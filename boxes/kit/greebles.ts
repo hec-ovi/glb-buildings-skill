@@ -81,9 +81,43 @@ function part(
 }
 
 /**
- * Dress a section's faces. Each floor row is cut into cells; a cell that draws below the
- * density gets a part, one or two cells wide, part of the row tall, standing 0.1 to 0.45 m out.
+ * Panels, by recursive subdivision. Each face of each floor is split in two, again and again,
+ * until the pieces are about a metre across; every leaf either stays flat or stands out by a
+ * quantised depth. Big slabs, medium blocks and small chips come out of the same pass, which is
+ * what makes the result read as erratic rather than as a regular grid of bumps.
+ *
+ * The panels that stay flat are the cuts: a face made of standing slabs reads as recessed
+ * wherever a slab is missing, and nothing has to be subtracted from anything.
  */
+
+/** Depths a panel can stand out by. Quantised, so the face keeps a built look. */
+const DEPTHS = [0.12, 0.22, 0.35, 0.55, 0.9];
+
+type Panel = { u0: number; u1: number; v0: number; v1: number };
+
+function split(panel: Panel, random: () => number, run: number, rise: number, depth: number, out: Panel[]): void {
+  const width = (panel.u1 - panel.u0) * run;
+  const height = (panel.v1 - panel.v0) * rise;
+  const small = width < 1.1 || height < 0.9;
+
+  if (depth === 0 || small || random() < 0.18) {
+    out.push(panel);
+    return;
+  }
+
+  // Split the long way, at a ratio that is never a clean half.
+  const cut = 0.32 + random() * 0.36;
+  if (width >= height) {
+    const at = panel.u0 + (panel.u1 - panel.u0) * cut;
+    split({ ...panel, u1: at }, random, run, rise, depth - 1, out);
+    split({ ...panel, u0: at }, random, run, rise, depth - 1, out);
+  } else {
+    const at = panel.v0 + (panel.v1 - panel.v0) * cut;
+    split({ ...panel, v1: at }, random, run, rise, depth - 1, out);
+    split({ ...panel, v0: at }, random, run, rise, depth - 1, out);
+  }
+}
+
 export function greebles(surface: Surface, shape: SectionShape, options: GreebleOptions): void {
   const density = Math.max(0, Math.min(1, options.density));
   if (density === 0) return;
@@ -97,27 +131,36 @@ export function greebles(surface: Surface, shape: SectionShape, options: Greeble
     const upper = ringAt(shape, (row + 1) / rows);
     const y0 = (shape.height * row) / rows;
     const y1 = (shape.height * (row + 1)) / rows;
-    const height = y1 - y0;
+    const rise = y1 - y0;
 
     for (const edge of sides) {
-      const next = (edge + 1) % lower.length;
       const a = lower[edge]!;
-      const b = lower[next]!;
+      const b = lower[(edge + 1) % lower.length]!;
       const run = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      const cells = Math.max(2, Math.round(run / 1.6));
 
-      for (let cell = 0; cell < cells; cell++) {
+      const panels: Panel[] = [];
+      split({ u0: 0.02, u1: 0.98, v0: 0.04, v1: 0.96 }, random, run, rise, 4, panels);
+
+      // Panels are pulled apart by a few centimetres, so neighbours never share a face and the
+      // gap reads as the reveal between two slabs.
+      const gapU = 0.03 / run;
+      const gapV = 0.03 / rise;
+
+      for (const panel of panels) {
+        // A panel left flat is a cut: the slabs around it do the work.
         if (random() > density) continue;
-        const wide = random() < 0.3 && cell + 1 < cells ? 2 : 1;
-        const from = (cell + 0.12) / cells;
-        const to = (cell + wide - 0.12) / cells;
-
-        const tall = 0.25 + random() * 0.55;
-        const base = random() * (1 - tall);
-        const stand = 0.1 + random() * 0.35;
-
-        part(surface, lower, upper, edge, from, to, y0 + height * base, y0 + height * (base + tall), stand);
-        cell += wide - 1;
+        const stand = DEPTHS[Math.floor(random() * DEPTHS.length)]!;
+        part(
+          surface,
+          lower,
+          upper,
+          edge,
+          panel.u0 + gapU,
+          panel.u1 - gapU,
+          y0 + rise * (panel.v0 + gapV),
+          y0 + rise * (panel.v1 - gapV),
+          stand,
+        );
       }
     }
   }

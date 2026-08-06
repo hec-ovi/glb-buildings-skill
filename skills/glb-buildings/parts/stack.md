@@ -79,7 +79,7 @@ The three parts of a building do different jobs, and mixing them up is what make
 
 | Flag | What it adds |
 | --- | --- |
-| `--greebles 0.0 to 1.0` | fake parts standing off the faces: panels, vents, blank signage |
+| `--greebles 0.0 to 1.0` | panel noise: the face is split into panels and each one either stands out or stays flat |
 | `--columns corners\|ribs\|partial` | uprights: at the corners, every few metres, or only in gaps |
 | `--balconies N\|E\|S\|W` | a slab with a rounded front, one per floor of the section |
 | `--wires N\|E\|S\|W` | cables climbing one face, tying the section together |
@@ -90,6 +90,12 @@ The three parts of a building do different jobs, and mixing them up is what make
 
 All of them are seeded from the section's name, so a rebuild keeps the same arrangement and an edit elsewhere
 never reshuffles it.
+
+**Noise.** `--greebles` splits each face into panels, again and again, until the pieces are about a metre
+across, then stands some of them out by a quantised depth. Big slabs, medium blocks and small chips come from
+the same pass, and the panels left flat read as the cuts between them. `0` is a clean flat section, which is
+right for most bulk; `0.3` is a worked facade; `0.6` and up is the heavy industrial noise of a kitbashed
+tower. Use it on one or two sections, not on all of them: flat next to noisy is what makes either one read.
 
 `--corner` and `--chamfer` together are what stop a section reading as a raw box: a small fillet on the
 uprights and a 0.2 to 0.3 m bevel top and bottom cost a handful of triangles and change the whole silhouette.
