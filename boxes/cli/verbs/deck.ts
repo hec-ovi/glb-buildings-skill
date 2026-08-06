@@ -4,7 +4,7 @@
  * instead of asking for a pile of clutter and hoping.
  */
 import { assemble } from '#assemble';
-import { DECK_PART_NOTES, deckCells } from '#kit';
+import { DECK_PART_NOTES, PART_SIZE, claim, deckCells } from '#kit';
 import { BuildingError, DECK_PARTS, parseDocument, type DeckPart, type DeckPlacement } from '#spec';
 import type { Verb } from './verb.ts';
 import { degrees, need, parse, text } from './args.ts';
@@ -37,14 +37,20 @@ export const deck: Verb = {
     const { name, band, grid } = await target(projects, positionals[0]);
     const held = new Map(band.deck.map((entry) => [entry.cell, entry]));
 
+    // A part that needs a block holds every cell of it, so nothing is placed on top of it.
+    const occupied = new Map<string, string>();
+    for (const entry of band.deck) {
+      for (const cell of claim(grid, entry.cell, PART_SIZE[entry.part] ?? 1) ?? []) occupied.set(cell.name, entry.part);
+    }
+
     return {
       project: name,
       section: band.id,
       cell: 2,
-      parts: DECK_PARTS.map((part) => ({ part, is: DECK_PART_NOTES[part as DeckPart] })),
+      parts: DECK_PARTS.map((part) => ({ part, cells: `${PART_SIZE[part]}x${PART_SIZE[part]}`, is: DECK_PART_NOTES[part as DeckPart] })),
       cells: grid.map((cell) => ({
         cell: cell.name,
-        holds: held.get(cell.name)?.part ?? null,
+        holds: occupied.get(cell.name) ?? null,
         turn: held.get(cell.name)?.turn ?? 0,
       })),
     };
@@ -78,13 +84,24 @@ export const place: Verb = {
       );
     }
 
-    // A tank or a tower is one object that needs room around it, not one per cell.
-    if ((part === 'tank' || part === 'tower') && wanted.length > 1) {
-      throw new BuildingError(
-        'E_DOC_INVALID',
-        `a ${part} stands in one cell and needs its neighbours clear. Name one cell, not ${wanted.length}`,
-        ['cell'],
-      );
+    // What is already held, including the cells a 2x2 part sits across.
+    const size = PART_SIZE[part];
+    const held = new Map<string, string>();
+    for (const entry of band.deck) {
+      if (wanted.includes(entry.cell)) continue;
+      for (const cell of claim(grid, entry.cell, PART_SIZE[entry.part] ?? 1) ?? []) held.set(cell.name, entry.part);
+    }
+
+    for (const cell of wanted) {
+      const block = claim(grid, cell, size);
+      if (!block) {
+        throw new BuildingError('E_DOC_INVALID', `a ${part} needs a ${size}x${size} block and ${cell} does not have room for one`, ['cell']);
+      }
+      const clash = block.find((candidate) => held.has(candidate.name));
+      if (clash) {
+        throw new BuildingError('E_DOC_INVALID', `${clash.name} already holds a ${held.get(clash.name)}; clear it first with unplace`, ['cell', clash.name]);
+      }
+      for (const candidate of block) held.set(candidate.name, part);
     }
 
     const kept = band.deck.filter((entry) => !wanted.includes(entry.cell));
@@ -93,13 +110,13 @@ export const place: Verb = {
     bands[at] = { ...band, deck: deckNow };
     await project.writeDocument(parseDocument({ ...doc, bands }));
 
-    const full = Math.round((deckNow.length / grid.length) * 100);
+    const full = Math.round((held.size / grid.length) * 100);
     return {
       project: name,
       section: band.id,
       part,
       cells: wanted,
-      deck: `${deckNow.length} of ${grid.length} cells taken, ${full}% full`,
+      deck: `${held.size} of ${grid.length} cells taken, ${full}% full`,
       ...(full > 55 ? { note: 'a roof past about half full reads as noise; leave space between the parts' } : {}),
     };
   },

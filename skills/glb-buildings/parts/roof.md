@@ -28,8 +28,9 @@ what a stepped building wants.
 | `tank` | a water tank on four legs | **one cell**, with its neighbours left empty |
 | `tower` | a small tower, the skyscraper on the skyscraper | **one cell**, with its neighbours left empty |
 
-A tank or a tower is one object. `place tank C4` is right; `place tank C4 C5 D4 D5` builds four tanks standing
-inside each other, and the CLI refuses it.
+A tank or a tower stands on a 2x2 block: name its bottom left cell and the CLI claims the other three. It
+refuses a cell that is already held and a block that runs off the deck, so parts cannot end up inside each
+other and `deck` always shows the truth.
 
 `--turn` is degrees, for the parts that point somewhere: a pipe, a panel, a unit, a tower.
 

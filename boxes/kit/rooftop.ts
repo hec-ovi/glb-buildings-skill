@@ -22,6 +22,42 @@ export const DECK_PART_NOTES: Record<DeckPart, string> = {
 
 export type Placement = { cell: string; part: DeckPart; turn?: number };
 
+/** How many cells a part needs, on a side. A tank or a tower wants a 2x2 block. */
+export const PART_SIZE: Record<DeckPart, number> = {
+  unit: 1,
+  turbine: 1,
+  pipe: 1,
+  panel: 1,
+  mast: 1,
+  vent: 1,
+  tank: 2,
+  tower: 2,
+};
+
+/** The cells a part standing at `cell` occupies, or nothing if the block runs off the deck. */
+export function claim(grid: Cell[], cell: string, size: number): Cell[] | undefined {
+  const anchor = grid.find((candidate) => candidate.name === cell);
+  if (!anchor) return undefined;
+  if (size === 1) return [anchor];
+
+  const block: Cell[] = [];
+  for (let dc = 0; dc < size; dc++) {
+    for (let dr = 0; dr < size; dr++) {
+      const found = grid.find((candidate) => candidate.column === anchor.column + dc && candidate.row === anchor.row + dr);
+      if (!found) return undefined;
+      block.push(found);
+    }
+  }
+  return block;
+}
+
+/** The middle of a block of cells, where the part actually stands. */
+export function blockCentre(block: Cell[]): Corner {
+  const x = block.reduce((sum, cell) => sum + cell.centre[0], 0) / block.length;
+  const z = block.reduce((sum, cell) => sum + cell.centre[1], 0) / block.length;
+  return [x, z];
+}
+
 export type RooftopOptions = {
   /** What the caller put where. */
   placements?: Placement[];
@@ -109,10 +145,10 @@ export function rooftop(surface: Surface, shape: SectionShape, options: RooftopO
   const taken = new Set<string>();
 
   for (const placement of options.placements ?? []) {
-    const cell = grid.find((candidate) => candidate.name === placement.cell);
-    if (!cell) continue;
-    taken.add(cell.name);
-    one(surface, placement.part, cell.centre, y, ((placement.turn ?? 0) * Math.PI) / 180, random);
+    const block = claim(grid, placement.cell, PART_SIZE[placement.part] ?? 1);
+    if (!block) continue;
+    for (const cell of block) taken.add(cell.name);
+    one(surface, placement.part, blockCentre(block), y, ((placement.turn ?? 0) * Math.PI) / 180, random);
   }
 
   const clutter = Math.max(0, Math.min(1, options.clutter ?? 0));

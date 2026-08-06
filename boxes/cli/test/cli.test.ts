@@ -164,12 +164,13 @@ describe('the roof deck', () => {
 
     const first = grid.cells[0]!.cell;
     const second = grid.cells[1]!.cell;
-    expect(await call('place', 'turbine', first, second)).toMatchObject({ part: 'turbine', holds: 2 });
+    expect(await call('place', 'turbine', first, second)).toMatchObject({ part: 'turbine', deck: expect.stringContaining('2 of') });
 
     const after = (await call('deck')) as unknown as { cells: { cell: string; holds: string | null }[] };
     expect(after.cells.find((cell) => cell.cell === first)!.holds).toBe('turbine');
 
     expect(await call('unplace', first)).toMatchObject({ holds: 1 });
+
   });
 
   it('refuses a cell that is not on that roof, and says which ones are', async () => {
@@ -177,6 +178,36 @@ describe('the roof deck', () => {
     const answer = (await call('place', 'mast', 'Z9')) as unknown as { ok: boolean; message: string };
     expect(answer.ok).toBe(false);
     expect(answer.message).toContain('has no cell Z9');
+  });
+
+  it('keeps parts from standing on top of each other, whatever size they are', async () => {
+    await call('new', 'tower-a', '--floors', '8');
+    await call('set-band', 'crown', '--width', '24', '--depth', '20', '--height', '3');
+    const grid = (await call('deck')) as unknown as { cells: { cell: string }[] };
+    const first = grid.cells[0]!.cell;
+
+    expect(await call('place', 'tank', first)).toMatchObject({ ok: true });
+    // The tank holds a 2x2 block, so its neighbours are taken too.
+    const after = (await call('deck')) as unknown as { cells: { cell: string; holds: string | null }[] };
+    expect(after.cells.filter((cell) => cell.holds === 'tank').length).toBe(4);
+
+    // Its own cell can be replaced; the other three are held.
+    const alsoTank = after.cells.find((cell) => cell.holds === 'tank' && cell.cell !== first)!.cell;
+    const clash = (await call('place', 'turbine', alsoTank)) as unknown as { ok: boolean; message: string };
+    expect(clash.ok).toBe(false);
+    expect(clash.message).toContain('already holds a tank');
+
+    expect(await call('place', 'turbine', first)).toMatchObject({ ok: true, part: 'turbine' });
+  });
+
+  it('refuses a block that runs off the edge of the deck', async () => {
+    await call('new', 'tower-a', '--floors', '8');
+    await call('set-band', 'crown', '--width', '18', '--depth', '14', '--height', '3');
+    const grid = (await call('deck')) as unknown as { cells: { cell: string }[] };
+    const last = grid.cells.at(-1)!.cell;
+    const answer = (await call('place', 'tower', last)) as unknown as { ok: boolean; message: string };
+    expect(answer.ok).toBe(false);
+    expect(answer.message).toContain('2x2 block');
   });
 
   it('refuses a part the kit does not have', async () => {
