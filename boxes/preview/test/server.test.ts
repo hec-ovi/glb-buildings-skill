@@ -31,7 +31,10 @@ describe('preview server', () => {
   });
 
   it('serves the viewer page and its bundle', async () => {
-    expect(await (await fetch(url)).text()).toContain('<div id="stage">');
+    const page = await (await fetch(url)).text();
+    expect(page).toContain('<div id="stage">');
+    // Without this tag the page loads, styles itself, and runs nothing at all.
+    expect(page).toContain('<script type="module" src="/viewer.js">');
     const bundle = await fetch(new URL('/viewer.js', url));
     expect(bundle.headers.get('content-type')).toContain('javascript');
     expect((await bundle.text()).length).toBeGreaterThan(1000);

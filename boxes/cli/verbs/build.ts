@@ -54,8 +54,8 @@ export const preview: Verb = {
     // With no name the preview follows the current project, so one server keeps up with the work.
     const server = new PreviewServer(
       pinned
-        ? { dir: project.dir, port }
-        : { resolve: async () => (await projects.open()).project.dir, watchRoot: projects.root, port },
+        ? { dir: project.dir, port, log: true }
+        : { resolve: async () => (await projects.open()).project.dir, watchRoot: projects.root, port, log: true },
     );
 
     let url: string;

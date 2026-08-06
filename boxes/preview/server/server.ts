@@ -18,6 +18,8 @@ export type PreviewOptions = {
   watchRoot?: string;
   port?: number;
   host?: string;
+  /** Print a line per request. On for the CLI, off in tests. */
+  log?: boolean;
 };
 
 export class PreviewServer {
@@ -25,6 +27,7 @@ export class PreviewServer {
   readonly project: Project;
   readonly #resolve: (() => Promise<string>) | undefined;
   readonly #watchRoot: string | undefined;
+  readonly #log: boolean;
   readonly #bundle = new ViewerBundle();
   readonly #host: string;
   readonly #port: number;
@@ -37,6 +40,7 @@ export class PreviewServer {
     this.project = new Project(options.dir ?? '.');
     this.#resolve = options.resolve;
     this.#watchRoot = options.watchRoot;
+    this.#log = options.log ?? false;
     this.#host = options.host ?? '127.0.0.1';
     this.#port = options.port ?? 4321;
   }
@@ -76,6 +80,10 @@ export class PreviewServer {
 
   async #route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const path = new URL(req.url ?? '/', 'http://localhost').pathname;
+    // One line per request, so a page that will not load can be read from this side.
+    if (this.#log) process.stdout.write(`${new Date().toISOString()} ${req.method} ${path}\n`);
+
+    if (path === '/api/ping') return this.#send(res, 200, 'text/plain', 'preview is serving\n');
 
     if (path === '/') return this.#sendFile(res, INDEX, 'text/html; charset=utf-8');
     if (path === '/viewer.js') return this.#send(res, 200, 'text/javascript; charset=utf-8', await this.#bundle.code());

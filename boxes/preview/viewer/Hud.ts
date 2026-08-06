@@ -41,6 +41,9 @@ export class Hud {
   #model = false;
 
   constructor(panel: HTMLElement, handlers: HudHandlers) {
+    // The page ships with a line of plain HTML, so a blank screen means the page itself never
+    // arrived. Once the viewer runs, the panel replaces it.
+    panel.replaceChildren();
     const segmented = element('div', 'segmented');
     this.#modeButtons = {
       pick: this.#segment('pick', 'mode-pick', segmented, handlers),

@@ -18,7 +18,7 @@ export class ViewerBundle {
       platform: 'browser',
       write: false,
       minify: false,
-      sourcemap: 'inline',
+      sourcemap: false,
     });
     const file = result.outputFiles[0];
     if (!file) throw new Error('viewer bundle produced no output');
