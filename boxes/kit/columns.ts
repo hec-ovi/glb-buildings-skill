@@ -4,7 +4,7 @@
  * what makes a tall run read as built rather than extruded.
  */
 import { Surface, type Vec } from './geometry.ts';
-import { cap, ringAt, tubeRing, type Corner, type SectionShape } from './section.ts';
+import { BITE, cap, ringAt, tubeRing, type Corner, type SectionShape } from './section.ts';
 
 export type ColumnStyle = 'none' | 'corners' | 'ribs' | 'partial';
 
@@ -39,6 +39,64 @@ function upright(
   cap(surface, previous, (shape.height * to) / rows, true);
 }
 
+/**
+ * A column on a footprint corner: a box centred on the vertex, following the section up. It
+ * reaches into the wall on both sides so the corner reads as one piece of structure.
+ */
+function corner(surface: Surface, shape: SectionShape, vertex: number, size: number, stand: number): void {
+  const rows = Math.max(1, shape.floors);
+  const half = size / 2;
+
+  const ringAtCorner = (t: number): Corner[] => {
+    const ring = ringAt(shape, t);
+    const here = ring[vertex]!;
+    const before = ring[(vertex + ring.length - 1) % ring.length]!;
+    const after = ring[(vertex + 1) % ring.length]!;
+
+    const away = (from: Corner, to: Corner): Corner => {
+      const dx = to[0] - from[0];
+      const dz = to[1] - from[1];
+      const length = Math.hypot(dx, dz) || 1;
+      return [dx / length, dz / length];
+    };
+    const a = away(here, before);
+    const b = away(here, after);
+    // The corner's outward direction is the way neither edge goes.
+    const out: Corner = [-(a[0] + b[0]), -(a[1] + b[1])];
+    const length = Math.hypot(out[0], out[1]) || 1;
+    const push: Corner = [(out[0] / length) * (stand - BITE), (out[1] / length) * (stand - BITE)];
+    const centre: Corner = [here[0] + push[0], here[1] + push[1]];
+
+    // Same direction round as a footprint, or the column comes out inside out.
+    return [
+      [centre[0] - half, centre[1] + half],
+      [centre[0] + half, centre[1] + half],
+      [centre[0] + half, centre[1] - half],
+      [centre[0] - half, centre[1] - half],
+    ];
+  };
+
+  let previous = ringAtCorner(0);
+  cap(surface, previous, 0, false);
+  for (let row = 0; row < rows; row++) {
+    const t = (row + 1) / rows;
+    const ring = ringAtCorner(t);
+    const y0 = (shape.height * row) / rows;
+    const y1 = shape.height * t;
+    for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4;
+      surface.quad(
+        [previous[i]![0], y0, previous[i]![1]],
+        [previous[j]![0], y0, previous[j]![1]],
+        [ring[j]![0], y1, ring[j]![1]],
+        [ring[i]![0], y1, ring[i]![1]],
+      );
+    }
+    previous = ring;
+  }
+  cap(surface, previous, shape.height, true);
+}
+
 /** Deterministic, so the same section keeps the same uprights between builds. */
 function rng(seed: number): () => number {
   let state = (seed | 0) || 1;
@@ -62,7 +120,9 @@ export function columns(surface: Surface, shape: SectionShape, style: ColumnStyl
     const run = Math.hypot(b[0] - a[0], b[1] - a[1]);
 
     if (style === 'corners') {
-      upright(surface, shape, edge, 0.02, 0.55, 0.22);
+      // One column per corner, standing on the corner itself. Put one near the corner on each
+      // edge instead and the two of them fight over the same space.
+      corner(surface, shape, edge, 0.6, 0.22);
       continue;
     }
 

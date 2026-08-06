@@ -7,7 +7,7 @@
  * never reshuffles it.
  */
 import { Surface, type Vec } from './geometry.ts';
-import { ringAt, type Corner, type SectionShape } from './section.ts';
+import { BITE, ringAt, type Corner, type SectionShape } from './section.ts';
 
 export type GreebleOptions = {
   /** 0 to 1: how much of the face carries a part. */
@@ -69,8 +69,9 @@ function part(
     return [on[0] + outward[0] * out, on[1] + outward[1] * out];
   };
 
-  const bottom: Corner[] = [face(lower, from, 0), face(lower, to, 0), face(lower, to, stand), face(lower, from, stand)];
-  const top: Corner[] = [face(upper, from, 0), face(upper, to, 0), face(upper, to, stand), face(upper, from, stand)];
+  // The back of the panel sits inside the wall: two faces in the same plane flicker.
+  const bottom: Corner[] = [face(lower, from, -BITE), face(lower, to, -BITE), face(lower, to, stand), face(lower, from, stand)];
+  const top: Corner[] = [face(upper, from, -BITE), face(upper, to, -BITE), face(upper, to, stand), face(upper, from, stand)];
 
   for (let i = 0; i < 4; i++) {
     const j = (i + 1) % 4;

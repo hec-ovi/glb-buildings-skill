@@ -151,6 +151,9 @@ export function wires(surface: Surface, shape: SectionShape, side: 'N' | 'E' | '
   }
 }
 
+/** How far a part sunk into a wall reaches, so its back face never shares the wall's plane. */
+export const BITE = 0.04;
+
 /** The four corners of one upright, at height t of the section, hugging the given face. */
 export function tubeRing(shape: SectionShape, t: number, edge: number, along: number, thickness: number, stand: number): Corner[] {
   const ring = ringAt(shape, t);
@@ -168,7 +171,7 @@ export function tubeRing(shape: SectionShape, t: number, edge: number, along: nu
     centre[0] + tangent[0] * side + outward[0] * out,
     centre[1] + tangent[1] * side + outward[1] * out,
   ];
-  return [at(-half, 0), at(half, 0), at(half, stand), at(-half, stand)];
+  return [at(-half, -BITE), at(half, -BITE), at(half, stand), at(-half, stand)];
 }
 
 /** Two footprints are the same when every corner matches, so no junction is needed. */
