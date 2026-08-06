@@ -5,6 +5,7 @@
  *
  * Everything here is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
+import { FACADE_STYLE } from '#materials';
 import { Surface, type Vec } from './geometry.ts';
 import { insetRing, lerp, outwardAt, type Corner } from './plan.ts';
 import { windowRow, WINDOW, type WindowStyle } from './openings.ts';
@@ -36,10 +37,27 @@ export function capRing(shape: SectionShape, end: 0 | 1): Corner[] {
   return insetRing(ringAt(shape, end), shape.chamfer ?? 0);
 }
 
-function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number): void {
+/**
+ * One row of quads around the section. `floor` places the row on the facade tile: the tile holds
+ * a few floors of windows, so floor 5 shows the row of the tile that floor 5 lands on, and a
+ * face as long as three bays shows three bays of it. Left out, the row takes the plain
+ * real-world scale, which is what a bevel wants.
+ */
+function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number, floor?: number): void {
   for (let i = 0; i < lower.length; i++) {
     const next = (i + 1) % lower.length;
-    surface.quad(point(lower[i]!, y0), point(lower[next]!, y0), point(upper[next]!, y1), point(upper[i]!, y1));
+    const a = lower[i]!;
+    const b = lower[next]!;
+    const patch =
+      floor === undefined
+        ? undefined
+        : {
+            u0: 0,
+            u1: Math.hypot(b[0] - a[0], b[1] - a[1]) / (FACADE_STYLE.across * FACADE_STYLE.bay),
+            v0: (floor % FACADE_STYLE.down) / FACADE_STYLE.down,
+            v1: ((floor % FACADE_STYLE.down) + 1) / FACADE_STYLE.down,
+          };
+    surface.quad(point(a, y0), point(b, y0), point(upper[next]!, y1), point(upper[i]!, y1), patch);
   }
 }
 
@@ -51,27 +69,27 @@ function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1
 export function walls(surface: Surface, shape: SectionShape, pane?: Surface): void {
   const rows = Math.max(1, shape.floors);
   const chamfer = Math.min(shape.chamfer ?? 0, shape.height / 3);
-  const from = chamfer;
-  const to = shape.height - chamfer;
+  const low = chamfer;
+  const high = shape.height - chamfer;
 
   if (chamfer > 0) band(surface, capRing(shape, 0), ringAt(shape, chamfer / shape.height), 0, chamfer);
 
   for (let row = 0; row < rows; row++) {
     const t0 = row / rows;
     const t1 = (row + 1) / rows;
-    const y0 = from + (to - from) * t0;
-    const y1 = from + (to - from) * t1;
+    const y0 = low + (high - low) * t0;
+    const y1 = low + (high - low) * t1;
     const lower = ringAt(shape, y0 / shape.height);
     const upper = ringAt(shape, y1 / shape.height);
 
-    band(surface, lower, upper, y0, y1);
+    band(surface, lower, upper, y0, y1, row);
     if (!shape.windows || !pane) continue;
 
     // A floor with windows: every face is cut into bays and each bay gets a pane.
     for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, y0, y1, shape.windows);
   }
 
-  if (chamfer > 0) band(surface, ringAt(shape, to / shape.height), capRing(shape, 1), to, shape.height);
+  if (chamfer > 0) band(surface, ringAt(shape, high / shape.height), capRing(shape, 1), high, shape.height);
 }
 
 /** The deck on top, or the underside at the bottom. A fan, so any footprint closes. */

@@ -6,8 +6,9 @@
  *
  * Twelve triangles each, and it cannot break the shell.
  */
+import { FACADE_STYLE } from '#materials';
 import { Surface, type Vec } from './geometry.ts';
-import { outwardAt, type Corner } from './section.ts';
+import { outwardAt, type Corner } from './plan.ts';
 
 export type WindowStyle = {
   /** How wide a bay is, in metres. The row is split into whole bays. */
@@ -22,7 +23,8 @@ export type WindowStyle = {
   depth: number;
 };
 
-export const WINDOW: WindowStyle = { bay: 3, from: 0.22, to: 0.78, sill: 0.3, head: 0.8, depth: 0.09 };
+/** Panes sit in the bays the facade texture is drawn for, so cut glass lands where drawn glass is. */
+export const WINDOW: WindowStyle = { bay: FACADE_STYLE.bay, from: 0.12, to: 0.88, sill: 0.28, head: 0.68, depth: 0.09 };
 
 const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
 

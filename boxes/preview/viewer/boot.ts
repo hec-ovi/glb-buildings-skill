@@ -9,6 +9,7 @@ import {
   DirectionalLight,
   GridHelper,
   Group,
+  HemisphereLight,
   PerspectiveCamera,
   Scene,
   Vector3,
@@ -61,8 +62,11 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
 
     const scene = new Scene();
     scene.background = new Color(0x0b1020);
-    scene.add(new AmbientLight(0xffffff, 1.6));
-    const sun = new DirectionalLight(0xffffff, 1.4);
+    // Evening light: enough sun to model the massing, little enough fill that a dark facade
+    // stays dark and its lit windows are the brightest thing on it.
+    scene.add(new AmbientLight(0xffffff, 0.22));
+    scene.add(new HemisphereLight(0x35507e, 0x090d18, 0.7));
+    const sun = new DirectionalLight(0xffe9cf, 1.15);
     sun.position.set(30, 60, 40);
     scene.add(sun);
 
@@ -103,6 +107,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
         modelRoot.clear();
         modelRoot.add(gltf.scene);
       } catch {
+        modelRoot.clear();
         hud.fail('no build yet, run the build verb first');
       }
     };
@@ -156,7 +161,12 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
 
       void listBuildings();
       if (!keepCamera) frame(blueprint.sizeMetres);
+
+      // The model on screen belongs to the building that was on screen. Load the new one now if
+      // it is showing, and drop it if it is not, so turning the model back on never shows the
+      // building before last.
       if (modelRoot.visible) await loadModel();
+      else modelRoot.clear();
     };
 
     window.addEventListener('resize', resize);

@@ -17,7 +17,7 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 |---|---|---|
 | [`spec`](../boxes/spec/CONTRACT.md) | The building document: bands, floors, bays, the selection, integer millimetres, the closed error set | none |
 | [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: transforms, bays, seams | `spec` |
-| [`kit`](../boxes/kit/CONTRACT.md) | The parts. Floor templates build geometry in metres, with the winding and normals engines expect | `spec` |
+| [`kit`](../boxes/kit/CONTRACT.md) | The parts. Floor templates build geometry in metres, with the winding and normals engines expect | `spec`, `materials` |
 | [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the shell proof, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `materials` |
 | [`preview`](../boxes/preview/CONTRACT.md) | three.js blueprint, click picking, drag zones, and the server that carries a selection back | `spec`, `assemble` |
 | [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |

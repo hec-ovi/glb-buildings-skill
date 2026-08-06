@@ -57,7 +57,9 @@ Materials are named, not built here: `facade`, `glass` and `roof`.
 - Which way is out comes from `outwardAt`, measured against the middle of the footprint, never from the
   winding, so a ring wound either way dresses the same.
 - A triangle with no area is never written: a collapsed corner drops out instead of carrying a zero normal.
-- UVs come from real-world size: one texture tile per `TILE` metres.
+- A wall lays its own UVs against the facade tile: one row of the tile per floor, one bay per `FACADE_STYLE.bay`
+  metres of face, so a window is a window sized rather than a pattern. Everything else takes real-world size:
+  one texture tile per `TILE` metres.
 
 ## Errors
 
@@ -65,4 +67,4 @@ Materials are named, not built here: `facade`, `glass` and `roof`.
 
 ## Depends on
 
-`#spec`.
+`#spec`, `#materials` (for the facade tile's shape).

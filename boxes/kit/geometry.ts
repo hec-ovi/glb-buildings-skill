@@ -28,8 +28,14 @@ export function normalOf(p0: Vec, p1: Vec, p2: Vec): Vec {
   return [n[0] / length, n[1] / length, n[2] / length];
 }
 
-/** Metres of surface per texture tile. Keeps texel density even across a facade. */
+/** Metres of surface per texture tile, for parts that carry no layout of their own. */
 export const TILE = 3;
+
+/**
+ * Where a quad sits on its texture. V runs up the wall, so `v0` is the bottom of the quad and
+ * the image's own top left is `[0, 1]`, the way glTF reads a texture.
+ */
+export type Patch = { u0: number; u1: number; v0: number; v1: number };
 
 /** Accumulates one material's triangles. Quads go in counter-clockwise seen from outside. */
 export class Surface {
@@ -48,18 +54,26 @@ export class Surface {
   }
 
   /**
-   * One quad, four corners counter-clockwise seen from the front. UVs come from the two
-   * in-plane edges, so a wall and a roof tile at the same real-world scale.
+   * One quad, four corners counter-clockwise seen from the front. UVs come from the two in-plane
+   * edges, so a wall and a roof tile at the same real-world scale, unless the caller lays them
+   * out itself: a facade has to place its tile against the floors and bays it is drawn for.
    */
-  quad(p0: Vec, p1: Vec, p2: Vec, p3: Vec): this {
+  quad(p0: Vec, p1: Vec, p2: Vec, p3: Vec, patch?: Patch): this {
     const width = Math.hypot(...sub(p1, p0));
     const height = Math.hypot(...sub(p3, p0));
-    const uv: [number, number][] = [
-      [0, 0],
-      [width / TILE, 0],
-      [width / TILE, height / TILE],
-      [0, height / TILE],
-    ];
+    const uv: [number, number][] = patch
+      ? [
+          [patch.u0, patch.v1],
+          [patch.u1, patch.v1],
+          [patch.u1, patch.v0],
+          [patch.u0, patch.v0],
+        ]
+      : [
+          [0, 0],
+          [width / TILE, 0],
+          [width / TILE, height / TILE],
+          [0, height / TILE],
+        ];
 
     // Two triangles, each with its own normal. A corner that collapses (a collar where two
     // footprints meet at a point) makes one of them degenerate, and a triangle with no area

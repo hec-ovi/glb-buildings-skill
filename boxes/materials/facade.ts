@@ -1,38 +1,42 @@
 /**
- * The facade texture, written from code. A tile is one floor tall and one bay wide, filled with
- * a grid of window cells: most dark, some lit, in the few tints a city at night actually shows.
- * The same grid comes back as an emissive map, so the lit ones glow and the rest stay flat.
+ * The facade texture, written from code. A tile is a few floors tall and a few bays wide. Each
+ * floor carries a band of glazing split into bays by the mullions between them, which is what a
+ * curtain wall is, and the wall around it is near black so a tower reads as a silhouette with
+ * lights in it rather than as a grey box.
  *
- * Seeded per building, so two towers never carry the same windows and a rebuild never reshuffles
- * the one you have. One 256 by 256 tile covers a whole building, which keeps a city cheap.
+ * A few windows are lit, most are not, and the lit ones come back in the emissive map so they
+ * glow. Seeded per building, so two towers never carry the same lights and a rebuild never
+ * reshuffles the one you have. One 256 by 256 tile covers a whole building.
  */
 import { png, type Pixels } from './png.ts';
 
 export type FacadeStyle = {
   /** Pixels on a side. A tile repeats, so this is the whole texture. */
   size: number;
-  /** Window cells across and down one tile. */
+  /** Bays across and floors down one tile. */
   across: number;
   down: number;
+  /** How wide one bay is on the building, in metres. This is what maps the tile onto a wall. */
+  bay: number;
   /** How many windows are lit, 0 to 1. */
   lit: number;
   seed: number;
 };
 
-export const FACADE_STYLE: FacadeStyle = { size: 256, across: 6, down: 4, lit: 0.34, seed: 1 };
+export const FACADE_STYLE: FacadeStyle = { size: 256, across: 8, down: 4, bay: 3, lit: 0.12, seed: 1 };
 
-/** Wall, mullion, and the tints a lit window comes in. */
-const WALL: [number, number, number] = [26, 27, 30];
-const FRAME: [number, number, number] = [17, 18, 21];
-const DARK: [number, number, number] = [11, 12, 15];
-const LIGHTS: [number, number, number][] = [
-  [255, 244, 214],
-  [255, 226, 170],
-  [206, 240, 255],
-  [255, 250, 240],
-  [255, 176, 120],
-  [186, 255, 226],
+/** Wall, the band under each window, the glass, and the few colours a lit window comes in. */
+const WALL: Rgb = [13, 14, 17];
+const SPANDREL: Rgb = [18, 19, 23];
+const GLASS: Rgb = [7, 8, 11];
+const SHEEN: Rgb = [21, 26, 34];
+const LIGHTS: { colour: Rgb; weight: number }[] = [
+  { colour: [255, 240, 212], weight: 9 },
+  { colour: [255, 231, 186], weight: 4 },
+  { colour: [226, 235, 255], weight: 1 },
 ];
+
+type Rgb = [number, number, number];
 
 function rng(seed: number): () => number {
   let state = (seed | 0) || 1;
@@ -44,61 +48,87 @@ function rng(seed: number): () => number {
   };
 }
 
-type Cell = { x0: number; x1: number; y0: number; y1: number; colour: [number, number, number]; glow: boolean };
+/** One lit colour, mostly the warm white a room actually is. */
+function lightColour(random: () => number): Rgb {
+  const total = LIGHTS.reduce((sum, light) => sum + light.weight, 0);
+  let roll = random() * total;
+  for (const light of LIGHTS) {
+    roll -= light.weight;
+    if (roll <= 0) return light.colour;
+  }
+  return LIGHTS[0]!.colour;
+}
 
-/** Where every window sits in the tile, and whether its light is on. */
-function grid(style: FacadeStyle): Cell[] {
+type Window = { x0: number; x1: number; y0: number; y1: number; colour: Rgb; glow: boolean };
+
+/**
+ * Where every window sits in the tile. One band of glazing per floor, cut into bays: wide, low,
+ * and the same on every floor, so the tile reads as a curtain wall rather than as dots.
+ */
+function windows(style: FacadeStyle): Window[] {
   const random = rng(style.seed);
-  const cells: Cell[] = [];
-  const cellW = style.size / style.across;
-  const cellH = style.size / style.down;
-  const insetX = cellW * 0.22;
-  const insetY = cellH * 0.26;
+  const found: Window[] = [];
+  const bay = style.size / style.across;
+  const floor = style.size / style.down;
+  // The mullion between two bays, and the sill and head of the band.
+  const mullion = Math.max(1, Math.round(bay * 0.09));
+  const sill = Math.round(floor * 0.62);
+  const head = Math.round(floor * 0.2);
 
   for (let row = 0; row < style.down; row++) {
     for (let column = 0; column < style.across; column++) {
       const on = random() < style.lit;
-      const colour = on ? LIGHTS[Math.floor(random() * LIGHTS.length)]! : DARK;
-      cells.push({
-        x0: Math.round(column * cellW + insetX),
-        x1: Math.round((column + 1) * cellW - insetX),
-        y0: Math.round(row * cellH + insetY),
-        y1: Math.round((row + 1) * cellH - insetY),
-        colour,
+      found.push({
+        x0: Math.round(column * bay + mullion),
+        x1: Math.round((column + 1) * bay - mullion),
+        y0: Math.round(row * floor + head),
+        y1: Math.round(row * floor + sill),
+        colour: on ? lightColour(random) : GLASS,
         glow: on,
       });
     }
   }
-  return cells;
+  return found;
 }
 
-function paint(style: FacadeStyle, cells: Cell[], emissive: boolean): Pixels {
+function paint(style: FacadeStyle, panes: Window[], emissive: boolean): Pixels {
   const { size } = style;
+  const floor = size / style.down;
   const rgba = new Uint8Array(size * size * 4);
 
-  // The wall, with a faint band at every floor line so the tile reads as storeys.
+  const put = (x: number, y: number, colour: Rgb) => {
+    const at = (y * size + x) * 4;
+    rgba[at] = colour[0]!;
+    rgba[at + 1] = colour[1]!;
+    rgba[at + 2] = colour[2]!;
+    rgba[at + 3] = 255;
+  };
+
   for (let y = 0; y < size; y++) {
-    const line = y % Math.round(size / style.down) < 2;
-    for (let x = 0; x < size; x++) {
-      const base = emissive ? [0, 0, 0] : line ? FRAME : WALL;
-      const at = (y * size + x) * 4;
-      rgba[at] = base[0]!;
-      rgba[at + 1] = base[1]!;
-      rgba[at + 2] = base[2]!;
-      rgba[at + 3] = 255;
-    }
+    // The wall, with the spandrel band that runs under each row of windows.
+    const down = y % floor;
+    const base: Rgb = emissive ? [0, 0, 0] : down > floor * 0.62 && down < floor * 0.94 ? SPANDREL : WALL;
+    for (let x = 0; x < size; x++) put(x, y, base);
   }
 
-  for (const cell of cells) {
-    const colour = emissive ? (cell.glow ? cell.colour : [0, 0, 0]) : cell.colour;
-    for (let y = cell.y0; y < cell.y1; y++) {
-      for (let x = cell.x0; x < cell.x1; x++) {
-        const at = (y * size + x) * 4;
-        rgba[at] = colour[0]!;
-        rgba[at + 1] = colour[1]!;
-        rgba[at + 2] = colour[2]!;
-        rgba[at + 3] = 255;
-      }
+  for (const pane of panes) {
+    const height = Math.max(1, pane.y1 - pane.y0);
+    for (let y = pane.y0; y < pane.y1; y++) {
+      // Unlit glass catches a little sky at the top of the pane, which is what stops a dark
+      // window reading as a hole cut in the wall.
+      const sky = 1 - (y - pane.y0) / height;
+      const colour: Rgb = emissive
+        ? pane.glow
+          ? pane.colour
+          : [0, 0, 0]
+        : pane.glow
+          ? pane.colour
+          : [
+              Math.round(GLASS[0] + (SHEEN[0] - GLASS[0]) * sky * sky),
+              Math.round(GLASS[1] + (SHEEN[1] - GLASS[1]) * sky * sky),
+              Math.round(GLASS[2] + (SHEEN[2] - GLASS[2]) * sky * sky),
+            ];
+      for (let x = pane.x0; x < pane.x1; x++) put(x, y, colour);
     }
   }
 
@@ -110,10 +140,10 @@ export type FacadeTexture = { colour: Uint8Array; emissive: Uint8Array; lit: num
 /** One tile of facade: what it looks like, and what glows. */
 export function facadeTexture(style: Partial<FacadeStyle> = {}): FacadeTexture {
   const settings = { ...FACADE_STYLE, ...style };
-  const cells = grid(settings);
+  const panes = windows(settings);
   return {
-    colour: png(paint(settings, cells, false)),
-    emissive: png(paint(settings, cells, true)),
-    lit: cells.filter((cell) => cell.glow).length,
+    colour: png(paint(settings, panes, false)),
+    emissive: png(paint(settings, panes, true)),
+    lit: panes.filter((pane) => pane.glow).length,
   };
 }
