@@ -37,7 +37,17 @@ belongs to the three.js profile, where Unity glTFast and three.js both read it.
 **Repeated floors are one mesh referenced by many nodes.** Core glTF mesh reuse is understood by every engine,
 so a 40 floor tower costs one floor of geometry.
 
-**The Khronos glTF validator gates every write.** A file that reports an error is not a product.
+**The Khronos glTF validator gates every write.** A file that reports an error is not a product. It is not
+enough on its own: it checks structure, not geometry, so a valid file can still import inside out. Two proofs
+run first, in `kit`: every stored normal agrees with its triangle's winding, and the building's meshes form one
+closed shell with positive volume (no open edge, no doubled edge).
+
+**Nothing is scaled and nothing is mirrored.** Every node keeps a positive determinant and a uniform scale, so
+the only handedness flip in the pipeline is the one each importer does for itself, which all three get right.
+Mirrored geometry is baked, never expressed as a negative scale.
+
+**LOD chains ship as separate files with a manifest.** `MSFT_lod` is unsupported by three.js, Unity glTFast and
+Unreal alike, so a glTF file cannot carry the intent.
 
 ## Preview
 

@@ -9,31 +9,31 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | How the whole thing fits together | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | What it is built on and why | [DECISIONS.md](DECISIONS.md) |
 | Build order and what is left | [PLAN.md](PLAN.md) |
+| Installing the CLI and the skill | [INSTALL.md](INSTALL.md) |
 
 ## Boxes
 
 | Box | Purpose | Depends on |
 |---|---|---|
-| [`spec`](../boxes/spec/CONTRACT.md) | The building document: bands, floors, bays, sockets, seams, in integer millimetres | none |
-| [`kit`](../boxes/kit/CONTRACT.md) | The parts. Each one returns geometry, sockets, a collision box and material slots, at three detail tiers | `spec` |
-| [`materials`](../boxes/materials/CONTRACT.md) | Texture sets to materials: atlas packing, baked UVs, real world texel density | `spec` |
-| [`assemble`](../boxes/assemble/CONTRACT.md) | Document plus kit to a placed scene: world transforms, repeated bands, mesh reuse groups | `spec`, `kit` |
-| [`check`](../boxes/check/CONTRACT.md) | The proofs: support, overlap, envelope, human proportions, seam match, triangle budget | `spec`, `kit` |
-| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene plus materials to a GLB per export profile, then the Khronos validator | `spec`, `assemble`, `materials` |
-| [`preview`](../boxes/preview/CONTRACT.md) | three.js viewer, blueprint overlay, click picking, drag zones, and the local server that carries a selection back | `spec`, `assemble` |
-| [`cli`](../boxes/cli/CONTRACT.md) | The verbs an agent calls, and the build walk with its gates | every box above |
-| [`skill`](../boxes/skill/CONTRACT.md) | The resolver and the fat sub-skills an agent reads | `cli` |
+| [`spec`](../boxes/spec/CONTRACT.md) | The building document: bands, floors, bays, the selection, integer millimetres, the closed error set | none |
+| [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: transforms, bays, seams | `spec` |
+| [`kit`](../boxes/kit/CONTRACT.md) | The parts. Floor templates build geometry in metres, with the winding and normals engines expect | `spec` |
+| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the shell proof and the Khronos validator | `spec`, `assemble`, `kit` |
+| [`preview`](../boxes/preview/CONTRACT.md) | three.js blueprint, click picking, drag zones, and the server that carries a selection back | `spec`, `assemble` |
+| [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |
+| [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and four fat parts. `SKILL.md` is its contract | `cli` |
+| `materials` | Texture sets to materials: atlas packing, baked UVs, real world texel density | not built |
+| `check` | The proofs on the document: support, overlap, envelope, human proportions, triangle budget | not built |
 
 Edges run one way. `cli` is the only box that touches several: it is the agent's face onto all of them. A box
 reaches another only through the `imports` map in `package.json` (`#spec`, `#kit`, and so on), so a deep import
 is not expressible.
 
-Standing today: `spec`, `assemble` and `preview`. [PLAN.md](PLAN.md) works through the rest.
-
 ```bash
 npm install
-npm test                       # every box, one pass
-npm run preview -- ./my-tower  # blueprint editor at http://127.0.0.1:4321
+npm test                         # every box, one pass
+node boxes/cli/bin/buildings.ts help
+npm link && buildings new tower-a && buildings build && buildings preview
 ```
 
 ## Cross-cutting
@@ -42,14 +42,15 @@ npm run preview -- ./my-tower  # blueprint editor at http://127.0.0.1:4321
 |---|---|
 | The closed error set | `boxes/spec/errors.ts` |
 | Units, grid and rounding rules | `boxes/spec/units.ts` |
-| Human size table | `boxes/check/rules/` |
 | The CLI entry point | `boxes/cli/bin/buildings.ts` |
-| Skill copies and the drift check | `scripts/sync-skill.ts` |
+| The preview entry point | `boxes/preview/bin/preview.ts` |
+| Skill copy at the root, and its drift check | `scripts/sync-skill.ts`, `boxes/cli/test/skill.test.ts` |
+| Research findings behind the design | `.research/INDEX.md` (local, not committed) |
 
 ## Surfaces
 
 | Surface | Where |
 |---|---|
-| The agent's instructions (canonical) | `skills/glb-buildings/SKILL.md` plus its sub-skills |
+| The agent's instructions (canonical) | `skills/glb-buildings/SKILL.md` plus `parts/` |
 | Root skill copy, for a plain checkout | `SKILL.md` (synced) |
-| Claude plugin | `plugins/glb-buildings/` (synced) |
+| Claude Code plugin and marketplace entry | `.claude-plugin/` |

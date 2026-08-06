@@ -1,6 +1,6 @@
 {
   "name": "glb-buildings",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,10 @@
   "imports": {
     "#spec": "./boxes/spec/index.ts",
     "#assemble": "./boxes/assemble/index.ts",
-    "#preview": "./boxes/preview/index.ts"
+    "#preview": "./boxes/preview/index.ts",
+    "#kit": "./boxes/kit/index.ts",
+    "#glb": "./boxes/glb/index.ts",
+    "#cli": "./boxes/cli/index.ts"
   },
   "bin": {
     "buildings": "./boxes/cli/bin/buildings.ts"
@@ -20,7 +23,10 @@
     "preview": "node boxes/preview/bin/preview.ts"
   },
   "dependencies": {
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
     "esbuild": "^0.25.0",
+    "gltf-validator": "^2.0.0-dev.3.10",
     "three": "^0.185.0",
     "zod": "^4.0.0"
   },

@@ -76,7 +76,13 @@ roughness, no Draco, no meshopt, no texture transform. Profiles differ only wher
 | `unity` | LOD group naming, optional second UV set |
 | `threejs` | Merged draw calls, optional `EXT_mesh_gpu_instancing` |
 
-Every written file goes through the Khronos glTF validator and the build fails on any error.
+Every written file goes through three gates: normals must agree with winding, the building must close into one
+shell with positive volume, and the Khronos glTF validator must report no error. The validator alone would not
+catch any of the geometry failures, which is why the first two exist.
+
+One building is one mesh per band with one node per floor, and its parts are primitives inside those meshes.
+That is the portable unit: Unreal turns it into one Static Mesh with material slots, Unity into one Mesh with
+submeshes, three.js into a Group.
 
 ## The preview loop
 

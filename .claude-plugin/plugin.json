@@ -1,0 +1,5 @@
+{
+  "name": "glb-buildings",
+  "description": "Generate building GLBs for Unreal Engine, Unity and three.js from named projects: stacks of floor bands become one validated glTF file, with a three.js blueprint preview the human can click.",
+  "version": "0.1.0"
+}

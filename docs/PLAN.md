@@ -2,39 +2,37 @@
 
 Build order, box by box. Each milestone ends with a file you can open in an engine.
 
-## 1. The fake building end to end
+## Done
 
-`spec`, `kit` (flat box bay only), `assemble`, `glb`, `cli new` and `cli build`.
+**1. The fake building end to end.** `spec`, `assemble`, `kit`, `glb`, and the `cli` verbs that drive them. An
+all `flat` tower writes one mesh per band, one node per floor, two materials, and passes the Khronos validator.
 
-Output: an all `flat` tower, one material, one mesh reused per band, that opens in Unreal, Unity and three.js
-and passes the Khronos validator. This is the whole low poly product, and it is the spine everything else hangs
-from.
+**2. The editor.** `preview`: three.js blueprint with click picking and dragged zones, selections carried back
+to the CLI through `selection.json`.
 
-## 2. The proofs
+**3. The agent surface.** Named projects, `SKILL.md` with four fat parts, plugin manifests, install docs, and a
+drift test that keeps the skill honest about the verbs.
 
-`check`: support, overlap, envelope, human size table, seam match, triangle budget. Wired into `cli build` as a
-gate, so nothing gets written until it passes.
+## Next
 
-## 3. Real floors
+**4. The proofs (`check`).** Support, overlap, envelope, the human size table, seam match, triangle budget.
+Wired into `build` as a gate. The mesh-level proofs already run (winding, closed shell); this is the document
+level, where a floating balcony or an over-budget band gets caught with a part id.
 
-`kit` grows the parts that carry detail: window, door, frame, sill, balcony slab, railing, landing, awning, AC
-unit, wire, cornice, roof cap. Main floor and roof become their own templates. `light` and `full` tiers.
+**5. Real floors (`kit` grows).** Window, door, frame, sill, balcony slab, railing, landing, awning, AC unit,
+wire, cornice. Sockets and quarter turns, so a part cannot be placed unattached. `light` and `full` tiers stop
+being walls with a different label.
 
-## 4. Materials
+**6. Materials.** Hector's images become texture sets, packed into one atlas per building family, with baked UVs
+and real world texel density. Unreal ignores `KHR_texture_transform`, so the UVs are baked, not offset.
 
-`materials`: Hector's images become texture sets, packed into one atlas per building family, with baked UVs and
-real world texel density.
+**7. Bay level editing.** A zone from the preview becomes a target for "put a window there": the CLI gains
+verbs that act on bay ids, not just bands.
 
-## 5. The preview
-
-`preview`: three.js viewer, blueprint overlay with metres, click picking, drag rectangle zones, and the local
-server that carries the selection back to the CLI.
-
-## 6. The agent
-
-`skill`: the resolver and the fat sub-skills, plus the auto walk with a gate at every step, so one description
-produces a finished building.
+**8. Export profiles and LODs.** `general`, `unreal`, `unity`, `threejs`. LOD chains ship as separate files with
+a manifest, because `MSFT_lod` is unsupported in all three engines.
 
 ## Later
 
-LOD chains as export output, Unreal collision meshes, second UV set for lightmaps, city scale batch export.
+Transition bands so setbacks and turned bands stack, Unreal collision meshes, second UV set for lightmaps, city
+scale batch export.

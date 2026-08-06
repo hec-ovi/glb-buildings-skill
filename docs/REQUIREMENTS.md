@@ -1,5 +1,5 @@
 
 
-## 3
+## 4
 
-before you do that, make a deep research, about this frictions, how to make by code this things? that do not overlap, or are floated, measures, etc? probagbly tons of docs, also best way of bundling all this compatible with all the things i said meaning unreal, unity, and threejs, there are specific issues you make when you code them, like inverting roofs, and things like that... so wen we test this, you will use haiku, if haiku with no extra prompts can use the skill and make an excellent build, means we are ready
+yep, do that... one requirement... COMPRESS MUCH MORE... please when talking with me. tell me when we can start testing it into a cli, i have one tho, so, oh i forgot... check skills other ones research-skill and websearch-skill they have correct structure of skill md and how to install them, etc so we can install it on my own cli, i will spin up my own sli with a local model, and see if he can uses it, so the idea is: he has models with names he can save (similar actually to another skill i did text to glb or to 3d skill or something like that) so each is a project, and from there the cli know which project we are editing, and start iterating
