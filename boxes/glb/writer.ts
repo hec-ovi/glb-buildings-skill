@@ -2,13 +2,15 @@
  * Placed scene to GLB. Core glTF 2.0 only: metres, Y up, one UV set, PBR metallic roughness,
  * no extensions, so the same file opens in Unreal, Unity and three.js.
  *
- * A band's floors are identical, so its mesh is written once and one node per floor points at
- * it. Nodes carry translation and, where a band is turned, a rotation. Nothing is scaled and
- * nothing is mirrored, so every node transform keeps a positive determinant.
+ * One mesh per section, because a section is the design unit and owns its shape. Between two
+ * sections the writer lofts the junction that closes them: a ledge where one steps in, a soffit
+ * where one hangs out, a twisted collar where one turns. Nodes only translate up, so every
+ * transform keeps a positive determinant and nothing is mirrored or scaled.
  */
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
-import { assemble, describeSeam, seamsMatch, type PlacedBand, type PlacedScene } from '#assemble';
-import { FACADE, ROOF, shellProblems, template, triangleCount, type MeshData } from '#kit';
+import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
+import { checkSupport, type Support } from '#check';
+import { FACADE, ROOF, shellProblems, template, triangleCount, wireRun, type MeshData, type SectionShape } from '#kit';
 import { BuildingError, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
@@ -25,24 +27,36 @@ export type BuildResult = {
   glb: Uint8Array;
   stats: BuildStats;
   scene: PlacedScene;
+  supports: Support[];
 };
 
-function bandShape(band: PlacedBand) {
-  const bay = band.floors[0]?.bays[0];
-  if (!bay) throw new BuildingError('E_BAND_EMPTY', `band ${band.id} has no floors`, ['bands', band.id]);
+function metres(corners: Corner[]): [number, number][] {
+  return corners.map(([x, z]) => [x * MM, z * MM]);
+}
 
-  let x0 = Infinity;
-  let x1 = -Infinity;
-  let z0 = Infinity;
-  let z1 = -Infinity;
-  for (const b of band.floors[0]!.bays) {
-    x0 = Math.min(x0, b.box.min[0]);
-    x1 = Math.max(x1, b.box.max[0]);
-    z0 = Math.min(z0, b.box.min[2]);
-    z1 = Math.max(z1, b.box.max[2]);
+/** How far a section reaches down into the one below, so no two faces ever share a plane. */
+const BITE = 0.01;
+
+function shapeOf(band: PlacedBand, sunk: number): SectionShape {
+  return {
+    bottom: metres(band.bottom),
+    top: metres(band.top),
+    height: (band.y1 - band.y0) * MM + sunk,
+    floors: band.floors.length,
+  };
+}
+
+/** The stack rules that have nothing to do with geometry. */
+function checkEnds(placed: PlacedScene): void {
+  const first = placed.bands[0]!;
+  const last = placed.bands.at(-1)!;
+
+  if (first.kind !== 'main') {
+    throw new BuildingError('E_SEAM_MISMATCH', `the bottom section ${first.id} is ${first.kind}; a building needs a main section at the bottom to carry its underside`, ['bands', first.id]);
   }
-  const floor = band.floors[0]!;
-  return { x0: x0 * MM, x1: x1 * MM, z0: z0 * MM, z1: z1 * MM, height: (floor.y1 - floor.y0) * MM };
+  if (last.kind !== 'roof') {
+    throw new BuildingError('E_SEAM_MISMATCH', `the top section ${last.id} is ${last.kind}; a building needs a roof section on top to carry its deck`, ['bands', last.id]);
+  }
 }
 
 function palette(document: Document): Map<string, Material> {
@@ -67,26 +81,10 @@ function meshOf(document: Document, name: string, parts: MeshData[], materials: 
   const mesh = document.createMesh(name);
 
   for (const part of parts) {
-    const position = document
-      .createAccessor(`${name}_${part.material}_P`)
-      .setType('VEC3')
-      .setArray(new Float32Array(part.positions))
-      .setBuffer(buffer);
-    const normal = document
-      .createAccessor(`${name}_${part.material}_N`)
-      .setType('VEC3')
-      .setArray(new Float32Array(part.normals))
-      .setBuffer(buffer);
-    const uv = document
-      .createAccessor(`${name}_${part.material}_T`)
-      .setType('VEC2')
-      .setArray(new Float32Array(part.uvs))
-      .setBuffer(buffer);
-    const indices = document
-      .createAccessor(`${name}_${part.material}_I`)
-      .setType('SCALAR')
-      .setArray(new Uint32Array(part.indices))
-      .setBuffer(buffer);
+    const floats = (suffix: string, type: 'VEC3' | 'VEC2', values: number[]) =>
+      document.createAccessor(`${name}_${part.material}_${suffix}`).setType(type).setArray(new Float32Array(values)).setBuffer(buffer);
+    const indices = () =>
+      document.createAccessor(`${name}_${part.material}_I`).setType('SCALAR').setArray(new Uint32Array(part.indices)).setBuffer(buffer);
 
     const material = materials.get(part.material);
     if (!material) throw new BuildingError('E_GLB_INVALID', `no material named ${part.material}`, [name]);
@@ -94,100 +92,59 @@ function meshOf(document: Document, name: string, parts: MeshData[], materials: 
     mesh.addPrimitive(
       document
         .createPrimitive()
-        .setAttribute('POSITION', position)
-        .setAttribute('NORMAL', normal)
-        .setAttribute('TEXCOORD_0', uv)
-        .setIndices(indices)
+        .setAttribute('POSITION', floats('P', 'VEC3', part.positions))
+        .setAttribute('NORMAL', floats('N', 'VEC3', part.normals))
+        .setAttribute('TEXCOORD_0', floats('T', 'VEC2', part.uvs))
+        .setIndices(indices())
         .setMaterial(material),
     );
   }
   return mesh;
 }
 
-/** Turn about Y as a quaternion, so a turned band still has a positive determinant. */
-function yaw(degrees: number): [number, number, number, number] {
-  const half = (degrees * Math.PI) / 360;
-  return [0, Math.sin(half), 0, Math.cos(half)];
-}
-
-/**
- * The cheap proof, run before any geometry: bands that do not share a seam cannot close into
- * a building, and the message names both of them instead of leaving a raw open edge behind.
- */
-function checkStack(placed: PlacedScene): void {
-  const first = placed.bands[0]!;
-  const last = placed.bands.at(-1)!;
-
-  if (first.kind !== 'main') {
-    throw new BuildingError('E_SEAM_MISMATCH', `the bottom band ${first.id} is ${first.kind}; a building needs a main band at the bottom to carry its underside`, ['bands', first.id]);
-  }
-  if (last.kind !== 'roof') {
-    throw new BuildingError('E_SEAM_MISMATCH', `the top band ${last.id} is ${last.kind}; a building needs a roof band on top to carry its deck`, ['bands', last.id]);
-  }
-
-  for (const band of placed.bands) {
-    if (band.rotation !== 0) {
-      throw new BuildingError('E_SEAM_MISMATCH', `band ${band.id} is turned ${band.rotation} degrees, and a turned band does not meet its neighbours yet. Set rotation to 0`, ['bands', band.id, 'rotation']);
-    }
-  }
-
-  for (let i = 1; i < placed.bands.length; i++) {
-    const below = placed.bands[i - 1]!;
-    const band = placed.bands[i]!;
-    if (seamsMatch(below.seam, band.seam)) continue;
-    throw new BuildingError(
-      'E_SEAM_MISMATCH',
-      `band ${band.id} (${describeSeam(band.seam)}) does not stack on ${below.id} (${describeSeam(below.seam)}). ` +
-        'A setback needs a transition the kit does not have yet: give both bands the same inset',
-      ['bands', band.id, 'inset'],
-    );
-  }
-}
-
 export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
   const placed = assemble(doc);
-  checkStack(placed);
+  checkEnds(placed);
+  const supports = checkSupport(placed);
+
   const document = new Document();
   document.createBuffer();
   document.getRoot().getAsset().generator = 'glb-buildings';
 
   const materials = palette(document);
   const scene = document.createScene(doc.name);
-  const allParts: MeshData[] = [];
+  const shell: MeshData[] = [];
+
   let triangles = 0;
   let nodes = 0;
 
-  for (const band of placed.bands) {
-    const shape = bandShape(band);
+  placed.bands.forEach((band, index) => {
+    const sunk = index === 0 ? 0 : BITE;
+    const shape = shapeOf(band, sunk);
     const parts = template(band.template).build(shape);
-    const mesh = meshOf(document, `${doc.name}_${band.id}`, parts, materials);
-    const perFloor = parts.reduce((sum, part) => sum + triangleCount(part), 0);
+    if (band.wires !== 'none') parts.push(...wireRun(shape, band.wires));
 
-    for (const floor of band.floors) {
-      const node = document
-        .createNode(floor.id)
-        .setTranslation([0, floor.y0 * MM, 0])
-        .setMesh(mesh);
-      if (band.rotation !== 0) node.setRotation(yaw(band.rotation));
-      scene.addChild(node);
-      nodes += 1;
-      triangles += perFloor;
-
-      // The shell proof needs the parts where they actually sit.
-      allParts.push(...parts.map((part) => place(part, floor.y0 * MM, band.rotation)));
+    // Every section is closed on its own. Proving them one at a time is what keeps a stack of
+    // stepped, slid and turned masses honest, without welding them into one surface.
+    const open = shellProblems(parts);
+    if (open.length > 0) {
+      throw new BuildingError('E_GLB_INVALID', `section ${band.id} is not closed: ${open[0]!.detail} at ${open[0]!.at}`, ['bands', band.id]);
     }
-  }
 
-  const open = shellProblems(allParts);
-  if (open.length > 0) {
-    throw new BuildingError('E_GLB_INVALID', `the building is not a closed shell: ${open[0]!.detail} at ${open[0]!.at}`, [doc.name]);
-  }
+    const y = band.y0 * MM - sunk;
+    const mesh = meshOf(document, band.id, parts, materials);
+    scene.addChild(document.createNode(band.id).setTranslation([0, y, 0]).setMesh(mesh));
+    nodes += 1;
+    triangles += parts.reduce((sum, part) => sum + triangleCount(part), 0);
+    shell.push(...parts);
+  });
 
   const glb = await new NodeIO().writeBinary(document);
 
   return {
     glb,
     scene: placed,
+    supports,
     stats: {
       meshes: document.getRoot().listMeshes().length,
       nodes,
@@ -198,25 +155,4 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
   };
 }
 
-/** The same triangles where the node puts them: turned about Y, then lifted. */
-function place(part: MeshData, y: number, rotation: number): MeshData {
-  const positions = part.positions.slice();
-  const normals = part.normals.slice();
-  const angle = (rotation * Math.PI) / 180;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
 
-  for (let i = 0; i < positions.length; i += 3) {
-    const x = positions[i]!;
-    const z = positions[i + 2]!;
-    positions[i] = x * cos + z * sin;
-    positions[i + 2] = -x * sin + z * cos;
-    positions[i + 1] = positions[i + 1]! + y;
-
-    const nx = normals[i]!;
-    const nz = normals[i + 2]!;
-    normals[i] = nx * cos + nz * sin;
-    normals[i + 2] = -nx * sin + nz * cos;
-  }
-  return { ...part, positions, normals };
-}

@@ -1,42 +1,28 @@
 /**
- * Floor templates. Each one builds a single floor in its own frame: the building centre at
- * x=0, z=0, and y=0 at the floor's underside. Every floor of a band is identical, so the GLB
- * writes one mesh and points many nodes at it.
+ * Section templates. A template is the skin of one section: the loft between the footprint it
+ * starts on and the one it ends on, closed at both ends. The section is the design unit, so a
+ * shape, a twist or a run of cables belongs to one section and stops there.
  *
- * A floor's walls are a ring of four outward quads. Stacked rings share their edges exactly,
- * and the main floor's underside plus the roof's top close the building into one shell.
+ * Every section is a closed solid of its own and sinks a little into the one below, the way a
+ * kitbashed building is put together. That is what lets a section step out, slide across or
+ * turn 45 degrees without a seam to negotiate.
+ *
+ * Everything is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData } from './geometry.ts';
-
-export type FloorShape = {
-  /** Metres, in the floor's own frame. */
-  x0: number;
-  x1: number;
-  z0: number;
-  z1: number;
-  height: number;
-};
+import { cap, ringAt, walls, wires, type SectionShape } from './section.ts';
 
 export type Template = {
   id: string;
   tier: Tier;
   /** One line for the skill and the CLI. */
   purpose: string;
-  build(shape: FloorShape): MeshData[];
+  build(shape: SectionShape): MeshData[];
 };
 
 export const FACADE = 'facade';
 export const ROOF = 'roof';
-
-function ring(shape: FloorShape, material = FACADE): Surface {
-  const { x0, x1, z0, z1, height: h } = shape;
-  return new Surface(material)
-    .quad([x0, 0, z1], [x1, 0, z1], [x1, h, z1], [x0, h, z1]) // S, faces +Z
-    .quad([x1, 0, z0], [x0, 0, z0], [x0, h, z0], [x1, h, z0]) // N, faces -Z
-    .quad([x1, 0, z1], [x1, 0, z0], [x1, h, z0], [x1, h, z1]) // E, faces +X
-    .quad([x0, 0, z0], [x0, 0, z1], [x0, h, z1], [x0, h, z0]); // W, faces -X
-}
 
 function surfaces(...list: Surface[]): MeshData[] {
   return list.filter((surface) => !surface.empty).map((surface) => surface.data());
@@ -46,27 +32,38 @@ const TEMPLATES: Template[] = [
   {
     id: 'bulk-flat',
     tier: 'flat',
-    purpose: 'a fake floor: four textured walls, windows live in the image',
-    build: (shape) => surfaces(ring(shape)),
+    purpose: 'a plain section: four textured walls, windows live in the image',
+    build: (shape) => {
+      const skin = new Surface(FACADE);
+      walls(skin, shape);
+      cap(skin, ringAt(shape, 0), 0, false);
+      cap(skin, ringAt(shape, 1), shape.height, true);
+      return surfaces(skin);
+    },
   },
   {
     id: 'main-plain',
     tier: 'full',
-    purpose: 'the ground floor: taller walls, and the underside that closes the building',
+    purpose: 'the base: taller walls, and the underside that closes the building',
     build: (shape) => {
-      const walls = ring(shape);
-      walls.cap([shape.x0, shape.z0], [shape.x1, shape.z1], 0, false);
-      return surfaces(walls);
+      const skin = new Surface(FACADE);
+      walls(skin, shape);
+      cap(skin, ringAt(shape, 0), 0, false);
+      cap(skin, ringAt(shape, 1), shape.height, true);
+      return surfaces(skin);
     },
   },
   {
     id: 'roof-parapet',
     tier: 'light',
-    purpose: 'the crown: a parapet ring and the roof deck that closes the building',
+    purpose: 'the crown: a parapet and the roof deck that closes the building',
     build: (shape) => {
-      const walls = ring(shape);
-      const deck = new Surface(ROOF).cap([shape.x0, shape.z0], [shape.x1, shape.z1], shape.height, true);
-      return surfaces(walls, deck);
+      const skin = new Surface(FACADE);
+      walls(skin, shape);
+      cap(skin, ringAt(shape, 0), 0, false);
+      const deck = new Surface(ROOF);
+      cap(deck, ringAt(shape, 1), shape.height, true);
+      return surfaces(skin, deck);
     },
   },
 ];
@@ -85,4 +82,11 @@ export function template(id: string): Template {
 
 export function templates(): Template[] {
   return [...TEMPLATES];
+}
+
+/** Cables climbing one face of a section, added to whatever the template built. */
+export function wireRun(shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): MeshData[] {
+  const surface = new Surface(FACADE);
+  wires(surface, shape, side);
+  return surfaces(surface);
 }

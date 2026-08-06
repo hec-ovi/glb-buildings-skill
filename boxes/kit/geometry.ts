@@ -52,25 +52,35 @@ export class Surface {
    * in-plane edges, so a wall and a roof tile at the same real-world scale.
    */
   quad(p0: Vec, p1: Vec, p2: Vec, p3: Vec): this {
-    const normal = normalOf(p0, p1, p2);
-    const base = this.#positions.length / 3;
     const width = Math.hypot(...sub(p1, p0));
     const height = Math.hypot(...sub(p3, p0));
-
-    const corners: [Vec, number, number][] = [
-      [p0, 0, 0],
-      [p1, width / TILE, 0],
-      [p2, width / TILE, height / TILE],
-      [p3, 0, height / TILE],
+    const uv: [number, number][] = [
+      [0, 0],
+      [width / TILE, 0],
+      [width / TILE, height / TILE],
+      [0, height / TILE],
     ];
 
-    for (const [point, u, v] of corners) {
+    // Two triangles, each with its own normal. A corner that collapses (a collar where two
+    // footprints meet at a point) makes one of them degenerate, and a triangle with no area
+    // has no normal to write, so it is left out.
+    this.#triangle([p0, p1, p2], [uv[0]!, uv[1]!, uv[2]!]);
+    this.#triangle([p0, p2, p3], [uv[0]!, uv[2]!, uv[3]!]);
+    return this;
+  }
+
+  #triangle(points: [Vec, Vec, Vec], uv: [[number, number], [number, number], [number, number]]): void {
+    const normal = normalOf(points[0], points[1], points[2]);
+    if (normal[0] === 0 && normal[1] === 0 && normal[2] === 0) return;
+
+    const base = this.#positions.length / 3;
+    for (let i = 0; i < 3; i++) {
+      const point = points[i]!;
       this.#positions.push(point[0], point[1], point[2]);
       this.#normals.push(normal[0], normal[1], normal[2]);
-      this.#uvs.push(u, v);
+      this.#uvs.push(uv[i]![0], uv[i]![1]);
     }
-    this.#indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-    return this;
+    this.#indices.push(base, base + 1, base + 2);
   }
 
   /** An axis aligned box, all six faces outward. */

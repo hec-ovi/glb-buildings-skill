@@ -47,10 +47,22 @@ const bandSchema = z.object({
   floorHeight: positiveMm.optional(),
   /** Floor template id from the kit. */
   template: z.string().min(1),
-  /** Setback from the building footprint, per side. */
-  inset: mm.nonnegative().default(0),
-  /** Yaw of the whole band, degrees. The seam check decides whether it stacks. */
+  /** This section's own footprint. Falls back to the building's. */
+  width: positiveMm.optional(),
+  depth: positiveMm.optional(),
+  /** Step per side: positive pulls the section in, negative hangs it out over the one below. */
+  inset: mm.default(0),
+  /** Slide the band east or west, and north or south, off the building centre. */
+  shiftX: mm.default(0),
+  shiftZ: mm.default(0),
+  /** Yaw of the whole section about the building's axis, degrees. */
   rotation: z.number().default(0),
+  /** Extra turn added across the section, so the mass twists as it rises. */
+  twist: z.number().default(0),
+  /** How much the section pulls in by the time it reaches its top. */
+  taper: mm.default(0),
+  /** A run of cables or pipes climbing one face of the section. */
+  wires: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
 });
 
 export const documentSchema = z.object({
@@ -105,9 +117,9 @@ export function newDocument(name: string, options: { width?: number; depth?: num
     footprint: { kind: 'rect', width, depth },
     grid: { bay: 3000, floorHeight: 3200 },
     bands: [
-      { id: 'ground', kind: 'main', tier: 'full', floors: 1, floorHeight: 4500, template: 'main-plain', inset: 0, rotation: 0 },
-      { id: 'body', kind: 'bulk', tier: 'flat', floors: bulkFloors, template: 'bulk-flat', inset: 0, rotation: 0 },
-      { id: 'crown', kind: 'roof', tier: 'light', floors: 1, floorHeight: 900, template: 'roof-parapet', inset: 0, rotation: 0 },
+      { id: 'ground', kind: 'main', tier: 'full', floors: 1, floorHeight: 4500, template: 'main-plain' },
+      { id: 'body', kind: 'bulk', tier: 'flat', floors: bulkFloors, template: 'bulk-flat' },
+      { id: 'crown', kind: 'roof', tier: 'light', floors: 1, floorHeight: 900, template: 'roof-parapet' },
     ],
   });
 }

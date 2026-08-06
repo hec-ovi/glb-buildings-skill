@@ -42,9 +42,9 @@ Run `buildings help` for the current list. Today:
 | `use <name>` | switch the current building |
 | `show [name]` | the stack band by band |
 | `templates` | the floor templates the kit can build |
-| `add-band <id> --kind --tier --template --floors [--height] [--inset] [--rotation] [--after id\|--before id]` | put a band into the stack |
-| `set-band <id> [same flags]` | change a band |
-| `remove-band <id>` | take a band out |
+| `add-band <id> --kind --tier --template --floors [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--after id\|--before id]` | put a section into the stack |
+| `set-band <id> [same flags]` | change a section |
+| `remove-band <id>` | take a section out |
 | `build [name]` | write the GLB, validated |
 | `preview [name] [--port 4321]` | open the blueprint editor and stay up |
 | `selection [name]` | what the human last picked in the preview |
@@ -53,25 +53,26 @@ Lengths on the command line are **metres**. Rotation is degrees.
 
 ## What a building is
 
-A stack of **bands**, bottom to top, over one rectangular footprint. A band repeats one floor N times, so a
-40 floor tower costs one floor of geometry in the file.
+A stack of **sections**, bottom to top: a base, some floors, a roof. A section is the design unit. It repeats
+one floor N times and owns its own footprint, so a 40 floor tower costs one section of geometry per design, and
+anything special (a twist, a cantilever, cables crossing floors) belongs to one section and stops there.
 
-- `kind` says what the band is for: `main` (the ground floor), `bulk` (the repeated middle), `custom` (a floor
-  that is different), `roof` (the crown).
-- `tier` says how much geometry it carries: `flat` (a fake floor, windows live in the texture), `light` (bulk
-  with shallow relief), `full` (real balconies, doors, landings).
+- `kind` says what the section is for: `main` (the base), `bulk` (the repeated middle), `custom` (a section
+  that breaks the rhythm), `roof` (the crown).
+- `tier` says how much geometry it carries: `flat` (walls, everything else in the texture), `light`, `full`.
+- Shape it with `--width` `--depth` (its own footprint), `--inset` (step in, or out with a negative),
+  `--shift-x` `--shift-z` (slide), `--rotation` (turn), `--twist` (turn across the section), `--taper` (pull in
+  toward the top), `--wires` (cables up one face).
 - A whole building may be `flat` top to bottom. That is a real product, not a degraded one, and it is what
   fills a city.
 
 ## Rules that keep files openable
 
-- Bands stack when their seams match. `show` tells you: `stacksOnBelow`. A band with an `inset` changes its
-  seam, so it needs a transition band or it will not close.
-- The building must close into one shell: a `main` band at the bottom (it carries the underside) and a `roof`
-  band at the top (it carries the deck). `build` refuses otherwise, and says where.
-- Setbacks (`--inset`) and turns (`--rotation`) do not stack yet: the kit has no transition part, so a band
-  that is inset or turned leaves the shell open and `build` refuses. Keep both at 0 and say so rather than
-  building something that fails.
+- **Support is the friction.** A section has to land on the one below. `build` reports what each one rests on;
+  under 20%, or with its middle out past the edge, it is refused and named. Slide it back, widen what is under
+  it, or make it smaller.
+- A **cantilever** (under half of it resting) is allowed and is often the point. Say so when you report.
+- The stack needs a `main` section at the bottom and a `roof` section on top. `build` refuses otherwise.
 - Keep the file plain: no compression extensions, one UV set, metres, Y up. The CLI already does this; do not
   ask for anything else.
 

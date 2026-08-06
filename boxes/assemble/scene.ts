@@ -32,6 +32,11 @@ export type Seam = {
   bays: Record<Side, number>;
 };
 
+export type Rect = { x0: Mm; x1: Mm; z0: Mm; z1: Mm };
+
+/** A footprint corner in world millimetres, on the ground plane. */
+export type Corner = [Mm, Mm];
+
 export type PlacedBand = {
   id: string;
   kind: BandKind;
@@ -39,7 +44,15 @@ export type PlacedBand = {
   template: string;
   /** Degrees about Y, applied to the whole band at the building centre. */
   rotation: number;
+  /** A run of cables climbing one face of the section. */
+  wires: 'none' | Side;
   inset: Mm;
+  /** Where this band's footprint actually sits, after its step and shift. */
+  rect: Rect;
+  /** The footprint as four world corners where the section starts. Order S, E, N, W. */
+  bottom: Corner[];
+  /** And where it ends, after its twist and taper. A section is the loft between the two. */
+  top: Corner[];
   y0: Mm;
   y1: Mm;
   floors: PlacedFloor[];

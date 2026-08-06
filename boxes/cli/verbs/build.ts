@@ -35,6 +35,7 @@ export const build: Verb = {
         height: toMetres(result.scene.size.height),
       },
       ...result.stats,
+      supports: result.supports,
       validator: { errors: 0, warnings: report.warnings.length, infos: report.infos.length },
     };
   },

@@ -1,8 +1,10 @@
 /** Verbs that change the stack: add a band, change one, take one out. */
 import { BAND_KINDS, BuildingError, TIERS, parseDocument, type Band, type BuildingDocument } from '#spec';
+
+const WIRE_SIDES = ['none', 'N', 'E', 'S', 'W'] as const;
 import { TEMPLATE_IDS } from '#kit';
 import type { Verb } from './verb.ts';
-import { count, degrees, metres, need, parse, text, type FlagSpec } from './args.ts';
+import { count, degrees, metres, need, parse, size, text, type FlagSpec } from './args.ts';
 
 const FLAGS: FlagSpec = {
   kind: { type: 'string' },
@@ -12,6 +14,13 @@ const FLAGS: FlagSpec = {
   height: { type: 'string' },
   inset: { type: 'string' },
   rotation: { type: 'string' },
+  'shift-x': { type: 'string' },
+  'shift-z': { type: 'string' },
+  width: { type: 'string' },
+  depth: { type: 'string' },
+  twist: { type: 'string' },
+  taper: { type: 'string' },
+  wires: { type: 'string' },
   before: { type: 'string' },
   after: { type: 'string' },
 };
@@ -46,7 +55,7 @@ async function edit(
 export const addBand: Verb = {
   name: 'add-band',
   summary: 'put a band of floors into the stack',
-  usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--inset 0] [--rotation 0] [--after <id> | --before <id>]',
+  usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--width 12] [--depth 10] [--inset 0] [--shift-x 0] [--shift-z 0] [--rotation 0] [--twist 0] [--taper 0] [--wires S] [--after <id> | --before <id>]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, FLAGS);
     const id = need(positionals, 0, 'band id');
@@ -58,8 +67,15 @@ export const addBand: Verb = {
       template: checkTemplate(text(values.template)) ?? 'bulk-flat',
       floors: count(values.floors, 'floors') ?? 1,
       inset: metres(values.inset, 'inset') ?? 0,
+      shiftX: metres(values['shift-x'], 'shift-x') ?? 0,
+      shiftZ: metres(values['shift-z'], 'shift-z') ?? 0,
       rotation: degrees(values.rotation) ?? 0,
-      ...(values.height ? { floorHeight: metres(values.height, 'height') } : {}),
+      twist: degrees(values.twist) ?? 0,
+      taper: size(values.taper, 'taper') ?? 0,
+      wires: oneOf(text(values.wires), WIRE_SIDES, 'wires') ?? 'none',
+      ...(values.width ? { width: size(values.width, 'width') } : {}),
+      ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),
+      ...(values.height ? { floorHeight: size(values.height, 'height') } : {}),
     };
 
     return edit(ctx, undefined, (doc) => {
@@ -81,7 +97,7 @@ export const addBand: Verb = {
 export const setBand: Verb = {
   name: 'set-band',
   summary: 'change a band that is already in the stack',
-  usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--inset] [--rotation]',
+  usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, FLAGS);
     const id = need(positionals, 0, 'band id');
@@ -90,7 +106,7 @@ export const setBand: Verb = {
       const at = doc.bands.findIndex((b) => b.id === id);
       if (at === -1) throw new BuildingError('E_DOC_INVALID', `no band named ${id}`, ['bands', id]);
       const band = doc.bands[at]!;
-      const height = metres(values.height, 'height');
+      const height = size(values.height, 'height');
 
       const bands = [...doc.bands];
       bands[at] = {
@@ -100,7 +116,14 @@ export const setBand: Verb = {
         template: checkTemplate(text(values.template)) ?? band.template,
         floors: count(values.floors, 'floors') ?? band.floors,
         inset: metres(values.inset, 'inset') ?? band.inset,
+        shiftX: metres(values['shift-x'], 'shift-x') ?? band.shiftX,
+        shiftZ: metres(values['shift-z'], 'shift-z') ?? band.shiftZ,
         rotation: degrees(values.rotation) ?? band.rotation,
+        twist: degrees(values.twist) ?? band.twist,
+        taper: size(values.taper, 'taper') ?? band.taper,
+        wires: oneOf(text(values.wires), WIRE_SIDES, 'wires') ?? band.wires,
+        ...(values.width ? { width: size(values.width, 'width') } : {}),
+        ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),
         ...(height ? { floorHeight: height } : {}),
       };
       return { ...doc, bands };

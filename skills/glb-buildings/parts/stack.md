@@ -1,6 +1,8 @@
 # Shaping the stack
 
-A band is a run of identical floors. Editing a building means editing bands.
+A building is sections stacked bottom to top. A **section** is the design unit: a run of floors that owns its
+own footprint, its own shape and its own features. Anything unusual belongs to one section and stops there, so
+you can give three floors a twist without touching the twenty below them.
 
 ## Look first
 
@@ -8,55 +10,66 @@ A band is a run of identical floors. Editing a building means editing bands.
 buildings show
 ```
 
-Every band comes back with its `kind`, `tier`, `template`, `floors`, `floorHeight`, `inset`, `rotation`, its
-`base` (how high it starts, in metres), its `seam`, and `stacksOnBelow`. Work from that, not from memory.
+Every section comes back with its `kind`, `tier`, `template`, `floors`, `floorHeight`, its footprint, its step,
+slide, turn, twist and taper, its `base` (how high it starts, in metres) and what it rests on. Work from that,
+not from memory.
 
 ## The three verbs
 
 ```bash
-buildings add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 --after body
+buildings add-band <id> --kind bulk --tier flat --template bulk-flat --floors 5 --after body
 buildings set-band body --floors 20 --height 3.0
-buildings remove-band sky
+buildings remove-band pad
 ```
 
-- `--after <id>` and `--before <id>` place the new band in the stack. Without either it goes on top.
-- Omitted flags keep what the band already had.
-- Lengths are metres.
+`--after <id>` and `--before <id>` place the new section in the stack; without either it goes on top. Omitted
+flags keep what the section already had. Lengths are metres, turns are degrees.
 
-## Choosing kind and tier
+## Shaping one section
 
-| kind | use it for | tier that fits |
-| --- | --- | --- |
-| `main` | the ground floor, once, at the bottom | `full` |
-| `bulk` | the repeated middle, most of the height | `flat` for background, `light` when it is seen close |
-| `custom` | one floor that breaks the rhythm: a sky lobby, a plant floor | `light` or `full` |
-| `roof` | the crown, once, at the top | `light` |
+| Flag | What it does |
+| --- | --- |
+| `--width` `--depth` | this section's own footprint, instead of the building's |
+| `--inset` | step every side in by this much; a negative hangs the section out over the one below |
+| `--shift-x` `--shift-z` | slide the section east or west, north or south |
+| `--rotation` | turn the whole section about the building's axis |
+| `--twist` | extra turn added across the section, so the mass turns as it rises |
+| `--taper` | how much it pulls in by the time it reaches its top |
+| `--wires` | cables climbing one face: `N`, `E`, `S`, `W` |
+| `--floors` `--height` | how many floors and how tall each one is |
 
-A building needs one `main` band at the bottom and one `roof` band at the top: they carry the underside and the
-deck that close the shell. `build` refuses without them.
+A section is built as the loft between the footprint it starts on and the one it ends on, closed at both ends,
+sitting slightly into the section below. That is why a step, a slide, a 45 degree turn and a twist all work the
+same way and none of them needs a transition piece.
 
-## Seams, setbacks and turns
+## Support is the thing that matters
 
-A band publishes the footprint and bay counts it shows its neighbours. Two bands stack when those match, which
-`show` reports as `stacksOnBelow`.
+Every section has to land on the one below it. `build` measures it and tells you:
 
-- `--inset 1.5` pulls a band in 1.5 m on every side. Its seam no longer matches the band below, so the shell
-  opens and `build` fails. Setbacks need a transition, which the kit does not have yet: leave `inset` at 0
-  until it does.
-- `--rotation 15` turns a band. Same story: a turned band does not meet its neighbours yet.
+- **rests on 100%**: ordinary stacking.
+- **cantilevers: only 40% lands**: allowed, and often what you want for a platform or an overhang. Say so when
+  you report.
+- **under 20%, or the middle hanging past the edge**: refused, with the section named. Slide it back with
+  `--shift-x` or `--shift-z`, widen the section below, or make this one smaller.
 
-Say this plainly to the user rather than building something that fails.
+So a wide base with a narrower tower on it works; a tower sliding off its base does not.
 
-## Height
+## Reaching the look
 
-Total height is the sum of every band's `floors x floorHeight`. To make a tower taller, add floors to a bulk
-band rather than stretching floor heights past what `parts/dimensions.md` allows.
+- **Sections, not one extruded box.** Three to six sections make a building read as a building. Vary their
+  height, footprint and step.
+- **A ledge** appears wherever a section is narrower than the one below: the lower section's top shows around
+  it. `--inset 0.6` on a section is the usual way to draw a horizontal line across a facade.
+- **An overhang** is a negative inset, or a wider `--width` on the section above.
+- **A platform** is a short section that is wide in one direction and shifted: `--floors 1 --height 1.2
+  --width 22 --depth 8 --shift-z -3`.
+- **A twisted crown** is `--rotation 45` on the roof section, or `--twist` across a mid section.
+- **Cables** with `--wires S` cross the whole section, which is what makes a run of floors read as one piece.
 
 ## Keeping it cheap
 
-- One band with 20 floors costs one floor of geometry in the file. Twenty bands of one floor cost twenty.
-  Prefer few bands with many floors.
-- `flat` is roughly 8 triangles a floor, `light` and `full` more. A background building should be `flat` all
-  the way up.
-- `buildings build` reports `triangles`, `meshes`, `nodes` and `materials`. Watch those numbers; a background
-  building over a few hundred triangles is doing something it should not.
+- One section with 20 floors is one mesh. Twenty sections of one floor are twenty. Prefer few sections with
+  many floors.
+- A plain section is about 8 triangles a floor plus 4 to close it. `build` reports `triangles`, `meshes`,
+  `nodes` and `materials`; a background building over a few hundred triangles is doing something it should not.
+- Cables and turned masses cost more. Spend them on the sections that are seen.

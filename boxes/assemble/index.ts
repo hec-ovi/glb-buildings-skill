@@ -5,6 +5,8 @@ export {
   describeSeam,
   boxCentre,
   type Box,
+  type Rect,
+  type Corner,
   type Vec3,
   type Seam,
   type PlacedBay,

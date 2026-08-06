@@ -13,15 +13,43 @@ describe('buildGlb', () => {
     expect(report.warnings).toEqual([]);
   });
 
-  it('writes one mesh per band and one node per floor, so a tall tower stays cheap', async () => {
+  it('writes one mesh per section, so a tall tower stays cheap', async () => {
     const { stats } = await buildGlb(doc);
     expect(stats.meshes).toBe(3);
-    expect(stats.nodes).toBe(12);
+    expect(stats.nodes).toBe(3);
     expect(stats.materials).toBe(2);
     expect(stats.triangles).toBeLessThan(200);
   });
 
-  it('keeps metres, Y up, and a plain node transform per floor', async () => {
+  it('steps a section in over the one below, and keeps every section closed', async () => {
+    const stepped = parseDocument({
+      ...doc,
+      bands: [
+        { id: 'base', kind: 'main', tier: 'full', floors: 1, floorHeight: 5000, template: 'main-plain' },
+        { id: 'body', kind: 'bulk', tier: 'flat', floors: 6, template: 'bulk-flat', inset: 1500 },
+        { id: 'tip', kind: 'roof', tier: 'light', floors: 1, floorHeight: 1200, template: 'roof-parapet', inset: 3000 },
+      ],
+    });
+    const { stats, supports } = await buildGlb(stepped);
+    expect(stats.meshes).toBe(3);
+    expect(supports.map((s) => s.band)).toEqual(['body', 'tip']);
+    expect(supports.every((s) => s.share > 0.5)).toBe(true);
+  });
+
+  it('builds a section that is turned and twisted over the one below', async () => {
+    const twisted = parseDocument({
+      ...doc,
+      bands: [
+        { id: 'base', kind: 'main', tier: 'full', floors: 1, floorHeight: 5000, template: 'main-plain' },
+        { id: 'body', kind: 'bulk', tier: 'flat', floors: 5, template: 'bulk-flat', rotation: 20, twist: 25, taper: 800 },
+        { id: 'tip', kind: 'roof', tier: 'light', floors: 1, floorHeight: 1200, template: 'roof-parapet', rotation: 45 },
+      ],
+    });
+    const { glb } = await buildGlb(twisted);
+    expect((await validateGlb(glb)).errors).toEqual([]);
+  });
+
+  it('keeps metres, Y up, and a plain node transform per section', async () => {
     const { glb } = await buildGlb(doc);
     const read = await new NodeIO().readBinary(glb);
     const root = read.getRoot();
@@ -32,7 +60,8 @@ describe('buildGlb', () => {
       .map((node) => node.getTranslation()[1])
       .sort((a, b) => a - b);
     expect(heights[0]).toBe(0);
-    expect(heights.at(-1)).toBeCloseTo(36.5, 3);
+    expect(heights.at(-1)).toBeCloseTo(36.49, 2);
+    expect(root.listNodes()).toHaveLength(3);
 
     for (const node of root.listNodes()) {
       expect(node.getScale()).toEqual([1, 1, 1]);
@@ -48,15 +77,15 @@ describe('buildGlb', () => {
     }
   });
 
-  it('refuses to write a building whose bands do not close into one shell', async () => {
-    const broken = parseDocument({
+  it('refuses a section that floats off the one below it', async () => {
+    const floating = parseDocument({
       ...doc,
       bands: [
-        { id: 'ground', kind: 'main', tier: 'full', floors: 1, floorHeight: 4500, template: 'main-plain' },
-        { id: 'body', kind: 'bulk', tier: 'flat', floors: 2, template: 'bulk-flat', inset: 1500 },
-        { id: 'crown', kind: 'roof', tier: 'light', floors: 1, floorHeight: 900, template: 'roof-parapet' },
+        { id: 'base', kind: 'main', tier: 'full', floors: 1, floorHeight: 5000, template: 'main-plain', width: 12000, depth: 12000 },
+        { id: 'body', kind: 'bulk', tier: 'flat', floors: 4, template: 'bulk-flat', width: 8000, depth: 8000, shiftX: 14000 },
+        { id: 'tip', kind: 'roof', tier: 'light', floors: 1, floorHeight: 1200, template: 'roof-parapet', width: 8000, depth: 8000, shiftX: 14000 },
       ],
     });
-    await expect(buildGlb(broken)).rejects.toThrow(BuildingError);
+    await expect(buildGlb(floating)).rejects.toThrow(BuildingError);
   });
 });

@@ -13,7 +13,8 @@
     "#preview": "./boxes/preview/index.ts",
     "#kit": "./boxes/kit/index.ts",
     "#glb": "./boxes/glb/index.ts",
-    "#cli": "./boxes/cli/index.ts"
+    "#cli": "./boxes/cli/index.ts",
+    "#check": "./boxes/check/index.ts"
   },
   "bin": {
     "buildings": "./boxes/cli/bin/buildings.ts"

@@ -8,18 +8,37 @@
  * N and S sides, along increasing Z on the E and W sides.
  */
 import { BuildingError, bandFloorHeight, bayCount, partition, type Band, type BuildingDocument, type Mm, type Side } from '#spec';
-import type { Box, PlacedBand, PlacedBay, PlacedFloor, PlacedScene, Seam } from './scene.ts';
+import type { Box, Corner, PlacedBand, PlacedBay, PlacedFloor, PlacedScene, Seam } from './scene.ts';
 
 /** Facade panel depth used for blueprint volumes until the kit places real walls. */
 export const PANEL_THICKNESS: Mm = 200;
 
 type Rect = { x0: Mm; x1: Mm; z0: Mm; z1: Mm };
 
-function footprintRect(doc: BuildingDocument, inset: Mm): Rect {
-  const { width, depth } = doc.footprint;
-  const x0 = -Math.floor(width / 2) + inset;
-  const z0 = -Math.floor(depth / 2) + inset;
-  return { x0, x1: x0 + width - 2 * inset, z0, z1: z0 + depth - 2 * inset };
+function footprintRect(doc: BuildingDocument, band: Band): Rect {
+  const width = band.width ?? doc.footprint.width;
+  const depth = band.depth ?? doc.footprint.depth;
+  const x0 = -Math.floor(width / 2) + band.inset + band.shiftX;
+  const z0 = -Math.floor(depth / 2) + band.inset + band.shiftZ;
+  return { x0, x1: x0 + width - 2 * band.inset, z0, z1: z0 + depth - 2 * band.inset };
+}
+
+/**
+ * The footprint as four world corners, turned about the building's own axis. Bands that step,
+ * slide or turn all end up as plain polygons, and the junction between two of them is one loft.
+ */
+function cornersOf(rect: Rect, degrees: number, shrink = 0): Corner[] {
+  const points: Corner[] = [
+    [rect.x0 + shrink, rect.z1 - shrink],
+    [rect.x1 - shrink, rect.z1 - shrink],
+    [rect.x1 - shrink, rect.z0 + shrink],
+    [rect.x0 + shrink, rect.z0 + shrink],
+  ];
+  if (degrees === 0) return points;
+  const angle = (degrees * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return points.map(([x, z]) => [Math.round(x * cos + z * sin), Math.round(-x * sin + z * cos)]);
 }
 
 function bayBox(side: Side, rect: Rect, start: Mm, width: Mm, y0: Mm, y1: Mm): Box {
@@ -73,9 +92,9 @@ export function assemble(doc: BuildingDocument): PlacedScene {
   let y = 0;
 
   for (const band of doc.bands) {
-    const rect = footprintRect(doc, band.inset);
+    const rect = footprintRect(doc, band);
     if (rect.x1 - rect.x0 <= 0 || rect.z1 - rect.z0 <= 0) {
-      throw new BuildingError('E_DOC_INVALID', `band ${band.id} insets past the footprint`, ['bands', band.id, 'inset']);
+      throw new BuildingError('E_DOC_INVALID', `band ${band.id} steps in past its own footprint`, ['bands', band.id, 'inset']);
     }
 
     const floorHeight = bandFloorHeight(doc, band);
@@ -94,7 +113,11 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       tier: band.tier,
       template: band.template,
       rotation: band.rotation,
+      wires: band.wires,
       inset: band.inset,
+      rect: { x0: rect.x0, x1: rect.x1, z0: rect.z0, z1: rect.z1 },
+      bottom: cornersOf(rect, band.rotation),
+      top: cornersOf(rect, band.rotation + band.twist, band.taper),
       y0,
       y1: y,
       floors,

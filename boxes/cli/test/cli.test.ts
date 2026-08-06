@@ -97,18 +97,25 @@ describe('build', () => {
     expect(built.ok).toBe(true);
     expect(existsSync(built.file)).toBe(true);
     expect(built.validator.errors).toBe(0);
-    expect(built.nodes).toBe(12);
+    expect(built.nodes).toBe(3);
     expect(built.triangles).toBeLessThan(200);
   });
 
-  it('names both bands when a setback breaks the stack, instead of leaving a raw edge', async () => {
+  it('builds a setback, and reports what each section rests on', async () => {
     await call('new', 'tower-a');
     await call('set-band', 'body', '--inset', '1.5');
+    const built = (await call('build')) as unknown as { ok: boolean; supports: { band: string; reads: string }[] };
+    expect(built.ok).toBe(true);
+    expect(built.supports.map((s) => s.band)).toEqual(['body', 'crown']);
+    expect(built.supports[0]!.reads).toContain('rests on');
+  });
+
+  it('refuses a section slid off the edge, and says how to bring it back', async () => {
+    await call('new', 'tower-a');
+    await call('set-band', 'body', '--width', '8', '--depth', '8', '--shift-x', '14');
     const answer = (await call('build')) as unknown as { ok: boolean; code: string; message: string };
-    expect(answer).toMatchObject({ ok: false, code: 'E_SEAM_MISMATCH' });
-    expect(answer.message).toContain('body');
-    expect(answer.message).toContain('ground');
-    expect(answer.message).toContain('inset');
+    expect(answer).toMatchObject({ ok: false, code: 'E_FLOATING_PART' });
+    expect(answer.message).toContain('shift-x');
   });
 
   it('says which band is missing when the stack has no roof on top', async () => {

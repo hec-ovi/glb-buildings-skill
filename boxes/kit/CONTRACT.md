@@ -1,7 +1,21 @@
 # kit
 
-The parts. A floor template builds one floor's geometry in metres, in its own frame, with the winding and
+The parts. A section template builds one section's geometry in metres, in its own frame, with the winding and
 normals that survive Unreal, Unity and three.js. It knows nothing about documents or files.
+
+## The section
+
+A section is the design unit: a run of floors that owns its shape. Its skin is the **loft** between the
+footprint it starts on and the one it ends on, closed at both ends, so a step, a slide, a turn, a twist and a
+taper are all the same operation. Sections are closed solids that sink slightly into the one below, the way a
+kitbashed building is assembled, which is why any two of them meet without a transition piece.
+
+```
+SectionShape { bottom: Corner[], top: Corner[], height, floors }
+```
+
+Corners are world X and Z in metres, order S, E, N, W. `y=0` is the section's underside. Walls are cut into one
+row of quads per floor, so a texture tiles once per floor.
 
 ## In and out
 
@@ -9,27 +23,20 @@ normals that survive Unreal, Unity and three.js. It knows nothing about document
 | --- | --- | --- |
 | `template(id)` | template id | the `Template`, or `E_UNKNOWN_TEMPLATE` |
 | `templates()` | | every template with its tier and one-line purpose |
-| `Template.build(shape)` | `FloorShape` in metres | one `MeshData` per material |
-| `windingProblems(mesh)` | one mesh | problems where a normal disagrees with its triangle, or a triangle has no area |
-| `shellProblems(meshes)` | every mesh of a building | problems where the shell is open, doubled, or inside out |
+| `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
+| `wireRun(shape, side)` | shape, `N`/`E`/`S`/`W` | cables climbing that face, as closed tubes |
+| `walls` / `cap` / `junction` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
+| `windingProblems(mesh)` | one mesh | where a normal disagrees with its triangle, or a triangle has no area |
+| `shellProblems(meshes)` | a section's meshes | where it is open, doubled, or inside out |
 | `new Surface(material)` | material name | a builder: `.quad()`, `.box()`, `.cap()`, `.data()` |
-
-## The frame
-
-A floor is built with the building centre at x=0, z=0 and y=0 at the floor's underside. Every floor of a band
-is identical, so the GLB writes the mesh once and points one node per floor at it.
-
-Walls are a ring of four outward quads: S faces +Z, N faces -Z, E faces +X, W faces -X. Stacked rings share
-their edges exactly, the main floor adds the underside and the roof adds the deck, so a whole building is one
-closed shell.
 
 ## Templates
 
 | id | tier | what it is |
 | --- | --- | --- |
-| `bulk-flat` | flat | a fake floor: four textured walls, windows live in the image |
-| `main-plain` | full | the ground floor: taller walls, and the underside that closes the building |
-| `roof-parapet` | light | the crown: a parapet ring and the roof deck that closes the building |
+| `bulk-flat` | flat | a plain section: four textured walls, windows live in the image |
+| `main-plain` | full | the base: taller walls, and the underside that closes the building |
+| `roof-parapet` | light | the crown: a parapet and the roof deck |
 
 Materials are named, not built here: `facade` and `roof`.
 
@@ -37,9 +44,9 @@ Materials are named, not built here: `facade` and `roof`.
 
 - Front faces are counter-clockwise seen from outside, and every stored normal agrees with its triangle's
   winding. `windingProblems` returns nothing for any template output.
-- A building's meshes together form a closed shell with positive volume. `shellProblems` returns nothing.
-- UVs come from real-world size: one texture tile per `TILE` metres, so a wall and a roof match density.
-- No triangle has zero area.
+- Every section is a closed solid with positive volume. `shellProblems` returns nothing, at any twist or taper.
+- A triangle with no area is never written: a collapsed corner drops out instead of carrying a zero normal.
+- UVs come from real-world size: one texture tile per `TILE` metres.
 
 ## Errors
 

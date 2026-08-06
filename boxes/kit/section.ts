@@ -1,0 +1,119 @@
+/**
+ * A section is the design unit: a run of floors that owns its shape. Its skin is the loft
+ * between the footprint it starts on and the one it ends on, so a step, a slide, a turn, a
+ * twist and a taper are all the same operation, and anything special stays inside the section.
+ *
+ * Everything here is metres, in the section's own frame: world X and Z, y=0 at its underside.
+ */
+import { Surface, type Vec } from './geometry.ts';
+
+/** A footprint corner on the ground plane, in metres. Order S, E, N, W. */
+export type Corner = [number, number];
+
+export type SectionShape = {
+  bottom: Corner[];
+  top: Corner[];
+  height: number;
+  /** How many rows the walls are cut into, so a texture tiles once per floor. */
+  floors: number;
+};
+
+function lerp(a: Corner, b: Corner, t: number): Corner {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+}
+
+/** The footprint partway up the section. */
+export function ringAt(shape: SectionShape, t: number): Corner[] {
+  return shape.bottom.map((corner, i) => lerp(corner, shape.top[i]!, t));
+}
+
+const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
+
+/** The outside of the section, one row of quads per floor. */
+export function walls(surface: Surface, shape: SectionShape): void {
+  const rows = Math.max(1, shape.floors);
+  for (let row = 0; row < rows; row++) {
+    const lower = ringAt(shape, row / rows);
+    const upper = ringAt(shape, (row + 1) / rows);
+    const y0 = (shape.height * row) / rows;
+    const y1 = (shape.height * (row + 1)) / rows;
+
+    for (let i = 0; i < lower.length; i++) {
+      const next = (i + 1) % lower.length;
+      surface.quad(point(lower[i]!, y0), point(lower[next]!, y0), point(upper[next]!, y1), point(upper[i]!, y1));
+    }
+  }
+}
+
+/** The deck on top, or the underside at the bottom. */
+export function cap(surface: Surface, ring: Corner[], y: number, up: boolean): void {
+  const [a, b, c, d] = ring as [Corner, Corner, Corner, Corner];
+  if (up) surface.quad(point(a, y), point(b, y), point(c, y), point(d, y));
+  else surface.quad(point(d, y), point(c, y), point(b, y), point(a, y));
+}
+
+/**
+ * The flat ring between two sections, at y=0 in its own frame. A section that steps in shows
+ * it as a ledge, one that hangs out shows it as a soffit, and the winding follows on its own.
+ */
+export function junction(material: string, lower: Corner[], upper: Corner[]): Surface {
+  const surface = new Surface(material);
+  for (let i = 0; i < lower.length; i++) {
+    const next = (i + 1) % lower.length;
+    surface.quad(point(lower[i]!, 0), point(lower[next]!, 0), point(upper[next]!, 0), point(upper[i]!, 0));
+  }
+  return surface;
+}
+
+/** Cables climbing one face: thin tubes standing proud of the wall, following its twist. */
+export function wires(surface: Surface, shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): void {
+  const edge = { S: 0, E: 1, N: 2, W: 3 }[side];
+  const runs = 4;
+  const thickness = 0.12;
+  const stand = 0.1;
+  const rows = Math.max(1, shape.floors);
+
+  for (let run = 0; run < runs; run++) {
+    const along = 0.3 + run * 0.11;
+    let previous = tubeRing(shape, 0, edge, along, thickness, stand);
+    cap(surface, previous, 0, false);
+
+    for (let row = 0; row < rows; row++) {
+      const t = (row + 1) / rows;
+      const ring = tubeRing(shape, t, edge, along, thickness, stand);
+      const y0 = (shape.height * row) / rows;
+      const y1 = shape.height * t;
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) % 4;
+        surface.quad(point(previous[i]!, y0), point(previous[j]!, y0), point(ring[j]!, y1), point(ring[i]!, y1));
+      }
+      previous = ring;
+    }
+    cap(surface, previous, shape.height, true);
+  }
+}
+
+/** The four corners of one cable, at height t of the section, hugging the given face. */
+function tubeRing(shape: SectionShape, t: number, edge: number, along: number, thickness: number, stand: number): Corner[] {
+  const ring = ringAt(shape, t);
+  const a = ring[edge]!;
+  const b = ring[(edge + 1) % ring.length]!;
+  const dx = b[0] - a[0];
+  const dz = b[1] - a[1];
+  const length = Math.hypot(dx, dz) || 1;
+  const tangent: Corner = [dx / length, dz / length];
+  const outward: Corner = [dz / length, -dx / length];
+  const centre: Corner = [a[0] + dx * along, a[1] + dz * along];
+  const half = thickness / 2;
+
+  const at = (side: number, out: number): Corner => [
+    centre[0] + tangent[0] * side + outward[0] * out,
+    centre[1] + tangent[1] * side + outward[1] * out,
+  ];
+  return [at(-half, 0), at(half, 0), at(half, stand), at(-half, stand)];
+}
+
+/** Two footprints are the same when every corner matches, so no junction is needed. */
+export function sameRing(a: Corner[], b: Corner[]): boolean {
+  return a.length === b.length && a.every((corner, i) => corner[0] === b[i]![0] && corner[1] === b[i]![1]);
+}

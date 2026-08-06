@@ -6,9 +6,30 @@ export type FlagSpec = Record<string, { type: 'string' | 'boolean' }>;
 
 export type Parsed = { positionals: string[]; values: Record<string, string | boolean | undefined> };
 
+/**
+ * `--shift-x -2` reads as an unknown option to the parser, because the value starts with a
+ * dash. A negative metre is an ordinary thing to ask for, so the value is joined to its flag
+ * before parsing and both spellings work.
+ */
+function joinNegatives(args: string[], options: FlagSpec): string[] {
+  const joined: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    const next = args[i + 1];
+    const name = arg.startsWith('--') ? arg.slice(2) : '';
+    if (options[name]?.type === 'string' && next !== undefined && /^-\d/.test(next)) {
+      joined.push(`${arg}=${next}`);
+      i += 1;
+      continue;
+    }
+    joined.push(arg);
+  }
+  return joined;
+}
+
 export function parse(args: string[], options: FlagSpec): Parsed {
   try {
-    const parsed = parseArgs({ args, options, allowPositionals: true, strict: true });
+    const parsed = parseArgs({ args: joinNegatives(args, options), options, allowPositionals: true, strict: true });
     return { positionals: parsed.positionals, values: parsed.values as Record<string, string | boolean | undefined> };
   } catch (error) {
     throw new BuildingError('E_DOC_INVALID', (error as Error).message, []);
@@ -27,12 +48,20 @@ export function text(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+/** Metres in, millimetres out. Steps and slides go both ways, so a negative is fine here. */
 export function metres(value: string | boolean | undefined, what: string): number | undefined {
   value = text(value);
   if (value === undefined) return undefined;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) throw new BuildingError('E_DOC_INVALID', `${what} must be a number of metres`, [what]);
+  if (!Number.isFinite(parsed)) throw new BuildingError('E_DOC_INVALID', `${what} must be a number of metres`, [what]);
   return toMm(parsed);
+}
+
+/** For the ones that cannot go backwards: a width, a depth, a height. */
+export function size(value: string | boolean | undefined, what: string): number | undefined {
+  const parsed = metres(value, what);
+  if (parsed !== undefined && parsed <= 0) throw new BuildingError('E_DOC_INVALID', `${what} must be more than zero metres`, [what]);
+  return parsed;
 }
 
 export function count(value: string | boolean | undefined, what: string): number | undefined {
