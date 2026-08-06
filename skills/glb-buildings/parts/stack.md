@@ -54,6 +54,14 @@ Every section has to land on the one below it. `build` measures it and tells you
 
 So a wide base with a narrower tower on it works; a tower sliding off its base does not.
 
+## Sizes that keep an arrangement tidy
+
+- The deck grid is **2 m** cells; a `tank` or a `tower` needs a 2x2 block, everything else one cell.
+- A corner column reaches about 0.25 m past the corner; ribs stand about 0.16 m off the face; a balcony
+  reaches 1.5 m. Nothing you place needs a margin: the parts are sized to sit on the section as it is.
+- Floor heights and footprints are metres, to two decimals. `show` prints back exactly what was stored, so
+  read it after an edit instead of assuming.
+
 ## Two traps
 
 - **`--inset` applies on top of `--width`.** A section given `--width 12 --inset 2` ends up 8 wide. Use one or

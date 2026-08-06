@@ -88,6 +88,22 @@ anything special (a twist, a cantilever, cables crossing floors) belongs to one 
 - Keep the file plain: no compression extensions, one UV set, metres, Y up. The CLI already does this; do not
   ask for anything else.
 
+## What the toolkit guarantees, so you do not have to
+
+You are composing, not modelling. These are true of every build, and you never need to compensate for them:
+
+- **Parts anchor themselves.** A corner column sits on the corner, a rib on the face, a balcony on the wall,
+  a deck part in its cell. Everything sinks slightly into what it stands on, so no two surfaces share a plane
+  and nothing flickers.
+- **Nothing can float.** A part that reaches more than 3 m past its section fails the build, and a section
+  resting on under 20% of the one below fails too.
+- **Nothing can overlap on a roof.** A part claims its cells, and a second part in them is refused.
+- **Nothing can be inside out or open.** Every solid is proved closed with positive volume before a file is
+  written, and the Khronos validator runs after.
+
+So place things where the design wants them and let `build` tell you if the arrangement is impossible. Do not
+add margins, do not offset by hand, and do not try to keep parts from touching: they are meant to touch.
+
 ## Never read the source
 
 `buildings help`, `buildings show` and the error messages are the whole surface. Reading the repository's code
