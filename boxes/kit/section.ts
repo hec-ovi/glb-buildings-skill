@@ -6,6 +6,7 @@
  * Everything here is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
 import { Surface, type Vec } from './geometry.ts';
+import { windowRow, WINDOW, type WindowStyle } from './openings.ts';
 
 /** A footprint corner on the ground plane, in metres. Order S, E, N, W. */
 export type Corner = [number, number];
@@ -18,6 +19,8 @@ export type SectionShape = {
   floors: number;
   /** Bevel on the top and bottom edges, in metres. The chamfer of a chamfered box. */
   chamfer?: number;
+  /** Real openings in every bay of every floor. Left out, the walls stay flat. */
+  windows?: WindowStyle;
 };
 
 function lerp(a: Corner, b: Corner, t: number): Corner {
@@ -62,7 +65,7 @@ function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1
  * when the section asks for one. That bevel is what a chamfered box has and a plain box does
  * not: an edge that catches the light instead of a hard line.
  */
-export function walls(surface: Surface, shape: SectionShape): void {
+export function walls(surface: Surface, shape: SectionShape, pane?: Surface): void {
   const rows = Math.max(1, shape.floors);
   const chamfer = Math.min(shape.chamfer ?? 0, shape.height / 3);
   const from = chamfer;
@@ -75,13 +78,25 @@ export function walls(surface: Surface, shape: SectionShape): void {
     const t1 = (row + 1) / rows;
     const y0 = from + (to - from) * t0;
     const y1 = from + (to - from) * t1;
-    band(surface, ringAt(shape, y0 / shape.height), ringAt(shape, y1 / shape.height), y0, y1);
+    const lower = ringAt(shape, y0 / shape.height);
+    const upper = ringAt(shape, y1 / shape.height);
+
+    band(surface, lower, upper, y0, y1);
+    if (!shape.windows || !pane) continue;
+
+    // A floor with windows: every face is cut into bays and each bay gets a pane.
+    for (let i = 0; i < lower.length; i++) {
+      const next = (i + 1) % lower.length;
+      windowRow(pane, [lower[i]!, lower[next]!], [upper[i]!, upper[next]!], y0, y1, shape.windows);
+    }
   }
 
   if (chamfer > 0) band(surface, ringAt(shape, to / shape.height), capRing(shape, 1), to, shape.height);
 }
 
 /** The deck on top, or the underside at the bottom. A fan, so any footprint closes. */
+export { WINDOW, type WindowStyle };
+
 export function cap(surface: Surface, ring: Corner[], y: number, up: boolean): void {
   for (let i = 1; i < ring.length - 1; i++) {
     if (up) surface.quad(point(ring[0]!, y), point(ring[i]!, y), point(ring[i + 1]!, y), point(ring[0]!, y));

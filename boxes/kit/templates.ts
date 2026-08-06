@@ -27,6 +27,7 @@ export type Template = {
 
 export const FACADE = 'facade';
 export const ROOF = 'roof';
+export const GLASS = 'glass';
 
 function surfaces(...list: Surface[]): MeshData[] {
   return list.filter((surface) => !surface.empty).map((surface) => surface.data());
@@ -39,10 +40,11 @@ const TEMPLATES: Template[] = [
     purpose: 'a plain section: four textured walls, windows live in the image',
     build: (shape) => {
       const skin = new Surface(FACADE);
-      walls(skin, shape);
+      const pane = new Surface(GLASS);
+      walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
       cap(skin, capRing(shape, 1), shape.height, true);
-      return surfaces(skin);
+      return surfaces(skin, pane);
     },
   },
   {
@@ -51,10 +53,11 @@ const TEMPLATES: Template[] = [
     purpose: 'the base: taller walls, and the underside that closes the building',
     build: (shape) => {
       const skin = new Surface(FACADE);
-      walls(skin, shape);
+      const pane = new Surface(GLASS);
+      walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
       cap(skin, capRing(shape, 1), shape.height, true);
-      return surfaces(skin);
+      return surfaces(skin, pane);
     },
   },
   {

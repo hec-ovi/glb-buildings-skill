@@ -83,10 +83,40 @@ The three parts of a building do different jobs, and mixing them up is what make
   0.35, solar panels and a small tower from 0.5. Each roof is seeded from its own section name, so two
   buildings never get the same arrangement. This is the one place to spend detail.
 
+## What each tier is for
+
+A tier is a promise about cost, and `build` holds you to it.
+
+| tier | what it carries | budget |
+| --- | --- | --- |
+| `flat` | walls, nothing else. Windows live in the texture | 120 triangles a floor |
+| `light` | greebles, columns, cables, balconies, windows as panes | 1,200 a floor |
+| `full` | the same, laid on thick, for a section that is seen close | 4,000 a floor |
+| a roof section | everything on the deck | 4,500 for the whole section |
+
+Most of a tower is `flat`. Spend `light` on the two or three sections at eye level and on the crown, and
+`full` only where the camera goes. A section over its budget fails the build and names what to drop.
+
+## What each tier is for
+
+A tier is a promise about cost, and `build` holds you to it.
+
+| tier | what it carries | budget |
+| --- | --- | --- |
+| `flat` | walls, nothing else | 120 triangles a floor |
+| `light` | greebles, columns, cables, balconies, window panes | 1,200 a floor |
+| `full` | the same, laid on thick, for a section seen close | 4,000 a floor |
+| a roof section | everything on the deck | 4,500 for the whole section |
+
+Most of a tower is `flat`. Spend `light` on the sections at eye level and on the crown, `full` only where the
+camera goes. A section over its budget fails the build and names what to drop.
+
 ## Dressing a section
 
 | Flag | What it adds |
 | --- | --- |
+| `--windows` | a dark pane set into every bay of every floor, about 12 triangles each |
+| `--windows` | a dark pane set into every bay of every floor, about 12 triangles each |
 | `--greebles 0.0 to 1.0` | panel noise: the face is split into panels and each one either stands out or stays flat |
 | `--columns corners\|ribs\|partial` | uprights: at the corners, every few metres, or only in gaps |
 | `--balconies N\|E\|S\|W` | a slab with a rounded front, one per floor of the section |

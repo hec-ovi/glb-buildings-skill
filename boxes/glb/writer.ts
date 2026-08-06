@@ -10,7 +10,7 @@
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
-import { FACADE, ROOF, dress, proudProblems, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
+import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
 import { BuildingError, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
@@ -37,6 +37,12 @@ function metres(corners: Corner[]): [number, number][] {
 /** How far a section reaches down into the one below, so no two faces ever share a plane. */
 const BITE = 0.01;
 
+/** What a floor of each tier may cost. Past this the section is doing too much to be repeated. */
+export const BUDGET: Record<string, number> = { flat: 120, light: 1200, full: 4000 };
+
+/** A crown is one floor carrying a whole roof, so it is judged as a section, not per floor. */
+export const ROOF_BUDGET = 4500;
+
 function shapeOf(band: PlacedBand, sunk: number): SectionShape {
   return {
     bottom: metres(band.bottom),
@@ -44,6 +50,7 @@ function shapeOf(band: PlacedBand, sunk: number): SectionShape {
     height: (band.y1 - band.y0) * MM + sunk,
     floors: band.floors.length,
     chamfer: band.chamfer * MM,
+    windows: band.windows ? WINDOW : undefined,
   };
 }
 
@@ -66,14 +73,21 @@ function palette(document: Document): Map<string, Material> {
     .setBaseColorFactor([0.62, 0.63, 0.65, 1])
     .setMetallicFactor(0)
     .setRoughnessFactor(0.85);
+  document
+    .createMaterial(GLASS)
+    .setBaseColorFactor([0.09, 0.11, 0.14, 1])
+    .setMetallicFactor(0.1)
+    .setRoughnessFactor(0.15);
   const roof = document
     .createMaterial(ROOF)
     .setBaseColorFactor([0.28, 0.29, 0.31, 1])
     .setMetallicFactor(0)
     .setRoughnessFactor(0.95);
+  const glass = document.getRoot().listMaterials().find((material) => material.getName() === GLASS)!;
   return new Map([
     [FACADE, facade],
     [ROOF, roof],
+    [GLASS, glass],
   ]);
 }
 
@@ -146,6 +160,29 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
 
     const xs = shape.bottom.concat(shape.top).map(([x]) => x);
     const zs = shape.bottom.concat(shape.top).map(([, z]) => z);
+    // A tier is a promise about cost: a flat section stays flat, and a full one stays affordable.
+    const total = parts.reduce((sum, part) => sum + triangleCount(part), 0);
+    if (band.kind === 'roof') {
+      if (total > ROOF_BUDGET) {
+        throw new BuildingError(
+          'E_BUDGET',
+          `the roof ${band.id} costs ${total} triangles and may spend ${ROOF_BUDGET}. Take parts off the deck, or turn the clutter down`,
+          ['bands', band.id, 'clutter'],
+        );
+      }
+    } else {
+      const perFloor = total / Math.max(1, band.floors.length);
+      const allowed = BUDGET[band.tier] ?? BUDGET.full!;
+      if (perFloor > allowed) {
+        throw new BuildingError(
+          'E_BUDGET',
+          `section ${band.id} costs ${Math.round(perFloor)} triangles a floor, and a ${band.tier} section may spend ${allowed}. ` +
+            'Drop the greebles, the windows or the columns, or move it to a richer tier',
+          ['bands', band.id, 'tier'],
+        );
+      }
+    }
+
     const adrift = proudProblems(parts, { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs), height: shape.height });
     if (adrift.length > 0) {
       throw new BuildingError('E_FLOATING_PART', `section ${band.id}: ${adrift[0]!.detail}`, ['bands', band.id]);

@@ -50,6 +50,7 @@ export type PlacedBand = {
   shape: 'box' | 'round';
   /** What the section wears: fake parts, balconies, uprights. */
   greebles: number;
+  windows: boolean;
   balconies: 'none' | Side;
   columns: 'none' | 'corners' | 'ribs' | 'partial';
   clutter: number;

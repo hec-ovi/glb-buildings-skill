@@ -1,11 +1,10 @@
 /**
- * Real windows. A wall row on one face is cut into bays, and each bay gets a rectangular hole
- * with a reveal around it and a pane at the back. That is the whole trick: no frames, no
- * mullions, no sills modelled. About eighteen triangles a window, so a floor of them is cheap
- * enough to put on the sections that are actually seen.
+ * Windows, the cheap way. Cutting a real hole means the wall, the reveal and the caps have to
+ * agree on where every edge is split, and one missed split leaves the section open. Instead a
+ * window is a dark panel set into the face: a thin box that stands a little proud, so the frame
+ * around it is the wall itself.
  *
- * The hole's edges meet the reveal's, and the reveal's meet the pane's, so the section stays a
- * closed solid and nothing floats.
+ * Twelve triangles each, and it cannot break the shell.
  */
 import { Surface, type Vec } from './geometry.ts';
 import type { Corner } from './section.ts';
@@ -13,24 +12,26 @@ import type { Corner } from './section.ts';
 export type WindowStyle = {
   /** How wide a bay is, in metres. The row is split into whole bays. */
   bay: number;
-  /** Where the opening starts and ends across its bay, 0 to 1. */
+  /** Where the pane starts and ends across its bay, 0 to 1. */
   from: number;
   to: number;
   /** Sill and head as a share of the floor height. */
   sill: number;
   head: number;
-  /** How deep the reveal goes. */
+  /** How far the pane stands off the wall. Small, so it reads as glass in a reveal. */
   depth: number;
 };
 
-export const WINDOW: WindowStyle = { bay: 3, from: 0.22, to: 0.78, sill: 0.28, head: 0.78, depth: 0.25 };
+export const WINDOW: WindowStyle = { bay: 3, from: 0.22, to: 0.78, sill: 0.3, head: 0.8, depth: 0.06 };
 
-/**
- * One wall row on one edge, with a window per bay. The row is the quad between the lower ring
- * edge and the upper one, so a twisted or tapered section keeps its shape through the openings.
- */
-export function windowedRow(
-  wall: Surface,
+const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
+
+function lerp(a: Corner, b: Corner, t: number): Corner {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+}
+
+/** One row of panes along one edge of one floor. */
+export function windowRow(
   pane: Surface,
   lower: [Corner, Corner],
   upper: [Corner, Corner],
@@ -40,52 +41,36 @@ export function windowedRow(
 ): void {
   const [a0, a1] = lower;
   const [b0, b1] = upper;
-
   const run = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
   const bays = Math.max(1, Math.round(run / style.bay));
 
-  // A point on the row: `t` across it, `v` up it, `into` the building.
-  const inward: Corner = (() => {
-    const dx = a1[0] - a0[0];
-    const dz = a1[1] - a0[1];
-    const length = Math.hypot(dx, dz) || 1;
-    return [-dz / length, dx / length];
-  })();
+  const dx = a1[0] - a0[0];
+  const dz = a1[1] - a0[1];
+  const length = Math.hypot(dx, dz) || 1;
+  const outward: Corner = [dz / length, -dx / length];
 
-  const at = (t: number, v: number, into = 0): Vec => {
-    const low: Corner = [a0[0] + (a1[0] - a0[0]) * t, a0[1] + (a1[1] - a0[1]) * t];
-    const high: Corner = [b0[0] + (b1[0] - b0[0]) * t, b0[1] + (b1[1] - b0[1]) * t];
-    return [
-      low[0] + (high[0] - low[0]) * v + inward[0] * into,
-      y0 + (y1 - y0) * v,
-      low[1] + (high[1] - low[1]) * v + inward[1] * into,
-    ];
-  };
-
-  const quad = (surface: Surface, t0: number, v0: number, t1: number, v1: number, into = 0) =>
-    surface.quad(at(t0, v0, into), at(t1, v0, into), at(t1, v1, into), at(t0, v1, into));
+  const rise = y1 - y0;
+  const sill = y0 + rise * style.sill;
+  const head = y0 + rise * style.head;
+  const back = -0.05;
 
   for (let bay = 0; bay < bays; bay++) {
-    const left = bay / bays;
-    const right = (bay + 1) / bays;
-    const width = right - left;
-    const holeL = left + width * style.from;
-    const holeR = left + width * style.to;
-    const { sill, head, depth: d } = style;
+    const left = (bay + style.from) / bays;
+    const right = (bay + style.to) / bays;
 
-    // The wall around the hole: below, above, and a pier each side.
-    quad(wall, left, 0, right, sill);
-    quad(wall, left, head, right, 1);
-    quad(wall, left, sill, holeL, head);
-    quad(wall, holeR, sill, right, head);
+    const at = (t: number, ring: [Corner, Corner], out: number): Corner => {
+      const on = lerp(ring[0], ring[1], t);
+      return [on[0] + outward[0] * out, on[1] + outward[1] * out];
+    };
 
-    // The reveal, four faces turned inward.
-    wall.quad(at(holeL, sill), at(holeL, head), at(holeL, head, d), at(holeL, sill, d));
-    wall.quad(at(holeR, head), at(holeR, sill), at(holeR, sill, d), at(holeR, head, d));
-    wall.quad(at(holeL, head), at(holeR, head), at(holeR, head, d), at(holeL, head, d));
-    wall.quad(at(holeR, sill), at(holeL, sill), at(holeL, sill, d), at(holeR, sill, d));
+    const bottom = [at(left, lower, back), at(right, lower, back), at(right, lower, style.depth), at(left, lower, style.depth)];
+    const top = [at(left, upper, back), at(right, upper, back), at(right, upper, style.depth), at(left, upper, style.depth)];
 
-    // The pane at the back of the reveal.
-    quad(pane, holeL, sill, holeR, head, d);
+    for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4;
+      pane.quad(point(bottom[i]!, sill), point(bottom[j]!, sill), point(top[j]!, head), point(top[i]!, head));
+    }
+    pane.quad(point(top[0]!, head), point(top[1]!, head), point(top[2]!, head), point(top[3]!, head));
+    pane.quad(point(bottom[3]!, sill), point(bottom[2]!, sill), point(bottom[1]!, sill), point(bottom[0]!, sill));
   }
 }

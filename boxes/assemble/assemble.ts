@@ -164,6 +164,7 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       wires: band.wires,
       shape: band.shape,
       greebles: band.greebles,
+      windows: band.windows,
       balconies: band.balconies,
       columns: band.columns,
       clutter: band.clutter,

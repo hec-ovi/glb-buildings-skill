@@ -17,7 +17,7 @@ describe('buildGlb', () => {
     const { stats } = await buildGlb(doc);
     expect(stats.meshes).toBe(3);
     expect(stats.nodes).toBe(3);
-    expect(stats.materials).toBe(2);
+    expect(stats.materials).toBe(3);
     expect(stats.triangles).toBeLessThan(200);
   });
 

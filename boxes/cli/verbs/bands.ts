@@ -28,6 +28,7 @@ const FLAGS: FlagSpec = {
   corner: { type: 'string' },
   chamfer: { type: 'string' },
   greebles: { type: 'string' },
+  windows: { type: 'boolean' },
   clutter: { type: 'string' },
   balconies: { type: 'string' },
   columns: { type: 'string' },
@@ -65,7 +66,7 @@ async function edit(
 export const addBand: Verb = {
   name: 'add-band',
   summary: 'put a band of floors into the stack',
-  usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--width 12] [--depth 10] [--inset 0] [--shift-x 0] [--shift-z 0] [--rotation 0] [--twist 0] [--taper 0] [--wires S] [--shape round] [--corner 0.6] [--chamfer 0.2] [--greebles 0.4] [--balconies S] [--columns ribs] [--clutter 0.6] [--after <id> | --before <id>]',
+  usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--width 12] [--depth 10] [--inset 0] [--shift-x 0] [--shift-z 0] [--rotation 0] [--twist 0] [--taper 0] [--wires S] [--shape round] [--corner 0.6] [--chamfer 0.2] [--greebles 0.4] [--windows] [--balconies S] [--columns ribs] [--clutter 0.6] [--after <id> | --before <id>]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, FLAGS);
     const id = need(positionals, 0, 'band id');
@@ -90,6 +91,7 @@ export const addBand: Verb = {
       corner: size(values.corner, 'corner') ?? 0,
       chamfer: size(values.chamfer, 'chamfer') ?? 0,
       greebles: fraction(values.greebles, 'greebles') ?? 0,
+      windows: values.windows === true,
       clutter: fraction(values.clutter, 'clutter') ?? 0,
       deck: [],
       ...(values.width ? { width: size(values.width, 'width') } : {}),
@@ -116,7 +118,7 @@ export const addBand: Verb = {
 export const setBand: Verb = {
   name: 'set-band',
   summary: 'change a band that is already in the stack',
-  usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--shape] [--segments] [--corner] [--chamfer] [--greebles] [--balconies] [--columns] [--clutter]',
+  usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--shape] [--segments] [--corner] [--chamfer] [--greebles] [--windows] [--balconies] [--columns] [--clutter]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, FLAGS);
     const id = need(positionals, 0, 'band id');
@@ -148,6 +150,7 @@ export const setBand: Verb = {
         corner: size(values.corner, 'corner') ?? band.corner,
         chamfer: size(values.chamfer, 'chamfer') ?? band.chamfer,
         greebles: fraction(values.greebles, 'greebles') ?? band.greebles,
+        windows: values.windows === true ? true : band.windows,
         clutter: fraction(values.clutter, 'clutter') ?? band.clutter,
         ...(values.width ? { width: size(values.width, 'width') } : {}),
         ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),

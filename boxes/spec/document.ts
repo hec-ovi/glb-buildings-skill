@@ -86,6 +86,8 @@ const bandSchema = z.object({
   wires: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
   /** Fake parts standing off the faces, 0 to 1. What stops a bulk section reading as a box. */
   greebles: z.number().min(0).max(1).default(0),
+  /** Real openings in every bay: a hole, a reveal and a pane. Costs about 18 triangles each. */
+  windows: z.boolean().default(false),
   /** Balconies with a rounded front, on one face, one per floor. */
   balconies: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
   /** Uprights: at the footprint corners, or as ribs along every face. */

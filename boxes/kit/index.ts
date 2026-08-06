@@ -1,7 +1,7 @@
 /** The parts. Geometry in metres, correct winding, and the proofs that keep it that way. */
 export { Surface, normalOf, triangleCount, TILE, type MeshData, type Vec } from './geometry.ts';
 export { windingProblems, shellProblems, proudProblems, MAX_PROUD, MAX_ABOVE, type MeshProblem } from './invariants.ts';
-export { walls, cap, capRing, insetRing, junction, wires, ringAt, sameRing, edgeFacing, tubeRing, type SectionShape, type Corner } from './section.ts';
+export { walls, cap, capRing, WINDOW, type WindowStyle, insetRing, junction, wires, ringAt, sameRing, edgeFacing, tubeRing, type SectionShape, type Corner } from './section.ts';
 export {
   template,
   templates,
@@ -10,6 +10,7 @@ export {
   TEMPLATE_IDS,
   FACADE,
   ROOF,
+  GLASS,
   type Template,
 } from './templates.ts';
 export { greebles, seedOf, type GreebleOptions } from './greebles.ts';
