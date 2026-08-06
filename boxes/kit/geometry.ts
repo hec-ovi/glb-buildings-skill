@@ -44,9 +44,12 @@ export class Surface {
   readonly #normals: number[] = [];
   readonly #uvs: number[] = [];
   readonly #indices: number[] = [];
+  /** Where quads land on the texture when they do not place themselves. */
+  readonly #patch?: Patch;
 
-  constructor(material: string) {
+  constructor(material: string, patch?: Patch) {
     this.material = material;
+    this.#patch = patch;
   }
 
   get empty(): boolean {
@@ -58,7 +61,7 @@ export class Surface {
    * edges, so a wall and a roof tile at the same real-world scale, unless the caller lays them
    * out itself: a facade has to place its tile against the floors and bays it is drawn for.
    */
-  quad(p0: Vec, p1: Vec, p2: Vec, p3: Vec, patch?: Patch): this {
+  quad(p0: Vec, p1: Vec, p2: Vec, p3: Vec, patch = this.#patch): this {
     const width = Math.hypot(...sub(p1, p0));
     const height = Math.hypot(...sub(p3, p0));
     const uv: [number, number][] = patch

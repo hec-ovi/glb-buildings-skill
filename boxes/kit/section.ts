@@ -86,7 +86,7 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
     if (!shape.windows || !pane) continue;
 
     // A floor with windows: every face is cut into bays and each bay gets a pane.
-    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, y0, y1, shape.windows);
+    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, row, y0, y1, shape.windows);
   }
 
   if (chamfer > 0) band(surface, ringAt(shape, high / shape.height), capRing(shape, 1), high, shape.height);
@@ -117,19 +117,6 @@ export function edgeFacing(ring: Corner[], side: 'N' | 'E' | 'S' | 'W'): number 
     }
   }
   return best;
-}
-
-/**
- * The flat ring between two sections, at y=0 in its own frame. A section that steps in shows
- * it as a ledge, one that hangs out shows it as a soffit, and the winding follows on its own.
- */
-export function junction(material: string, lower: Corner[], upper: Corner[]): Surface {
-  const surface = new Surface(material);
-  for (let i = 0; i < lower.length; i++) {
-    const next = (i + 1) % lower.length;
-    surface.quad(point(lower[i]!, 0), point(lower[next]!, 0), point(upper[next]!, 0), point(upper[i]!, 0));
-  }
-  return surface;
 }
 
 /** Cables climbing one face: thin tubes standing proud of the wall, following its twist. */

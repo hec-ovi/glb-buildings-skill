@@ -1,8 +1,8 @@
 /** The parts. Geometry in metres, correct winding, and the proofs that keep it that way. */
-export { Surface, normalOf, triangleCount, TILE, type MeshData, type Vec } from './geometry.ts';
+export { Surface, normalOf, triangleCount, TILE, type MeshData, type Patch, type Vec } from './geometry.ts';
 export { windingProblems, shellProblems, sunkProblems, proudProblems, solids, MAX_PROUD, MAX_ABOVE, SHOWS, type MeshProblem } from './invariants.ts';
 export { insideRing, insetRing, middleOf, outsideBy, outwardAt, tangentAt, type Corner } from './plan.ts';
-export { walls, cap, capRing, WINDOW, type WindowStyle, junction, wires, ringAt, sameRing, edgeFacing, tubeRing, type SectionShape } from './section.ts';
+export { walls, cap, capRing, WINDOW, type WindowStyle, wires, ringAt, sameRing, edgeFacing, tubeRing, type SectionShape } from './section.ts';
 export {
   template,
   templates,
@@ -13,6 +13,7 @@ export {
   ROOF,
   GLASS,
   type Template,
+  WALL_PATCH,
 } from './templates.ts';
 export { greebles, seedOf, type GreebleOptions } from './greebles.ts';
 export { balconies, balconyPlan, prism, BALCONY, type BalconyOptions } from './balcony.ts';

@@ -18,12 +18,36 @@ export type FacadeStyle = {
   down: number;
   /** How wide one bay is on the building, in metres. This is what maps the tile onto a wall. */
   bay: number;
+  /**
+   * Where the glazing sits in one cell of the tile: across the bay from `left` to `right`, and
+   * down from the top of the floor from `top` to `bottom`. Geometry that gives a window real
+   * depth is built to these same numbers, so drawn glass and cut glass are the same window.
+   */
+  pane: { left: number; right: number; top: number; bottom: number };
   /** How many windows are lit, 0 to 1. */
   lit: number;
   seed: number;
 };
 
-export const FACADE_STYLE: FacadeStyle = { size: 256, across: 8, down: 4, bay: 3, lit: 0.12, seed: 1 };
+export const FACADE_STYLE: FacadeStyle = {
+  size: 256,
+  across: 8,
+  down: 4,
+  bay: 3,
+  pane: { left: 0.09, right: 0.91, top: 0.2, bottom: 0.62 },
+  lit: 0.12,
+  seed: 1,
+};
+
+/**
+ * A point of plain wall on the tile, above the first window. Anything that is not a window takes
+ * its colour from here: a column, a panel, a balcony, the underside of a section. Sampled at
+ * real-world scale instead, a solid part shows slices of somebody's windows.
+ */
+export const FACADE_WALL: { u: number; v: number } = {
+  u: 0.5 / FACADE_STYLE.across,
+  v: (FACADE_STYLE.pane.top / 2) / FACADE_STYLE.down,
+};
 
 /** Wall, the band under each window, the glass, and the few colours a lit window comes in. */
 const WALL: Rgb = [13, 14, 17];
@@ -70,19 +94,15 @@ function windows(style: FacadeStyle): Window[] {
   const found: Window[] = [];
   const bay = style.size / style.across;
   const floor = style.size / style.down;
-  // The mullion between two bays, and the sill and head of the band.
-  const mullion = Math.max(1, Math.round(bay * 0.09));
-  const sill = Math.round(floor * 0.62);
-  const head = Math.round(floor * 0.2);
 
   for (let row = 0; row < style.down; row++) {
     for (let column = 0; column < style.across; column++) {
       const on = random() < style.lit;
       found.push({
-        x0: Math.round(column * bay + mullion),
-        x1: Math.round((column + 1) * bay - mullion),
-        y0: Math.round(row * floor + head),
-        y1: Math.round(row * floor + sill),
+        x0: Math.round((column + style.pane.left) * bay),
+        x1: Math.round((column + style.pane.right) * bay),
+        y0: Math.round((row + style.pane.top) * floor),
+        y1: Math.round((row + style.pane.bottom) * floor),
         colour: on ? lightColour(random) : GLASS,
         glow: on,
       });
@@ -106,8 +126,8 @@ function paint(style: FacadeStyle, panes: Window[], emissive: boolean): Pixels {
 
   for (let y = 0; y < size; y++) {
     // The wall, with the spandrel band that runs under each row of windows.
-    const down = y % floor;
-    const base: Rgb = emissive ? [0, 0, 0] : down > floor * 0.62 && down < floor * 0.94 ? SPANDREL : WALL;
+    const down = (y % floor) / floor;
+    const base: Rgb = emissive ? [0, 0, 0] : down > style.pane.bottom && down < 0.94 ? SPANDREL : WALL;
     for (let x = 0; x < size; x++) put(x, y, base);
   }
 

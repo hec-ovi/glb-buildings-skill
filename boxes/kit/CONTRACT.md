@@ -25,7 +25,7 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `templates()` | | every template with its tier and one-line purpose |
 | `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
 | `dress(shape, options)` | shape, what it wears | cables, columns, balconies, greebles, deck parts, as one mesh |
-| `walls` / `cap` / `capRing` / `junction` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
+| `walls` / `cap` / `capRing` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
 | `outwardAt(ring, edge)` | footprint, edge | the way out at that edge |
 | `outsideBy(ring, point)` | footprint, point | metres past the footprint, negative inside |
 | `insideRing` / `nearestOn` / `insetRing` / `middleOf` / `tangentAt` | footprints | the rest of the plan arithmetic |
@@ -35,7 +35,7 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `sunkProblems(meshes, shape)` | what a section wears | which parts are buried inside it |
 | `proudProblems(meshes, box)` | meshes, the section's box | which parts have drifted off it |
 | `solids(meshes)` | meshes | triangles grouped into separate solids |
-| `new Surface(material)` | material name | a builder: `.quad()`, `.box()`, `.cap()`, `.data()` |
+| `new Surface(material, patch?)` | material name, where its quads land on the texture | a builder: `.quad()`, `.box()`, `.cap()`, `.data()` |
 
 ## Templates
 
@@ -58,8 +58,10 @@ Materials are named, not built here: `facade`, `glass` and `roof`.
   winding, so a ring wound either way dresses the same.
 - A triangle with no area is never written: a collapsed corner drops out instead of carrying a zero normal.
 - A wall lays its own UVs against the facade tile: one row of the tile per floor, one bay per `FACADE_STYLE.bay`
-  metres of face, so a window is a window sized rather than a pattern. Everything else takes real-world size:
-  one texture tile per `TILE` metres.
+  metres of face, so a window comes out window sized. A window pane covers the window it is built over and
+  samples it, so drawn glass and cut glass are one window.
+- Everything that is not a window takes `WALL_PATCH`, one point of plain wall, rather than a slice of
+  somebody's windows at whatever scale the part happens to be.
 
 ## Errors
 

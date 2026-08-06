@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError } from '#spec';
-import { Surface, cap, capRing, cylinder, junction, ringAt, proudProblems, shellProblems, sunkProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
+import { FACADE_STYLE } from '#materials';
+import { Surface, WINDOW, cap, capRing, cylinder, ringAt, proudProblems, shellProblems, sunkProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
 
 const plain: SectionShape = {
   bottom: [
@@ -68,19 +69,6 @@ describe('sections', () => {
     const skin = new Surface('facade');
     walls(skin, { ...plain, floors: 5, height: 16 });
     expect(triangleCount(skin.data())).toBe(5 * 4 * 2);
-  });
-
-  it('lofts the junction between two sections and closes it', () => {
-    const lower = plain.top;
-    const upper: [number, number][] = [
-      [-5, 4],
-      [5, 4],
-      [5, -4],
-      [-5, -4],
-    ];
-    const collar = junction('facade', lower, upper).data();
-    expect(windingProblems(collar)).toEqual([]);
-    expect(triangleCount(collar)).toBe(8);
   });
 
   it('runs cables up one face as closed boxes', () => {
@@ -157,6 +145,67 @@ describe('fake parts', () => {
       expect(windingProblems(parts[0]!), style).toEqual([]);
       expect(shellProblems(parts), style).toEqual([]);
     }
+  });
+});
+
+describe('one window, drawn and built', () => {
+  // Eight bays of three metres, so the wall shows exactly one tile across.
+  const glazed: SectionShape = {
+    bottom: [
+      [-12, 12],
+      [12, 12],
+      [12, -12],
+      [-12, -12],
+    ],
+    top: [
+      [-12, 12],
+      [12, 12],
+      [12, -12],
+      [-12, -12],
+    ],
+    height: 3.2,
+    floors: 1,
+    windows: WINDOW,
+  };
+
+  const built = () => {
+    const skin = new Surface('facade');
+    const pane = new Surface('glass');
+    walls(skin, glazed, pane);
+    return { skin: skin.data(), pane: pane.data() };
+  };
+
+  it('stands the pane on the window the texture draws, in the same place on the tile', () => {
+    // The glass face is the first quad of the first pane: the first bay of the first floor.
+    const front = built().pane.uvs.slice(0, 12);
+    const us = front.filter((_, i) => i % 2 === 0);
+    const vs = front.filter((_, i) => i % 2 === 1);
+    const { across, down, pane: glass } = FACADE_STYLE;
+
+    expect(Math.min(...us)).toBeCloseTo(glass.left / across, 5);
+    expect(Math.max(...us)).toBeCloseTo(glass.right / across, 5);
+    expect(Math.min(...vs)).toBeCloseTo(glass.top / down, 5);
+    expect(Math.max(...vs)).toBeCloseTo(glass.bottom / down, 5);
+  });
+
+  it('cuts it at the height the texture draws it, so the two never disagree', () => {
+    const { pane } = built();
+    const ys = pane.positions.filter((_, i) => i % 3 === 1);
+    expect(Math.min(...ys)).toBeCloseTo(glazed.height * (1 - FACADE_STYLE.pane.bottom), 5);
+    expect(Math.max(...ys)).toBeCloseTo(glazed.height * (1 - FACADE_STYLE.pane.top), 5);
+  });
+
+  it('lays one row of the tile on each floor, and one bay on every three metres', () => {
+    const skin = new Surface('facade');
+    walls(skin, { ...glazed, floors: 6, height: 19.2, windows: undefined });
+    const uvs = skin.data().uvs;
+    const us = uvs.filter((_, i) => i % 2 === 0);
+    const vs = uvs.filter((_, i) => i % 2 === 1);
+
+    // A 24 m face is exactly one tile across, and six floors walk the four rows of it and repeat.
+    expect(Math.max(...us)).toBeCloseTo(1, 5);
+    expect(Math.max(...vs)).toBeCloseTo(1, 5);
+    expect(new Set(vs.map((v) => Math.round(v * 1000))).size).toBe(FACADE_STYLE.down + 1);
   });
 });
 

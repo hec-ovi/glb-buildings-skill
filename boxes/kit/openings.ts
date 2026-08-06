@@ -1,9 +1,10 @@
 /**
- * Windows, the cheap way. Cutting a real hole means the wall, the reveal and the caps have to
- * agree on where every edge is split, and one missed split leaves the section open. Instead a
- * window is a dark panel set into the face: a thin box that stands a little proud, so the frame
- * around it is the wall itself.
+ * Windows with real depth. The facade texture already draws the glazing; this gives the same
+ * window a body, so the glass sits in a reveal and catches the light from an angle instead of
+ * lying flat on the wall.
  *
+ * A pane is a shallow box on the wall, and its front face samples the very window it covers, so
+ * a lit window is still lit and there is one window system on the building rather than two.
  * Twelve triangles each, and it cannot break the shell.
  */
 import { FACADE_STYLE } from '#materials';
@@ -13,18 +14,13 @@ import { outwardAt, type Corner } from './plan.ts';
 export type WindowStyle = {
   /** How wide a bay is, in metres. The row is split into whole bays. */
   bay: number;
-  /** Where the pane starts and ends across its bay, 0 to 1. */
-  from: number;
-  to: number;
-  /** Sill and head as a share of the floor height. */
-  sill: number;
-  head: number;
   /** How far the pane stands off the wall. Small, so it reads as glass in a reveal. */
   depth: number;
+  /** How far its back sits inside the wall, so the two never share a plane. */
+  back: number;
 };
 
-/** Panes sit in the bays the facade texture is drawn for, so cut glass lands where drawn glass is. */
-export const WINDOW: WindowStyle = { bay: FACADE_STYLE.bay, from: 0.12, to: 0.88, sill: 0.28, head: 0.68, depth: 0.09 };
+export const WINDOW: WindowStyle = { bay: FACADE_STYLE.bay, depth: 0.09, back: 0.05 };
 
 const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
 
@@ -38,6 +34,7 @@ export function windowRow(
   lowerRing: Corner[],
   upperRing: Corner[],
   edge: number,
+  floor: number,
   y0: number,
   y1: number,
   style: WindowStyle = WINDOW,
@@ -45,19 +42,20 @@ export function windowRow(
   const next = (edge + 1) % lowerRing.length;
   const lower: [Corner, Corner] = [lowerRing[edge]!, lowerRing[next]!];
   const upper: [Corner, Corner] = [upperRing[edge]!, upperRing[next]!];
-  const [a0, a1] = lower;
-  const run = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
+  const run = Math.hypot(lower[1][0] - lower[0][0], lower[1][1] - lower[0][1]);
   const bays = Math.max(1, Math.round(run / style.bay));
   const outward = outwardAt(lowerRing, edge);
 
+  const { across, down, pane: glass } = FACADE_STYLE;
   const rise = y1 - y0;
-  const sill = y0 + rise * style.sill;
-  const head = y0 + rise * style.head;
-  const back = -0.05;
+  // The drawn window, read as the wall reads it: across the bay, and down from the floor's top.
+  const sill = y0 + rise * (1 - glass.bottom);
+  const head = y0 + rise * (1 - glass.top);
+  const row = floor % down;
 
   for (let bay = 0; bay < bays; bay++) {
-    const left = (bay + style.from) / bays;
-    const right = (bay + style.to) / bays;
+    const left = (bay + glass.left) / bays;
+    const right = (bay + glass.right) / bays;
 
     const at = (t: number, ring: [Corner, Corner], out: number): Corner => {
       const on = lerp(ring[0], ring[1], t);
@@ -65,12 +63,20 @@ export function windowRow(
     };
 
     // Glass first, then the back inside the reveal: the same way round a footprint goes.
-    const bottom = [at(left, lower, style.depth), at(right, lower, style.depth), at(right, lower, back), at(left, lower, back)];
-    const top = [at(left, upper, style.depth), at(right, upper, style.depth), at(right, upper, back), at(left, upper, back)];
+    const bottom = [at(left, lower, style.depth), at(right, lower, style.depth), at(right, lower, -style.back), at(left, lower, -style.back)];
+    const top = [at(left, upper, style.depth), at(right, upper, style.depth), at(right, upper, -style.back), at(left, upper, -style.back)];
+
+    // The front face carries the window it stands on. The reveals and the back take the wall.
+    const patch = {
+      u0: (bay + glass.left) / across,
+      u1: (bay + glass.right) / across,
+      v0: (row + glass.top) / down,
+      v1: (row + glass.bottom) / down,
+    };
 
     for (let i = 0; i < 4; i++) {
       const j = (i + 1) % 4;
-      pane.quad(point(bottom[i]!, sill), point(bottom[j]!, sill), point(top[j]!, head), point(top[i]!, head));
+      pane.quad(point(bottom[i]!, sill), point(bottom[j]!, sill), point(top[j]!, head), point(top[i]!, head), i === 0 ? patch : undefined);
     }
     pane.quad(point(top[0]!, head), point(top[1]!, head), point(top[2]!, head), point(top[3]!, head));
     pane.quad(point(bottom[3]!, sill), point(bottom[2]!, sill), point(bottom[1]!, sill), point(bottom[0]!, sill));

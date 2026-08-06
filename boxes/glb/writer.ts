@@ -83,17 +83,24 @@ function palette(document: Document, seed: number): Map<string, Material> {
     .setEmissiveTexture(glow)
     .setMetallicFactor(0)
     .setRoughnessFactor(0.85);
-  document
+
+  // Glass is the same picture with a sheen on it: a pane covers the window it is built over, so
+  // the building never carries two window systems that disagree.
+  const glass = document
     .createMaterial(GLASS)
-    .setBaseColorFactor([0.09, 0.11, 0.14, 1])
-    .setMetallicFactor(0.1)
-    .setRoughnessFactor(0.15);
+    .setBaseColorFactor([1, 1, 1, 1])
+    .setBaseColorTexture(colour)
+    .setEmissiveFactor([1, 1, 1])
+    .setEmissiveTexture(glow)
+    .setMetallicFactor(0.25)
+    .setRoughnessFactor(0.12);
+
   const roof = document
     .createMaterial(ROOF)
-    .setBaseColorFactor([0.28, 0.29, 0.31, 1])
+    .setBaseColorFactor([0.24, 0.25, 0.27, 1])
     .setMetallicFactor(0)
     .setRoughnessFactor(0.95);
-  const glass = document.getRoot().listMaterials().find((material) => material.getName() === GLASS)!;
+
   return new Map([
     [FACADE, facade],
     [ROOF, roof],

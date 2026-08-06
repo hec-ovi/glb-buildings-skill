@@ -10,6 +10,7 @@ exactly, it costs nothing to ship, and every building gets its own.
 | --- | --- | --- |
 | `facadeTexture({ seed, size, across, down, bay, lit })` | a seed and a grid | `{ colour, emissive, lit }`, both PNG bytes |
 | `FACADE_STYLE` | | the tile's own shape, which is what maps it onto a wall |
+| `FACADE_WALL` | | the point of plain wall that everything which is not a window samples |
 | `png({ width, height, rgba })` | RGBA pixels | PNG bytes |
 
 Defaults: 256 px square, 8 bays across, 4 floors down, a bay 3 m wide, an eighth of the windows lit.
@@ -28,6 +29,8 @@ and the wall stays flat. Lit windows are the warm white a room actually is, with
 
 - The same seed gives the same picture, every build. A different building gives a different one.
 - Both maps come out of the same grid, so a window that glows is a window that is lit.
+- `pane` is where the glazing is drawn and where geometry cuts it, so a building never carries two
+  window systems that disagree.
 - A tile stays under 40 kB, which is what makes it affordable on every building in a scene.
 
 ## Depends on

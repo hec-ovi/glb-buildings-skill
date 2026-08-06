@@ -9,9 +9,10 @@
  *
  * Everything is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
+import { FACADE_WALL } from '#materials';
 import { BuildingError, type Tier } from '#spec';
-import { Surface, type MeshData } from './geometry.ts';
-import { cap, capRing, edgeFacing, ringAt, walls, wires, type SectionShape } from './section.ts';
+import { Surface, type MeshData, type Patch } from './geometry.ts';
+import { cap, capRing, edgeFacing, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
 import { balconies, BALCONY } from './balcony.ts';
 import { columns, type ColumnStyle } from './columns.ts';
@@ -24,6 +25,9 @@ export type Template = {
   purpose: string;
   build(shape: SectionShape): MeshData[];
 };
+
+/** One point of plain wall. Everything that is not a window takes its colour from there. */
+export const WALL_PATCH: Patch = { u0: FACADE_WALL.u, u1: FACADE_WALL.u, v0: FACADE_WALL.v, v1: FACADE_WALL.v };
 
 export const FACADE = 'facade';
 export const ROOF = 'roof';
@@ -39,8 +43,8 @@ const TEMPLATES: Template[] = [
     tier: 'flat',
     purpose: 'a plain section: four textured walls, windows live in the image',
     build: (shape) => {
-      const skin = new Surface(FACADE);
-      const pane = new Surface(GLASS);
+      const skin = new Surface(FACADE, WALL_PATCH);
+      const pane = new Surface(GLASS, WALL_PATCH);
       walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
       cap(skin, capRing(shape, 1), shape.height, true);
@@ -52,8 +56,8 @@ const TEMPLATES: Template[] = [
     tier: 'full',
     purpose: 'the base: taller walls, and the underside that closes the building',
     build: (shape) => {
-      const skin = new Surface(FACADE);
-      const pane = new Surface(GLASS);
+      const skin = new Surface(FACADE, WALL_PATCH);
+      const pane = new Surface(GLASS, WALL_PATCH);
       walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
       cap(skin, capRing(shape, 1), shape.height, true);
@@ -65,7 +69,7 @@ const TEMPLATES: Template[] = [
     tier: 'light',
     purpose: 'the crown: a parapet and the roof deck that closes the building',
     build: (shape) => {
-      const skin = new Surface(FACADE);
+      const skin = new Surface(FACADE, WALL_PATCH);
       walls(skin, shape);
       cap(skin, capRing(shape, 0), 0, false);
       const deck = new Surface(ROOF);
@@ -104,7 +108,7 @@ export type Dressing = {
 
 /** Everything a section can wear on top of its skin: cables, balconies, columns, fake parts. */
 export function dress(shape: SectionShape, options: Dressing): MeshData[] {
-  const surface = new Surface(FACADE);
+  const surface = new Surface(FACADE, WALL_PATCH);
 
   if (options.wires && options.wires !== 'none') wires(surface, shape, options.wires);
   if (options.columns && options.columns !== 'none') columns(surface, shape, options.columns, options.seed ?? 1);
