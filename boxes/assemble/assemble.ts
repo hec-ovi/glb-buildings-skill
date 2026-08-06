@@ -13,6 +13,12 @@ import type { Box, Corner, PlacedBand, PlacedBay, PlacedFloor, PlacedScene, Seam
 /** Facade panel depth used for blueprint volumes until the kit places real walls. */
 export const PANEL_THICKNESS: Mm = 200;
 
+/** How far a corner has to stand off the line through its neighbours to be a corner at all, in mm. */
+const FLAT = 50;
+
+/** How much a rounding step may read as a turn the wrong way before the plan is not convex, in mm². */
+const STRAIGHT = 2000;
+
 type Rect = { x0: Mm; x1: Mm; z0: Mm; z1: Mm };
 
 function footprintRect(doc: BuildingDocument, band: Band): Rect {
@@ -23,18 +29,29 @@ function footprintRect(doc: BuildingDocument, band: Band): Rect {
   return { x0, x1: x0 + width - 2 * band.inset, z0, z1: z0 + depth - 2 * band.inset };
 }
 
+type Plan = { round?: number; arc: number; corner: number; bow: string };
+
 /**
- * The footprint as four world corners, turned about the building's own axis. Bands that step,
- * slide or turn all end up as plain polygons, and the junction between two of them is one loft.
+ * The footprint as world corners, turned about the building's own axis. Bands that step, slide,
+ * turn, round off or get sliced all end up as plain convex polygons, and the junction between
+ * two of them is one loft.
  */
-function cornersOf(rect: Rect, degrees: number, shrink = 0, round?: number, corner = 0): Corner[] {
+function cornersOf(rect: Rect, degrees: number, shrink: number, plan: Plan): Corner[] {
   const square: Corner[] = [
     [rect.x0 + shrink, rect.z1 - shrink],
     [rect.x1 - shrink, rect.z1 - shrink],
     [rect.x1 - shrink, rect.z0 + shrink],
     [rect.x0 + shrink, rect.z0 + shrink],
   ];
-  const points: Corner[] = round ? ellipse(rect, shrink, round) : corner > 0 ? fillet(square, corner) : square;
+
+  const points: Corner[] = plan.round
+    ? ellipse(rect, shrink, plan.round, plan.arc)
+    : plan.bow !== ''
+      ? bowed(square, plan.bow)
+      : plan.corner > 0
+        ? fillet(square, plan.corner)
+        : square;
+
   if (degrees === 0) return points;
   const angle = (degrees * Math.PI) / 180;
   const cos = Math.cos(angle);
@@ -42,17 +59,86 @@ function cornersOf(rect: Rect, degrees: number, shrink = 0, round?: number, corn
   return points.map(([x, z]) => [Math.round(x * cos + z * sin), Math.round(-x * sin + z * cos)]);
 }
 
-/** A round footprint: the ellipse inside the rectangle, walked the same way as the corners. */
-function ellipse(rect: Rect, shrink: number, segments: number): Corner[] {
+/**
+ * A round footprint: the ellipse inside the rectangle, walked the same way as the corners. An arc
+ * of less than a full turn is a slice of it, closed through the middle while the middle is still
+ * outside the chord. So a quarter turn is a wedge with its point at the middle, a half turn is a
+ * D, and three quarters is a cylinder with a flat cut across it. Every one of them is convex.
+ */
+function ellipse(rect: Rect, shrink: number, segments: number, arc: number): Corner[] {
   const cx = (rect.x0 + rect.x1) / 2;
   const cz = (rect.z0 + rect.z1) / 2;
   const rx = (rect.x1 - rect.x0) / 2 - shrink;
   const rz = (rect.z1 - rect.z0) / 2 - shrink;
+
+  const sweep = (Math.min(360, arc) * Math.PI) / 180;
+  const full = arc >= 360;
+  // Starts on the south face and turns south, east, north, west, the way a box does.
+  const at = (angle: number): Corner => [Math.round(cx + rx * Math.sin(angle)), Math.round(cz + rz * Math.cos(angle))];
+
+  const steps = full ? segments : Math.max(2, Math.round((segments * sweep) / (Math.PI * 2)));
   const points: Corner[] = [];
-  for (let i = 0; i < segments; i++) {
-    // Starts on the south face and turns south, east, north, west, the way a box does.
-    const angle = (i / segments) * Math.PI * 2;
-    points.push([Math.round(cx + rx * Math.sin(angle)), Math.round(cz + rz * Math.cos(angle))]);
+  for (let i = 0; i < (full ? steps : steps + 1); i++) points.push(at((i / steps) * sweep));
+  if (full) return points;
+
+  const first = points[0]!;
+  const last = points.at(-1)!;
+  const chord = Math.hypot(last[0] - first[0], last[1] - first[1]) || 1;
+  const sideOf = (p: Corner) =>
+    ((last[0] - first[0]) * (p[1] - first[1]) - (last[1] - first[1]) * (p[0] - first[0])) / chord;
+
+  // The middle only earns a corner while it stands clear on the far side of the chord from the
+  // arc. Past a half turn it is inside the arc, where it would fold the plan in on itself.
+  const middle = sideOf([cx, cz]);
+  if (Math.sign(middle) !== Math.sign(sideOf(at(sweep / 2))) && Math.abs(middle) > FLAT) {
+    points.push([Math.round(cx), Math.round(cz)]);
+  }
+  return points;
+}
+
+/** Faces in the order the rectangle's edges are walked. */
+const FACES: { side: Side; out: [number, number] }[] = [
+  { side: 'S', out: [0, 1] },
+  { side: 'E', out: [1, 0] },
+  { side: 'N', out: [0, -1] },
+  { side: 'W', out: [-1, 0] },
+];
+
+/**
+ * Named faces bulged out into a round end: the edge becomes an arc standing off it, as deep as
+ * the face is wide or the plan is deep, whichever is less. Two opposite faces bowed is the plan
+ * of a stadium, one is a tower with a rounded front.
+ */
+function bowed(square: Corner[], sides: string, steps = 6): Corner[] {
+  const points: Corner[] = [];
+
+  for (let i = 0; i < square.length; i++) {
+    const a = square[i]!;
+    const b = square[(i + 1) % square.length]!;
+    if (!sides.includes(FACES[i]!.side)) {
+      points.push(a);
+      continue;
+    }
+
+    const [ox, oz] = FACES[i]!.out;
+    const after = square[(i + 2) % square.length]!;
+    const half = Math.hypot(b[0] - a[0], b[1] - a[1]) / 2;
+    const across = Math.hypot(after[0] - b[0], after[1] - b[1]);
+
+    // A face bowed beside another bowed face has to stay shallow: two round ends meeting at a
+    // corner leave a cusp there, and a cusp is a plan that folds in on itself.
+    const beside = [(i + 3) % 4, (i + 1) % 4].some((n) => sides.includes(FACES[n]!.side));
+    const rise = Math.min(half * (beside ? 0.4 : 1), across / 2);
+    const radius = (half * half + rise * rise) / (2 * rise);
+    const middle: Corner = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const along: Corner = [(b[0] - a[0]) / (half * 2), (b[1] - a[1]) / (half * 2)];
+
+    // Ends on the corners it replaced, so the faces beside it still meet it.
+    for (let step = 0; step < steps; step++) {
+      const u = (-1 + (2 * step) / steps) * half;
+      const stand = Math.sqrt(Math.max(0, radius * radius - u * u)) - (radius - rise);
+      points.push([Math.round(middle[0] + along[0] * u + ox * stand), Math.round(middle[1] + along[1] * u + oz * stand)]);
+    }
   }
   return points;
 }
@@ -86,6 +172,25 @@ function fillet(square: Corner[], radius: Mm, steps = 3): Corner[] {
     }
   }
   return out;
+}
+
+/**
+ * Every footprint is convex, and this is where that is proved. The deck grid, the support proof,
+ * the caps and the way out of a wall all read a plan by its edges alone, and a plan that folds in
+ * on itself makes each of them quietly wrong instead of loudly broken.
+ */
+function turnsOneWay(points: Corner[]): boolean {
+  let left = 0;
+  let right = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % points.length]!;
+    const c = points[(i + 2) % points.length]!;
+    const turn = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    if (turn > STRAIGHT) left += 1;
+    if (turn < -STRAIGHT) right += 1;
+  }
+  return left === 0 || right === 0;
 }
 
 function bayBox(side: Side, rect: Rect, start: Mm, width: Mm, y0: Mm, y1: Mm): Box {
@@ -144,7 +249,14 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       throw new BuildingError('E_DOC_INVALID', `band ${band.id} steps in past its own footprint`, ['bands', band.id, 'inset']);
     }
 
-    const round = band.shape === 'round' ? band.segments : undefined;
+    const plan = { round: band.shape === 'round' ? band.segments : undefined, arc: band.arc, corner: band.corner, bow: band.bow };
+    const bottom = cornersOf(rect, band.rotation, 0, plan);
+    const top = cornersOf(rect, band.rotation + band.twist, band.taper, plan);
+    for (const [where, points] of [['bottom', bottom], ['top', top]] as const) {
+      if (turnsOneWay(points)) continue;
+      throw new BuildingError('E_DOC_INVALID', `band ${band.id} has a ${where} footprint that folds in on itself`, ['bands', band.id, 'shape']);
+    }
+
     const floorHeight = bandFloorHeight(doc, band);
     const floors: PlacedFloor[] = [];
     const y0 = y;
@@ -171,8 +283,8 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       deck: band.deck,
       inset: band.inset,
       rect: { x0: rect.x0, x1: rect.x1, z0: rect.z0, z1: rect.z1 },
-      bottom: cornersOf(rect, band.rotation, 0, round, band.corner),
-      top: cornersOf(rect, band.rotation + band.twist, band.taper, round, band.corner),
+      bottom,
+      top,
       chamfer: band.chamfer,
       y0,
       y1: y,

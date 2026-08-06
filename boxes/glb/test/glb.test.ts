@@ -77,6 +77,21 @@ describe('buildGlb', () => {
     }
   });
 
+  it('builds a stack of sliced, bowed and round sections the validator accepts', async () => {
+    const shaped = parseDocument({
+      ...doc,
+      bands: [
+        { id: 'base', kind: 'main', tier: 'full', floors: 1, floorHeight: 5000, template: 'main-plain', bow: 'NS' },
+        { id: 'body', kind: 'bulk', tier: 'light', floors: 6, template: 'bulk-flat', shape: 'round', arc: 270, rotation: 30, greebles: 0.3 },
+        { id: 'wedge', kind: 'bulk', tier: 'flat', floors: 3, template: 'bulk-flat', shape: 'round', arc: 120, columns: 'ribs' },
+        { id: 'tip', kind: 'roof', tier: 'light', floors: 1, floorHeight: 1200, template: 'roof-parapet', shape: 'round', arc: 120, clutter: 0.5 },
+      ],
+    });
+    const { glb, stats } = await buildGlb(shaped);
+    expect(stats.meshes).toBe(4);
+    expect((await validateGlb(glb)).errors).toEqual([]);
+  });
+
   it('refuses a section that floats off the one below it', async () => {
     const floating = parseDocument({
       ...doc,

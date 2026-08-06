@@ -178,10 +178,17 @@ export function shellProblems(meshes: MeshData[]): MeshProblem[] {
     }
   }
 
+  // Every edge is walked as many times one way as the other. Two solids that happen to touch
+  // along the same line are both closed and both counted, so the rule is a balance rather than
+  // a limit of one.
   for (const [edge, count] of edges) {
     const [from, to] = edge.split('>') as [string, string];
-    if (count > 1) problems.push({ at: edge, detail: `edge used ${count} times in the same direction` });
-    if (!edges.has(`${to}>${from}`)) problems.push({ at: edge, detail: 'edge has no opposite, the shell is open' });
+    const back = edges.get(`${to}>${from}`) ?? 0;
+    if (count === back) continue;
+    problems.push({
+      at: edge,
+      detail: back === 0 ? 'edge has no opposite, the shell is open' : `edge walked ${count} times one way and ${back} the other`,
+    });
   }
 
   for (const group of solids(meshes)) {

@@ -46,6 +46,11 @@ Bands are listed bottom to top. `kind` says what the band is for, `tier` says ho
 (`flat` is a fake floor whose windows live in the texture, `light` is bulk with shallow relief, `full` carries
 real balconies, doors and landings). A building may be `flat` top to bottom.
 
+A band's plan is `shape` (`box` or `round`) plus one way of rounding it: `corner` fillets a box's uprights,
+`bow` bulges named faces of a box out into a round end (`"NS"`), `arc` sweeps part of a round instead of all
+of it. Asking for two of them at once is refused rather than resolved, and so is asking for one the shape
+cannot use.
+
 ## Errors
 
 Every box throws `BuildingError` with a code from this set and nothing else:

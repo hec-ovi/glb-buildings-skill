@@ -67,6 +67,18 @@ const bandSchema = z.object({
   /** `box` is four corners, `round` is a cylinder drawn with `segments` of them. */
   shape: z.enum(['box', 'round']).default('box'),
   segments: z.number().int().min(6).max(64).default(16),
+  /**
+   * How much of the round the section sweeps, in degrees, starting at the south face and turning
+   * east. A half or less is a wedge with its point at the middle, more is a cylinder with a flat
+   * cut across it. `rotation` points it wherever it is wanted.
+   */
+  arc: z.number().min(30).max(360).default(360),
+  /** Faces that bulge out into a round end instead of running straight, like `NS`. Box only. */
+  bow: z
+    .string()
+    .regex(/^[NESW]{0,4}$/, 'bow is any of N, E, S, W, like NS')
+    .refine((sides) => new Set(sides).size === sides.length, 'bow names a face twice')
+    .default(''),
   /** Fillet on the upright corners: the footprint corner becomes a small arc. */
   corner: mm.nonnegative().default(0),
   /** Bevel on the top and bottom edges of the section, so they catch the light. */
@@ -98,12 +110,30 @@ const bandSchema = z.object({
   deck: z.array(deckPartSchema).default([]),
 });
 
+/** Shapes that read as two ways of rounding the same plan are refused rather than resolved. */
+const bandShape = bandSchema.superRefine((band, ctx) => {
+  const refuse = (message: string, at: string) => ctx.addIssue({ code: 'custom', message, path: [at] });
+
+  if (band.arc !== 360 && band.shape !== 'round') {
+    refuse(`band ${band.id} sweeps an arc, which only a round section has. Set --shape round`, 'arc');
+  }
+  if (band.bow !== '' && band.shape !== 'box') {
+    refuse(`band ${band.id} bows a face, which only a box section has. A round section uses --arc`, 'bow');
+  }
+  if (band.corner > 0 && band.shape !== 'box') {
+    refuse(`band ${band.id} fillets its corners, which a round section does not have`, 'corner');
+  }
+  if (band.bow !== '' && band.corner > 0) {
+    refuse(`band ${band.id} both bows a face and fillets its corners, which are two ways of rounding one plan. Pick one`, 'bow');
+  }
+});
+
 export const documentSchema = z.object({
   version: z.literal(SCHEMA_VERSION),
   name: z.string().min(1),
   footprint: footprintSchema,
   grid: gridSchema.default({ bay: 3000, floorHeight: 3200 }),
-  bands: z.array(bandSchema).min(1),
+  bands: z.array(bandShape).min(1),
 });
 
 export type Footprint = z.infer<typeof footprintSchema>;

@@ -8,6 +8,17 @@ function withBands(bands: BuildingDocument['bands']): BuildingDocument {
   return parseDocument({ ...doc, bands });
 }
 
+/** Square metres inside a footprint. */
+function area(ring: [number, number][]): number {
+  let sum = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % ring.length]!;
+    sum += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(sum) / 2e6;
+}
+
 describe('assemble', () => {
   it('stacks bands from the ground with no gap between them', () => {
     const scene = assemble(doc);
@@ -53,6 +64,37 @@ describe('assemble', () => {
     const [a, b, c] = scene.bands;
     expect(seamsMatch(a!.seam, b!.seam)).toBe(true);
     expect(seamsMatch(b!.seam, c!.seam)).toBe(false);
+  });
+
+  it('slices a round section, and keeps every slice convex', () => {
+    const band = (over: Partial<BuildingDocument['bands'][number]>) =>
+      assemble(withBands([{ id: 'a', kind: 'bulk', tier: 'flat', floors: 2, template: 'bulk-flat', shape: 'round', ...over }] as BuildingDocument['bands'])).bands[0]!;
+
+    const full = area(band({}).bottom);
+    // A quarter turn is a wedge with its point at the middle, so the middle is one of its corners.
+    const quarter = band({ arc: 90 });
+    expect(quarter.bottom).toContainEqual([0, 0]);
+    expect(area(quarter.bottom) / full).toBeCloseTo(0.25, 1);
+
+    // A half turn's middle sits on the chord, where a corner would be a fold rather than a corner.
+    expect(band({ arc: 180 }).bottom).not.toContainEqual([0, 0]);
+    expect(area(band({ arc: 180 }).bottom) / full).toBeCloseTo(0.5, 1);
+
+    // Past a half turn the slice is the cylinder with a flat cut across it, so it keeps most of it.
+    expect(area(band({ arc: 270 }).bottom) / full).toBeGreaterThan(0.75);
+  });
+
+  it('bows a face out into a round end, and two of them into a stadium', () => {
+    const band = (bow: string) =>
+      assemble(withBands([{ id: 'a', kind: 'bulk', tier: 'flat', floors: 2, template: 'bulk-flat', bow }] as BuildingDocument['bands'])).bands[0]!;
+
+    const plain = area(band('').bottom);
+    const one = area(band('S').bottom);
+    const both = area(band('NS').bottom);
+    expect(one).toBeGreaterThan(plain);
+    expect(both - one).toBeCloseTo(one - plain, -5);
+    // Four round ends on one plan would meet in a cusp, so they come out shallower instead.
+    expect(area(band('NESW').bottom)).toBeGreaterThan(plain);
   });
 
   it('refuses a band that insets past its own footprint', () => {

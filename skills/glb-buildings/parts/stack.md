@@ -116,13 +116,14 @@ camera goes. A section over its budget fails the build and names what to drop.
 | Flag | What it adds |
 | --- | --- |
 | `--windows` | a dark pane set into every bay of every floor, about 12 triangles each |
-| `--windows` | a dark pane set into every bay of every floor, about 12 triangles each |
 | `--greebles 0.0 to 1.0` | panel noise: the face is split into panels and each one either stands out or stays flat |
 | `--columns corners\|ribs\|partial` | uprights: at the corners, every few metres, or only in gaps |
 | `--balconies N\|E\|S\|W` | a slab with a rounded front, one per floor of the section |
 | `--wires N\|E\|S\|W` | cables climbing one face, tying the section together |
 | `--clutter 0.0 to 1.0` | on a roof section: edge railing, mast with harness rings and spikes, water tank on legs, AC units, solar panels, a utility pole with drooping cables, a small tower |
 | `--shape round --segments 20` | the whole section becomes a cylinder |
+| `--arc 120` | on a round section: sweeps part of the turn instead of all of it |
+| `--bow NS` | on a box section: those faces bulge out into a round end |
 | `--corner 0.6` | rounds the upright corners of the footprint, the way a chamfered box does |
 | `--chamfer 0.25` | bevels the top and bottom edges, so they catch the light instead of reading as a hard line |
 
@@ -138,6 +139,14 @@ tower. Use it on one or two sections, not on all of them: flat next to noisy is 
 `--corner` and `--chamfer` together are what stop a section reading as a raw box: a small fillet on the
 uprights and a 0.2 to 0.3 m bevel top and bottom cost a handful of triangles and change the whole silhouette.
 Use a larger corner on the base and smaller ones as the building rises.
+
+**Trimmed plans.** `--arc` cuts a round section down to part of its turn, starting at the south face and
+turning east, so `--rotation` points it wherever it is wanted. A quarter (`--arc 90`) is a wedge with its
+point at the middle; a half is a D; three quarters is the cylinder with a flat cut across it. `--bow` does the
+opposite to a box: the named faces bulge out into a round end, so `--bow NS` is a stadium plan and `--bow S` a
+tower with a rounded front. A section can have one or the other, never both, and neither goes with `--corner`.
+Both are footprints, so a sliced section still steps, slides, turns, twists, tapers and carries whatever it
+wears. A round section costs four times a box per floor, so slice on a `light` tier or keep the segments low.
 
 ## Reaching the look
 

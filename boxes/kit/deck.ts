@@ -98,9 +98,12 @@ export function cylinder(surface: Surface, centre: Corner, radius: number, y0: n
     const j = (i + 1) % sides;
     surface.quad(point(ring[i]!, y0), point(ring[j]!, y0), point(ring[j]!, y1), point(ring[i]!, y1));
   }
-  for (let i = 1; i < sides - 1; i++) {
-    surface.quad(point(ring[0]!, y1), point(ring[i]!, y1), point(ring[i + 1]!, y1), point(ring[0]!, y1));
-    surface.quad(point(ring[0]!, y0), point(ring[i + 1]!, y0), point(ring[i]!, y0), point(ring[0]!, y0));
+  // The ends fan from the middle rather than from a vertex, so no edge crosses the inside of the
+  // cylinder where another part butted against it could land on exactly the same line.
+  for (let i = 0; i < sides; i++) {
+    const j = (i + 1) % sides;
+    surface.quad(point(centre, y1), point(ring[i]!, y1), point(ring[j]!, y1), point(centre, y1));
+    surface.quad(point(centre, y0), point(ring[j]!, y0), point(ring[i]!, y0), point(centre, y0));
   }
 }
 

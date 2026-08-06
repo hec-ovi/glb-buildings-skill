@@ -31,13 +31,22 @@ Bays run along increasing X on the N and S sides, along increasing Z on the E an
 exact integer partition of the side, so they sum to the side length with no gap and no overlap. Adjacent sides
 share their corner volume, which the kit resolves with a corner part.
 
+## Footprints
+
+A band's `bottom` and `top` are the polygons its skin is lofted between: a rectangle, a fillet of one, a
+rectangle with named faces bowed into round ends, an ellipse, or a slice of one. A slice closes through the
+middle while the middle stands clear of the chord, so a quarter turn is a wedge, a half is a D and three
+quarters is a cylinder with a flat cut across it.
+
 ## Errors
 
-`E_DOC_INVALID` when a band insets past its own footprint. Nothing else: a document that parsed can be
-assembled.
+`E_DOC_INVALID` when a band insets past its own footprint, or when its plan folds in on itself. Nothing else:
+a document that parsed can be assembled.
 
 ## Invariants
 
+- Every footprint is convex, and the layout refuses one that is not. The deck grid, the support proof and the
+  caps all read a plan by its edges alone.
 - Bands are contiguous in y: each band starts where the one below ended, starting at 0.
 - Every floor of a band has the same bay layout, so a repeated floor is one mesh in the GLB.
 - The sum of a side's bay widths equals that side's length exactly.

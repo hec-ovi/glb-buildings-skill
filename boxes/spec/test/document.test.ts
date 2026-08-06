@@ -33,6 +33,20 @@ describe('parseDocument', () => {
   it('refuses a document with no bands', () => {
     expect(catchError(() => parseDocument({ ...valid, bands: [] })).code).toBe('E_DOC_INVALID');
   });
+
+  it('refuses two ways of rounding one plan, and settings the shape cannot use', () => {
+    const band = (over: Record<string, unknown>) => ({ ...valid, bands: [{ ...valid.bands[0], ...over }] });
+
+    expect(catchError(() => parseDocument(band({ bow: 'S', corner: 600 }))).message).toContain('Pick one');
+    expect(catchError(() => parseDocument(band({ arc: 90 }))).message).toContain('--shape round');
+    expect(catchError(() => parseDocument(band({ shape: 'round', bow: 'S' }))).message).toContain('--arc');
+    expect(catchError(() => parseDocument(band({ shape: 'round', corner: 600 }))).message).toContain('round section does not have');
+    expect(catchError(() => parseDocument(band({ bow: 'SS' }))).message).toContain('twice');
+    expect(catchError(() => parseDocument(band({ bow: 'up' }))).code).toBe('E_DOC_INVALID');
+
+    expect(() => parseDocument(band({ shape: 'round', arc: 120 }))).not.toThrow();
+    expect(() => parseDocument(band({ bow: 'NS' }))).not.toThrow();
+  });
 });
 
 describe('newDocument', () => {

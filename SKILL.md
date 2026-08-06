@@ -97,6 +97,8 @@ You are composing, not modelling. These are true of every build, and you never n
   and nothing flickers.
 - **Nothing can float.** A part that reaches more than 3 m past its section fails the build, and a section
   resting on under 20% of the one below fails too.
+- **Nothing can be buried.** Every part a section wears reaches at least 5 cm out of it, so nothing you add
+  ends up hidden inside the walls.
 - **Nothing can overlap on a roof.** A part claims its cells, and a second part in them is refused.
 - **Nothing can be inside out or open.** Every solid is proved closed with positive volume before a file is
   written, and the Khronos validator runs after.
