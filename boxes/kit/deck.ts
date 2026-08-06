@@ -113,16 +113,25 @@ export function cylinder(surface: Surface, centre: Corner, radius: number, y0: n
   }
 }
 
-/** A turbine: a squat cylinder with a hub and three blades, flat on the deck. */
+/**
+ * A roof extractor: a wide flat housing, a narrower barrel on top of it, four blades across the
+ * mouth and a hub in the middle. Stepping the two cylinders is what makes it read as a fan
+ * rather than a lump, and it costs about ninety triangles.
+ */
 export function turbine(surface: Surface, centre: Corner, y: number, random: () => number): void {
-  const radius = 0.75 + random() * 0.35;
-  cylinder(surface, centre, radius, y, 0.55, 12);
-  cylinder(surface, centre, radius * 0.28, y + 0.55, 0.35, 8);
+  const radius = 0.85 + random() * 0.35;
+
+  cylinder(surface, centre, radius, y, 0.28, 12); // the housing on the deck
+  cylinder(surface, centre, radius * 0.78, y + 0.28, 0.5, 12); // the barrel it sits in
+  cylinder(surface, centre, radius * 0.22, y + 0.78, 0.22, 8); // the hub
+
+  // Blades reach from the hub to the rim, thick enough to read from a distance.
   const turn = random() * Math.PI;
-  for (let blade = 0; blade < 3; blade++) {
-    const angle = turn + (blade / 3) * Math.PI * 2;
-    const at: Corner = [centre[0] + Math.sin(angle) * radius * 0.5, centre[1] + Math.cos(angle) * radius * 0.5];
-    block(surface, at, radius * 0.9, 0.14, y + 0.58, 0.1, -angle);
+  for (let blade = 0; blade < 4; blade++) {
+    const angle = turn + (blade / 4) * Math.PI * 2;
+    const reach = radius * 0.72;
+    const at: Corner = [centre[0] + Math.sin(angle) * reach * 0.5, centre[1] + Math.cos(angle) * reach * 0.5];
+    block(surface, at, reach, radius * 0.3, y + 0.66, 0.14, -angle);
   }
 }
 
