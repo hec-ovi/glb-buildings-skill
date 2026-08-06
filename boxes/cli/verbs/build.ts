@@ -57,7 +57,16 @@ export const preview: Verb = {
         ? { dir: project.dir, port }
         : { resolve: async () => (await projects.open()).project.dir, watchRoot: projects.root, port },
     );
-    const url = await server.start();
+
+    let url: string;
+    try {
+      url = await server.start();
+    } catch (error) {
+      // A preview left running on this port keeps serving its own build, which looks like a
+      // page that will not update. Say so instead of failing quietly.
+      if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
+      throw new BuildingError('E_DOC_INVALID', `something is already serving port ${port}. Stop it, or pass --port with another number`, ['port']);
+    }
 
     process.on('SIGINT', () => void server.close().then(() => process.exit(0)));
     process.on('SIGTERM', () => void server.close().then(() => process.exit(0)));
