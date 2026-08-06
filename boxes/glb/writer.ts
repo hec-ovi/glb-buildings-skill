@@ -130,6 +130,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
         columns: band.columns,
         greebles: band.greebles,
         clutter: band.clutter,
+        deck: band.deck,
         seed: seedOf(`${doc.name}/${band.id}`),
       }),
     );

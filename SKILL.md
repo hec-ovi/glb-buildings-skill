@@ -16,6 +16,7 @@ Match the request to a row, open the file it names (next to this one), then run 
 | to shape the stack: floors, heights, setbacks, the roof | `parts/stack.md` |
 | to change what is already there, using what they clicked in the preview | `parts/editing.md` |
 | to break up a run of identical floors | `parts/enhance.md` |
+| to lay out a roof: turbines, pipes, tanks, masts | `parts/roof.md` |
 | sizes that look right: floor heights, doors, guards, bays | `parts/dimensions.md` |
 
 ## Always
@@ -47,6 +48,9 @@ Run `buildings help` for the current list. Today:
 | `set-band <id> [same flags]` | change a section |
 | `remove-band <id>` | take a section out |
 | `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | give one floor a shape of its own, so a section stops being uniform. With no floor named it uses what the human picked |
+| `deck [section]` | the roof as a grid of cells, what stands in each, and the parts you can use |
+| `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more cells |
+| `unplace <cell ...> [--section id]` | clear cells |
 | `build [name]` | write the GLB, validated |
 | `preview [name] [--port 4321]` | open the blueprint editor and stay up |
 | `selection [name]` | what the human last picked in the preview |

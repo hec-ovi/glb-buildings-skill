@@ -150,3 +150,49 @@ describe('help', () => {
     expect(await call('bulid')).toMatchObject({ ok: false, message: expect.stringContaining('no verb named bulid') });
   });
 });
+
+describe('the roof deck', () => {
+  it('lists the grid, places parts in cells, and clears them again', async () => {
+    await call('new', 'tower-a', '--floors', '8');
+    await call('set-band', 'crown', '--width', '18', '--depth', '14', '--height', '3');
+
+    const grid = (await call('deck')) as unknown as { section: string; cells: { cell: string; holds: string | null }[]; parts: { part: string }[] };
+    expect(grid.section).toBe('crown');
+    expect(grid.cells.length).toBeGreaterThan(4);
+    expect(grid.parts.map((p) => p.part)).toContain('turbine');
+    expect(grid.cells.every((cell) => cell.holds === null)).toBe(true);
+
+    const first = grid.cells[0]!.cell;
+    const second = grid.cells[1]!.cell;
+    expect(await call('place', 'turbine', first, second)).toMatchObject({ part: 'turbine', holds: 2 });
+
+    const after = (await call('deck')) as unknown as { cells: { cell: string; holds: string | null }[] };
+    expect(after.cells.find((cell) => cell.cell === first)!.holds).toBe('turbine');
+
+    expect(await call('unplace', first)).toMatchObject({ holds: 1 });
+  });
+
+  it('refuses a cell that is not on that roof, and says which ones are', async () => {
+    await call('new', 'tower-a', '--floors', '6');
+    const answer = (await call('place', 'mast', 'Z9')) as unknown as { ok: boolean; message: string };
+    expect(answer.ok).toBe(false);
+    expect(answer.message).toContain('has no cell Z9');
+  });
+
+  it('refuses a part the kit does not have', async () => {
+    await call('new', 'tower-a', '--floors', '6');
+    expect(await call('place', 'helipad', 'B2')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+  });
+
+  it('builds what was placed', async () => {
+    await call('new', 'tower-a', '--floors', '8');
+    await call('set-band', 'crown', '--width', '18', '--depth', '14', '--height', '3');
+    const grid = (await call('deck')) as unknown as { cells: { cell: string }[] };
+    await call('place', 'turbine', grid.cells[0]!.cell);
+
+    const bare = (await call('build')) as unknown as { triangles: number };
+    await call('place', 'mast', grid.cells[1]!.cell);
+    const more = (await call('build')) as unknown as { triangles: number };
+    expect(more.triangles).toBeGreaterThan(bare.triangles);
+  });
+});

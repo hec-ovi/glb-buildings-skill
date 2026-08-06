@@ -91,6 +91,7 @@ export const addBand: Verb = {
       chamfer: size(values.chamfer, 'chamfer') ?? 0,
       greebles: fraction(values.greebles, 'greebles') ?? 0,
       clutter: fraction(values.clutter, 'clutter') ?? 0,
+      deck: [],
       ...(values.width ? { width: size(values.width, 'width') } : {}),
       ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),
       ...(values.height ? { floorHeight: size(values.height, 'height') } : {}),

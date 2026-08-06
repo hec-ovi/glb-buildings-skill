@@ -37,6 +37,20 @@ const gridSchema = z.object({
   floorHeight: positiveMm.default(3200),
 });
 
+/** The parts a deck cell can hold. Two metres square each, except the ones marked 2x2. */
+export const DECK_PARTS = ['unit', 'turbine', 'pipe', 'panel', 'mast', 'tank', 'tower', 'vent'] as const;
+export type DeckPart = (typeof DECK_PARTS)[number];
+
+const deckPartSchema = z.object({
+  /** A cell name from `buildings deck`, like `B3`. */
+  cell: z.string().regex(/^[A-Z]+\d+$/),
+  part: z.enum(DECK_PARTS),
+  /** Degrees, for the parts that show a direction. */
+  turn: z.number().default(0),
+});
+
+export type DeckPlacement = z.infer<typeof deckPartSchema>;
+
 const bandSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(BAND_KINDS),
@@ -76,8 +90,10 @@ const bandSchema = z.object({
   balconies: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
   /** Uprights: at the footprint corners, or as ribs along every face. */
   columns: z.enum(['none', 'corners', 'ribs', 'partial']).default('none'),
-  /** What stands on this section's deck: mast, harness rings, units, a small tower. 0 to 1. */
+  /** A quick pass that fills free cells of the deck, 0 to 1. Anything placed by hand wins. */
   clutter: z.number().min(0).max(1).default(0),
+  /** What stands where on the deck, one entry per cell. */
+  deck: z.array(deckPartSchema).default([]),
 });
 
 export const documentSchema = z.object({

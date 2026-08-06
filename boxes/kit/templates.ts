@@ -94,6 +94,7 @@ export type Dressing = {
   columns?: ColumnStyle;
   greebles?: number;
   clutter?: number;
+  deck?: { cell: string; part: string; turn?: number }[];
   seed?: number;
 };
 
@@ -107,7 +108,13 @@ export function dress(shape: SectionShape, options: Dressing): MeshData[] {
     balconies(surface, shape, { ...BALCONY, edge: edgeFacing(shape.bottom, options.balconies) });
   }
   if (options.greebles) greebles(surface, shape, { density: options.greebles, seed: options.seed ?? 1 });
-  if (options.clutter) rooftop(surface, shape, { density: options.clutter, seed: (options.seed ?? 1) ^ 0x9e37 });
+  if (options.clutter || options.deck?.length) {
+    rooftop(surface, shape, {
+      clutter: options.clutter,
+      placements: (options.deck ?? []) as never,
+      seed: (options.seed ?? 1) ^ 0x9e37,
+    });
+  }
 
   return surfaces(surface);
 }

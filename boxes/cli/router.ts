@@ -3,11 +3,12 @@ import { BuildingError } from '#spec';
 import { Projects } from './projects.ts';
 import { bandVerbs } from './verbs/bands.ts';
 import { outputVerbs } from './verbs/build.ts';
+import { deckVerbs } from './verbs/deck.ts';
 import { enhanceVerbs } from './verbs/enhance.ts';
 import { projectVerbs } from './verbs/projects.ts';
 import type { Verb } from './verbs/verb.ts';
 
-export const VERBS: Verb[] = [...projectVerbs, ...bandVerbs, ...enhanceVerbs, ...outputVerbs];
+export const VERBS: Verb[] = [...projectVerbs, ...bandVerbs, ...enhanceVerbs, ...deckVerbs, ...outputVerbs];
 
 export type Answer = { ok: true; verb: string; [key: string]: unknown } | { ok: false; code: string; message: string; at: string[] };
 

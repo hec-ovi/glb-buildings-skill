@@ -167,6 +167,7 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       balconies: band.balconies,
       columns: band.columns,
       clutter: band.clutter,
+      deck: band.deck,
       inset: band.inset,
       rect: { x0: rect.x0, x1: rect.x1, z0: rect.z0, z1: rect.z1 },
       bottom: cornersOf(rect, band.rotation, 0, round, band.corner),

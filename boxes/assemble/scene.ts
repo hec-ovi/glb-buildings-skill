@@ -53,6 +53,7 @@ export type PlacedBand = {
   balconies: 'none' | Side;
   columns: 'none' | 'corners' | 'ribs' | 'partial';
   clutter: number;
+  deck: { cell: string; part: string; turn: number }[];
   inset: Mm;
   /** Where this band's footprint actually sits, after its step and shift. */
   rect: Rect;
