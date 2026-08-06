@@ -11,7 +11,11 @@
  */
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData } from './geometry.ts';
-import { cap, ringAt, walls, wires, type SectionShape } from './section.ts';
+import { cap, edgeFacing, ringAt, walls, wires, type SectionShape } from './section.ts';
+import { greebles } from './greebles.ts';
+import { balconies, BALCONY } from './balcony.ts';
+import { columns, type ColumnStyle } from './columns.ts';
+import { rooftop } from './rooftop.ts';
 
 export type Template = {
   id: string;
@@ -84,9 +88,26 @@ export function templates(): Template[] {
   return [...TEMPLATES];
 }
 
-/** Cables climbing one face of a section, added to whatever the template built. */
-export function wireRun(shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): MeshData[] {
+export type Dressing = {
+  wires?: 'none' | 'N' | 'E' | 'S' | 'W';
+  balconies?: 'none' | 'N' | 'E' | 'S' | 'W';
+  columns?: ColumnStyle;
+  greebles?: number;
+  clutter?: number;
+  seed?: number;
+};
+
+/** Everything a section can wear on top of its skin: cables, balconies, columns, fake parts. */
+export function dress(shape: SectionShape, options: Dressing): MeshData[] {
   const surface = new Surface(FACADE);
-  wires(surface, shape, side);
+
+  if (options.wires && options.wires !== 'none') wires(surface, shape, options.wires);
+  if (options.columns && options.columns !== 'none') columns(surface, shape, options.columns, options.seed ?? 1);
+  if (options.balconies && options.balconies !== 'none') {
+    balconies(surface, shape, { ...BALCONY, edge: edgeFacing(shape.bottom, options.balconies) });
+  }
+  if (options.greebles) greebles(surface, shape, { density: options.greebles, seed: options.seed ?? 1 });
+  if (options.clutter) rooftop(surface, shape, { density: options.clutter, seed: (options.seed ?? 1) ^ 0x9e37 });
+
   return surfaces(surface);
 }

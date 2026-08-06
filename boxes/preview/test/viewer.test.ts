@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { screen } from '@testing-library/dom';
 import { userEvent } from '@testing-library/user-event';
-import { PerspectiveCamera } from 'three';
+import { PerspectiveCamera, Vector3 } from 'three';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { assemble } from '#assemble';
 import { newDocument, type Selection } from '#spec';
@@ -9,6 +9,7 @@ import { Blueprint } from '../viewer/Blueprint.ts';
 import { Hud } from '../viewer/Hud.ts';
 import { Picker } from '../viewer/Picker.ts';
 import { boot } from '../viewer/boot.ts';
+import { Fly } from '../viewer/Fly.ts';
 
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 6 });
 const scene = assemble(doc);
@@ -52,11 +53,11 @@ describe('panel', () => {
     expect(onModel).toHaveBeenLastCalledWith(false);
   });
 
-  it('reports what is selected, one chip per bay', () => {
+  it('reports the floors that are selected, one chip each', () => {
     const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {} });
-    hud.showSelection(['body.f1.S0', 'body.f1.S1'], ['body']);
-    expect(screen.getByTestId('selection').textContent).toBe('2 bays in body');
-    expect([...document.querySelectorAll('.ids span')].map((n) => n.textContent)).toEqual(['body.f1.S0', 'body.f1.S1']);
+    hud.showSelection(['body.f1.S0', 'body.f1.S1'], ['body'], ['body.f1']);
+    expect(screen.getByTestId('selection').textContent).toBe('1 floor in body · 2 bays');
+    expect([...document.querySelectorAll('.ids span')].map((n) => n.textContent)).toEqual(['body.f1']);
   });
 });
 
@@ -89,8 +90,9 @@ describe('picking', () => {
 
     const selection = emitted.at(-1)!;
     expect(selection.mode).toBe('zone');
-    expect(selection.bayIds.length).toBeGreaterThan(0);
-    expect(selection.bayIds.every((id) => /\.S\d+$/.test(id))).toBe(true);
+    expect(selection.floorIds.length).toBeGreaterThan(0);
+    // The rectangle catches the near face, and the floors it touches come whole.
+    expect(selection.bayIds.some((id) => /\.N\d+$/.test(id))).toBe(true);
     expect(blueprint.selected).toEqual(selection.bayIds);
   });
 
@@ -99,6 +101,7 @@ describe('picking', () => {
     picker.setMode('zone');
     drag(picker, [0, 0], [4, 4]);
 
+    expect(emitted.at(-1)!.floorIds).toEqual([]);
     expect(emitted.at(-1)!.bayIds).toEqual([]);
     expect(emitted.at(-1)!.box).toBeUndefined();
   });
@@ -124,7 +127,10 @@ describe('picking', () => {
 
     expect(emitted).toHaveLength(1);
     expect(emitted[0]!.mode).toBe('pick');
-    expect(emitted[0]!.bayIds).toHaveLength(1);
+    expect(emitted[0]!.floorIds).toHaveLength(1);
+    // A pick is a floor: every bay of it, all four sides.
+    expect(emitted[0]!.bayIds.length).toBeGreaterThan(4);
+    expect(new Set(emitted[0]!.bayIds.map((id) => id.replace(/\.[NESW]\d+$/, '')))).toEqual(new Set(emitted[0]!.floorIds));
   });
 });
 
@@ -152,3 +158,78 @@ function drag(picker: Picker, from: [number, number], to: [number, number]): voi
   at('pointermove', to);
   at('pointerup', to);
 }
+
+describe('view controls', () => {
+  const camera = () => {
+    const c = new PerspectiveCamera(45, 1, 0.1, 5000);
+    c.position.set(0, 20, 60);
+    return c;
+  };
+
+  it('walks the way you are looking with W and S, and strafes with A and D', () => {
+    const c = camera();
+    const target = new Vector3(0, 20, 0);
+    const fly = new Fly(c, target);
+
+    fly.press('w', true);
+    fly.step(0.5);
+    expect(c.position.z).toBeLessThan(60);
+    expect(target.z).toBeLessThan(0);
+
+    const afterForward = c.position.z;
+    fly.press('w', false);
+    fly.press('s', true);
+    fly.step(0.5);
+    expect(c.position.z).toBeGreaterThan(afterForward);
+
+    fly.press('s', false);
+    fly.press('d', true);
+    fly.step(0.5);
+    expect(Math.abs(c.position.x)).toBeGreaterThan(0);
+  });
+
+  it('turns around the target with Q and E, keeping its distance', () => {
+    const c = camera();
+    const target = new Vector3(0, 20, 0);
+    const fly = new Fly(c, target);
+    const before = c.position.distanceTo(target);
+
+    fly.press('q', true);
+    fly.step(0.5);
+
+    expect(c.position.distanceTo(target)).toBeCloseTo(before, 3);
+    expect(c.position.x).not.toBeCloseTo(0, 3);
+  });
+
+  it('rises and falls with R and F', () => {
+    const c = camera();
+    const target = new Vector3(0, 20, 0);
+    const fly = new Fly(c, target);
+
+    fly.press('r', true);
+    fly.step(0.5);
+    expect(c.position.y).toBeGreaterThan(20);
+    expect(target.y).toBeGreaterThan(20);
+
+    fly.press('r', false);
+    fly.press('f', true);
+    fly.step(0.5);
+    expect(target.y).toBeLessThan(21);
+  });
+
+  it('ignores keys it does not own, and stops when the key comes up', () => {
+    const c = camera();
+    const fly = new Fly(c, new Vector3(0, 20, 0));
+    fly.press('k', true);
+    expect(fly.active).toBe(false);
+
+    fly.press('W', true);
+    expect(fly.active).toBe(true);
+    fly.press('w', false);
+    expect(fly.active).toBe(false);
+
+    const still = c.position.clone();
+    fly.step(0.5);
+    expect(c.position).toEqual(still);
+  });
+});

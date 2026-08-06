@@ -29,10 +29,10 @@ export function parseSelection(value: unknown): Selection {
 
 /** One line an agent can read: which bays, on which floors, in which bands. */
 export function describeSelection(selection: Selection): string {
-  if (selection.bayIds.length === 0 && selection.floorIds.length === 0) return 'nothing selected';
+  if (selection.floorIds.length === 0 && selection.bayIds.length === 0) return 'nothing selected';
   const parts: string[] = [];
-  if (selection.bayIds.length) parts.push(`${selection.bayIds.length} bays: ${selection.bayIds.join(', ')}`);
-  else if (selection.floorIds.length) parts.push(`floors: ${selection.floorIds.join(', ')}`);
-  if (selection.bandIds.length) parts.push(`bands: ${selection.bandIds.join(', ')}`);
+  if (selection.floorIds.length) parts.push(`${selection.floorIds.length} floors: ${selection.floorIds.join(', ')}`);
+  if (selection.bandIds.length) parts.push(`in ${selection.bandIds.join(', ')}`);
+  if (selection.bayIds.length) parts.push(`${selection.bayIds.length} bays`);
   return parts.join(' | ');
 }

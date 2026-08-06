@@ -10,6 +10,12 @@ export type PickerMode = 'pick' | 'zone';
 
 type Emit = (selection: Omit<Selection, 'at'>) => void;
 
+/** A pick is a floor, not a bay: floor by floor is how a building gets designed. */
+function wholeFloors(all: BayHandle[], hit: BayHandle[]): BayHandle[] {
+  const floors = new Set(hit.map((handle) => handle.floorId));
+  return all.filter((handle) => floors.has(handle.floorId));
+}
+
 function selectionOf(mode: PickerMode, handles: BayHandle[]): Omit<Selection, 'at'> {
   const min: [number, number, number] = [Infinity, Infinity, Infinity];
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
@@ -141,8 +147,9 @@ export class Picker {
     }
     const handle = this.#blueprint.handleAt(hit.object as InstancedMesh, hit.instanceId);
     if (!handle) return;
-    this.#blueprint.select([handle.bay.id]);
-    this.#emit(selectionOf('pick', [handle]));
+    const floor = wholeFloors(this.#blueprint.handles, [handle]);
+    this.#blueprint.select(floor.map((h) => h.bay.id));
+    this.#emit(selectionOf('pick', floor));
   }
 
   #zone(): void {
@@ -160,7 +167,9 @@ export class Picker {
       return p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY && p.z < 1;
     });
 
-    this.#blueprint.select(inside.map((h) => h.bay.id));
-    this.#emit(selectionOf('zone', inside));
+    // The rectangle catches the near face; the floors it touches are selected whole.
+    const floors = wholeFloors(this.#blueprint.handles, inside);
+    this.#blueprint.select(floors.map((h) => h.bay.id));
+    this.#emit(selectionOf('zone', floors));
   }
 }

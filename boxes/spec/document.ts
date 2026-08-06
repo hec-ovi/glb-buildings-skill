@@ -50,6 +50,9 @@ const bandSchema = z.object({
   /** This section's own footprint. Falls back to the building's. */
   width: positiveMm.optional(),
   depth: positiveMm.optional(),
+  /** `box` is four corners, `round` is a cylinder drawn with `segments` of them. */
+  shape: z.enum(['box', 'round']).default('box'),
+  segments: z.number().int().min(6).max(64).default(16),
   /** Step per side: positive pulls the section in, negative hangs it out over the one below. */
   inset: mm.default(0),
   /** Slide the band east or west, and north or south, off the building centre. */
@@ -63,6 +66,14 @@ const bandSchema = z.object({
   taper: mm.default(0),
   /** A run of cables or pipes climbing one face of the section. */
   wires: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
+  /** Fake parts standing off the faces, 0 to 1. What stops a bulk section reading as a box. */
+  greebles: z.number().min(0).max(1).default(0),
+  /** Balconies with a rounded front, on one face, one per floor. */
+  balconies: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
+  /** Uprights: at the footprint corners, or as ribs along every face. */
+  columns: z.enum(['none', 'corners', 'ribs', 'partial']).default('none'),
+  /** What stands on this section's deck: mast, harness rings, units, a small tower. 0 to 1. */
+  clutter: z.number().min(0).max(1).default(0),
 });
 
 export const documentSchema = z.object({

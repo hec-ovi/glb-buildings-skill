@@ -2,9 +2,11 @@
 import { BAND_KINDS, BuildingError, TIERS, parseDocument, type Band, type BuildingDocument } from '#spec';
 
 const WIRE_SIDES = ['none', 'N', 'E', 'S', 'W'] as const;
+const COLUMN_STYLES = ['none', 'corners', 'ribs', 'partial'] as const;
+const SHAPES = ['box', 'round'] as const;
 import { TEMPLATE_IDS } from '#kit';
 import type { Verb } from './verb.ts';
-import { count, degrees, metres, need, parse, size, text, type FlagSpec } from './args.ts';
+import { count, degrees, fraction, metres, need, parse, size, text, type FlagSpec } from './args.ts';
 
 const FLAGS: FlagSpec = {
   kind: { type: 'string' },
@@ -21,6 +23,12 @@ const FLAGS: FlagSpec = {
   twist: { type: 'string' },
   taper: { type: 'string' },
   wires: { type: 'string' },
+  shape: { type: 'string' },
+  segments: { type: 'string' },
+  greebles: { type: 'string' },
+  clutter: { type: 'string' },
+  balconies: { type: 'string' },
+  columns: { type: 'string' },
   before: { type: 'string' },
   after: { type: 'string' },
 };
@@ -55,7 +63,7 @@ async function edit(
 export const addBand: Verb = {
   name: 'add-band',
   summary: 'put a band of floors into the stack',
-  usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--width 12] [--depth 10] [--inset 0] [--shift-x 0] [--shift-z 0] [--rotation 0] [--twist 0] [--taper 0] [--wires S] [--after <id> | --before <id>]',
+  usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--width 12] [--depth 10] [--inset 0] [--shift-x 0] [--shift-z 0] [--rotation 0] [--twist 0] [--taper 0] [--wires S] [--shape round] [--greebles 0.4] [--balconies S] [--columns ribs] [--clutter 0.6] [--after <id> | --before <id>]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, FLAGS);
     const id = need(positionals, 0, 'band id');
@@ -73,6 +81,12 @@ export const addBand: Verb = {
       twist: degrees(values.twist) ?? 0,
       taper: size(values.taper, 'taper') ?? 0,
       wires: oneOf(text(values.wires), WIRE_SIDES, 'wires') ?? 'none',
+      balconies: oneOf(text(values.balconies), WIRE_SIDES, 'balconies') ?? 'none',
+      columns: oneOf(text(values.columns), COLUMN_STYLES, 'columns') ?? 'none',
+      shape: oneOf(text(values.shape), SHAPES, 'shape') ?? 'box',
+      segments: count(values.segments, 'segments') ?? 16,
+      greebles: fraction(values.greebles, 'greebles') ?? 0,
+      clutter: fraction(values.clutter, 'clutter') ?? 0,
       ...(values.width ? { width: size(values.width, 'width') } : {}),
       ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),
       ...(values.height ? { floorHeight: size(values.height, 'height') } : {}),
@@ -97,7 +111,7 @@ export const addBand: Verb = {
 export const setBand: Verb = {
   name: 'set-band',
   summary: 'change a band that is already in the stack',
-  usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires]',
+  usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--shape] [--segments] [--greebles] [--balconies] [--columns] [--clutter]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, FLAGS);
     const id = need(positionals, 0, 'band id');
@@ -122,6 +136,12 @@ export const setBand: Verb = {
         twist: degrees(values.twist) ?? band.twist,
         taper: size(values.taper, 'taper') ?? band.taper,
         wires: oneOf(text(values.wires), WIRE_SIDES, 'wires') ?? band.wires,
+        balconies: oneOf(text(values.balconies), WIRE_SIDES, 'balconies') ?? band.balconies,
+        columns: oneOf(text(values.columns), COLUMN_STYLES, 'columns') ?? band.columns,
+        shape: oneOf(text(values.shape), SHAPES, 'shape') ?? band.shape,
+        segments: count(values.segments, 'segments') ?? band.segments,
+        greebles: fraction(values.greebles, 'greebles') ?? band.greebles,
+        clutter: fraction(values.clutter, 'clutter') ?? band.clutter,
         ...(values.width ? { width: size(values.width, 'width') } : {}),
         ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),
         ...(height ? { floorHeight: height } : {}),

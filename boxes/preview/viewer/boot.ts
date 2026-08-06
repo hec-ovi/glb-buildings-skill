@@ -17,6 +17,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Blueprint } from './Blueprint.ts';
+import { Fly } from './Fly.ts';
 import { Hud } from './Hud.ts';
 import { Picker } from './Picker.ts';
 import { fetchScene, onChange, postSelection } from './api.ts';
@@ -70,16 +71,19 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
+    const fly = new Fly(camera, controls.target, () => controls.update());
+    fly.listen(window);
+
     let blueprint: Blueprint | undefined;
-    let picked: { bayIds: string[]; bandIds: string[] } = { bayIds: [], bandIds: [] };
+    let picked: { bayIds: string[]; bandIds: string[]; floorIds: string[] } = { bayIds: [], bandIds: [], floorIds: [] };
 
     picker = new Picker(
       stage,
       camera,
       new Blueprint(EMPTY_SCENE),
       (selection) => {
-        picked = { bayIds: selection.bayIds, bandIds: selection.bandIds };
-        hud.showSelection(selection.bayIds, selection.bandIds);
+        picked = { bayIds: selection.bayIds, bandIds: selection.bandIds, floorIds: selection.floorIds };
+        hud.showSelection(selection.bayIds, selection.bandIds, selection.floorIds);
         void postSelection(selection);
       },
       (enabled) => {
@@ -133,9 +137,14 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
 
       // Keep the highlight after a rebuild, minus any bay the new document no longer has.
       const alive = new Set(blueprint.handles.map((handle) => handle.bay.id));
-      picked = { bayIds: picked.bayIds.filter((id) => alive.has(id)), bandIds: picked.bandIds };
+      const floors = new Set(blueprint.handles.map((handle) => handle.floorId));
+      picked = {
+        bayIds: picked.bayIds.filter((id) => alive.has(id)),
+        bandIds: picked.bandIds,
+        floorIds: picked.floorIds.filter((id) => floors.has(id)),
+      };
       blueprint.select(picked.bayIds);
-      hud.showSelection(picked.bayIds, picked.bandIds);
+      hud.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
       if (!keepCamera) frame(blueprint.sizeMetres);
       if (modelRoot.visible) await loadModel();
@@ -145,7 +154,11 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
     window.addEventListener('error', (event) => hud.fail(event.message));
     resize();
 
-    renderer.setAnimationLoop(() => {
+    let last = performance.now();
+    renderer.setAnimationLoop((now: number) => {
+      const seconds = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      fly.step(seconds);
       controls.update();
       renderer.render(scene, camera);
     });

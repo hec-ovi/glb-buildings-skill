@@ -27,18 +27,35 @@ function footprintRect(doc: BuildingDocument, band: Band): Rect {
  * The footprint as four world corners, turned about the building's own axis. Bands that step,
  * slide or turn all end up as plain polygons, and the junction between two of them is one loft.
  */
-function cornersOf(rect: Rect, degrees: number, shrink = 0): Corner[] {
-  const points: Corner[] = [
-    [rect.x0 + shrink, rect.z1 - shrink],
-    [rect.x1 - shrink, rect.z1 - shrink],
-    [rect.x1 - shrink, rect.z0 + shrink],
-    [rect.x0 + shrink, rect.z0 + shrink],
-  ];
+function cornersOf(rect: Rect, degrees: number, shrink = 0, round?: number): Corner[] {
+  const points: Corner[] = round
+    ? ellipse(rect, shrink, round)
+    : [
+        [rect.x0 + shrink, rect.z1 - shrink],
+        [rect.x1 - shrink, rect.z1 - shrink],
+        [rect.x1 - shrink, rect.z0 + shrink],
+        [rect.x0 + shrink, rect.z0 + shrink],
+      ];
   if (degrees === 0) return points;
   const angle = (degrees * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
   return points.map(([x, z]) => [Math.round(x * cos + z * sin), Math.round(-x * sin + z * cos)]);
+}
+
+/** A round footprint: the ellipse inside the rectangle, walked the same way as the corners. */
+function ellipse(rect: Rect, shrink: number, segments: number): Corner[] {
+  const cx = (rect.x0 + rect.x1) / 2;
+  const cz = (rect.z0 + rect.z1) / 2;
+  const rx = (rect.x1 - rect.x0) / 2 - shrink;
+  const rz = (rect.z1 - rect.z0) / 2 - shrink;
+  const points: Corner[] = [];
+  for (let i = 0; i < segments; i++) {
+    // Starts on the south face and turns south, east, north, west, the way a box does.
+    const angle = (i / segments) * Math.PI * 2;
+    points.push([Math.round(cx + rx * Math.sin(angle)), Math.round(cz + rz * Math.cos(angle))]);
+  }
+  return points;
 }
 
 function bayBox(side: Side, rect: Rect, start: Mm, width: Mm, y0: Mm, y1: Mm): Box {
@@ -97,6 +114,7 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       throw new BuildingError('E_DOC_INVALID', `band ${band.id} steps in past its own footprint`, ['bands', band.id, 'inset']);
     }
 
+    const round = band.shape === 'round' ? band.segments : undefined;
     const floorHeight = bandFloorHeight(doc, band);
     const floors: PlacedFloor[] = [];
     const y0 = y;
@@ -114,10 +132,15 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       template: band.template,
       rotation: band.rotation,
       wires: band.wires,
+      shape: band.shape,
+      greebles: band.greebles,
+      balconies: band.balconies,
+      columns: band.columns,
+      clutter: band.clutter,
       inset: band.inset,
       rect: { x0: rect.x0, x1: rect.x1, z0: rect.z0, z1: rect.z1 },
-      bottom: cornersOf(rect, band.rotation),
-      top: cornersOf(rect, band.rotation + band.twist, band.taper),
+      bottom: cornersOf(rect, band.rotation, 0, round),
+      top: cornersOf(rect, band.rotation + band.twist, band.taper, round),
       y0,
       y1: y,
       floors,

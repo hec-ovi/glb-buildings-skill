@@ -45,11 +45,33 @@ export function walls(surface: Surface, shape: SectionShape): void {
   }
 }
 
-/** The deck on top, or the underside at the bottom. */
+/** The deck on top, or the underside at the bottom. A fan, so any footprint closes. */
 export function cap(surface: Surface, ring: Corner[], y: number, up: boolean): void {
-  const [a, b, c, d] = ring as [Corner, Corner, Corner, Corner];
-  if (up) surface.quad(point(a, y), point(b, y), point(c, y), point(d, y));
-  else surface.quad(point(d, y), point(c, y), point(b, y), point(a, y));
+  for (let i = 1; i < ring.length - 1; i++) {
+    if (up) surface.quad(point(ring[0]!, y), point(ring[i]!, y), point(ring[i + 1]!, y), point(ring[0]!, y));
+    else surface.quad(point(ring[0]!, y), point(ring[i + 1]!, y), point(ring[i]!, y), point(ring[0]!, y));
+  }
+}
+
+/** The edge of a footprint that faces a given side, whatever the footprint is. */
+export function edgeFacing(ring: Corner[], side: 'N' | 'E' | 'S' | 'W'): number {
+  const want: Record<string, [number, number]> = { S: [0, 1], N: [0, -1], E: [1, 0], W: [-1, 0] };
+  const [wx, wz] = want[side]!;
+  let best = 0;
+  let score = -Infinity;
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % ring.length]!;
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const length = Math.hypot(dx, dz) || 1;
+    const dot = (dz / length) * wx + (-dx / length) * wz;
+    if (dot > score) {
+      score = dot;
+      best = i;
+    }
+  }
+  return best;
 }
 
 /**
@@ -67,7 +89,7 @@ export function junction(material: string, lower: Corner[], upper: Corner[]): Su
 
 /** Cables climbing one face: thin tubes standing proud of the wall, following its twist. */
 export function wires(surface: Surface, shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): void {
-  const edge = { S: 0, E: 1, N: 2, W: 3 }[side];
+  const edge = edgeFacing(shape.bottom, side);
   const runs = 4;
   const thickness = 0.12;
   const stand = 0.1;
@@ -93,8 +115,8 @@ export function wires(surface: Surface, shape: SectionShape, side: 'N' | 'E' | '
   }
 }
 
-/** The four corners of one cable, at height t of the section, hugging the given face. */
-function tubeRing(shape: SectionShape, t: number, edge: number, along: number, thickness: number, stand: number): Corner[] {
+/** The four corners of one upright, at height t of the section, hugging the given face. */
+export function tubeRing(shape: SectionShape, t: number, edge: number, along: number, thickness: number, stand: number): Corner[] {
   const ring = ringAt(shape, t);
   const a = ring[edge]!;
   const b = ring[(edge + 1) % ring.length]!;

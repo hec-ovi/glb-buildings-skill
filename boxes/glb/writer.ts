@@ -10,7 +10,7 @@
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
-import { FACADE, ROOF, shellProblems, template, triangleCount, wireRun, type MeshData, type SectionShape } from '#kit';
+import { FACADE, ROOF, dress, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
 import { BuildingError, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
@@ -122,7 +122,16 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     const sunk = index === 0 ? 0 : BITE;
     const shape = shapeOf(band, sunk);
     const parts = template(band.template).build(shape);
-    if (band.wires !== 'none') parts.push(...wireRun(shape, band.wires));
+    parts.push(
+      ...dress(shape, {
+        wires: band.wires,
+        balconies: band.balconies,
+        columns: band.columns,
+        greebles: band.greebles,
+        clutter: band.clutter,
+        seed: seedOf(`${doc.name}/${band.id}`),
+      }),
+    );
 
     // Every section is closed on its own. Proving them one at a time is what keeps a stack of
     // stepped, slid and turned masses honest, without welding them into one surface.

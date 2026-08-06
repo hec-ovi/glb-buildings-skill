@@ -62,6 +62,31 @@ So a wide base with a narrower tower on it works; a tower sliding off its base d
   `build` say `and is wider than it`. That is right for a deliberate platform or an overhang and wrong
   everywhere else: a tower that widens toward the top reads upside down. Check the line before you report.
 
+## Base, bulk, top
+
+The three parts of a building do different jobs, and mixing them up is what makes a tower look wrong.
+
+- **The base** carries weight: taller floors, often wider, `--columns corners`.
+- **The bulk** is repetitive on purpose. It is meant to be similar and fake: `--greebles 0.3` to `0.5` so it
+  is not a bare box, `--columns ribs` or `partial`, `--balconies S`, and a step or two between runs. Do not
+  make every bulk section different; two or three variations, repeated, is what reads as a building.
+- **The top** is where the silhouette is made: `--clutter 0.6` on the roof section puts a mast with harness
+  rings, air conditioning units and a small tower on the deck. This is the one place to spend detail.
+
+## Dressing a section
+
+| Flag | What it adds |
+| --- | --- |
+| `--greebles 0.0 to 1.0` | fake parts standing off the faces: panels, vents, blank signage |
+| `--columns corners\|ribs\|partial` | uprights: at the corners, every few metres, or only in gaps |
+| `--balconies N\|E\|S\|W` | a slab with a rounded front, one per floor of the section |
+| `--wires N\|E\|S\|W` | cables climbing one face, tying the section together |
+| `--clutter 0.0 to 1.0` | on a roof section: mast, harness rings, AC units, a small tower |
+| `--shape round --segments 20` | the whole section becomes a cylinder |
+
+All of them are seeded from the section's name, so a rebuild keeps the same arrangement and an edit elsewhere
+never reshuffles it.
+
 ## Reaching the look
 
 - **Sections, not one extruded box.** Three to six sections make a building read as a building. Vary their

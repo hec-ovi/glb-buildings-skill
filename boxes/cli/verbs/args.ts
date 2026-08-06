@@ -72,6 +72,17 @@ export function count(value: string | boolean | undefined, what: string): number
   return parsed;
 }
 
+/** A 0 to 1 dial, like how much of a face carries fake parts. */
+export function fraction(value: string | boolean | undefined, what: string): number | undefined {
+  value = text(value);
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    throw new BuildingError('E_DOC_INVALID', `${what} must be between 0 and 1`, [what]);
+  }
+  return parsed;
+}
+
 export function degrees(value: string | boolean | undefined): number | undefined {
   value = text(value);
   if (value === undefined) return undefined;

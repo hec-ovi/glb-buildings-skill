@@ -46,6 +46,13 @@ export type PlacedBand = {
   rotation: number;
   /** A run of cables climbing one face of the section. */
   wires: 'none' | Side;
+  /** `box` or `round`. A round section is a polygon with more corners, nothing else changes. */
+  shape: 'box' | 'round';
+  /** What the section wears: fake parts, balconies, uprights. */
+  greebles: number;
+  balconies: 'none' | Side;
+  columns: 'none' | 'corners' | 'ribs' | 'partial';
+  clutter: number;
   inset: Mm;
   /** Where this band's footprint actually sits, after its step and shift. */
   rect: Rect;

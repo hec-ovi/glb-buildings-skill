@@ -15,6 +15,7 @@ Match the request to a row, open the file it names (next to this one), then run 
 | a building from a description, start to finish | `parts/auto.md` |
 | to shape the stack: floors, heights, setbacks, the roof | `parts/stack.md` |
 | to change what is already there, using what they clicked in the preview | `parts/editing.md` |
+| to break up a run of identical floors | `parts/enhance.md` |
 | sizes that look right: floor heights, doors, guards, bays | `parts/dimensions.md` |
 
 ## Always
@@ -45,6 +46,7 @@ Run `buildings help` for the current list. Today:
 | `add-band <id> --kind --tier --template --floors [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--after id\|--before id]` | put a section into the stack |
 | `set-band <id> [same flags]` | change a section |
 | `remove-band <id>` | take a section out |
+| `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | give one floor a shape of its own, so a section stops being uniform. With no floor named it uses what the human picked |
 | `build [name]` | write the GLB, validated |
 | `preview [name] [--port 4321]` | open the blueprint editor and stay up |
 | `selection [name]` | what the human last picked in the preview |
@@ -60,9 +62,12 @@ anything special (a twist, a cantilever, cables crossing floors) belongs to one 
 - `kind` says what the section is for: `main` (the base), `bulk` (the repeated middle), `custom` (a section
   that breaks the rhythm), `roof` (the crown).
 - `tier` says how much geometry it carries: `flat` (walls, everything else in the texture), `light`, `full`.
-- Shape it with `--width` `--depth` (its own footprint), `--inset` (step in, or out with a negative),
-  `--shift-x` `--shift-z` (slide), `--rotation` (turn), `--twist` (turn across the section), `--taper` (pull in
-  toward the top), `--wires` (cables up one face).
+- Shape it with `--width` `--depth` (its own footprint), `--shape box\|round` (a round section is a cylinder),
+  `--inset` (step in, or out with a negative), `--shift-x` `--shift-z` (slide), `--rotation` (turn), `--twist`
+  (turn across the section), `--taper` (pull in toward the top).
+- Dress it with `--greebles 0.4` (fake parts standing off the faces, which is what stops a bulk section
+  reading as a box), `--columns corners\|ribs\|partial` (uprights), `--balconies S` (a slab with a rounded
+  front, one per floor), `--wires S` (cables up one face).
 - A whole building may be `flat` top to bottom. That is a real product, not a degraded one, and it is what
   fills a city.
 

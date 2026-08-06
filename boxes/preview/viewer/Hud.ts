@@ -36,6 +36,7 @@ export class Hud {
   readonly #count = element('div', 'count', 'nothing selected');
   readonly #ids = element('div', 'ids');
   readonly #hint = element('div', 'hint');
+  readonly #keys: HTMLElement;
   readonly #modeButtons: Record<PickerMode, HTMLButtonElement>;
   readonly #modelButton: HTMLButtonElement;
   #model = false;
@@ -65,12 +66,17 @@ export class Hud {
     this.#count.dataset.testid = 'selection';
     this.#hint.textContent = 'click a bay, or drag a rectangle in zone mode';
 
+    const keys = element('div', 'hint', 'W A S D move · Q E turn · R F up and down · mouse orbits and zooms');
+    keys.style.marginTop = '14px';
+    this.#keys = keys;
+
     panel.append(
       this.#name,
       this.#size,
       section('Bands', this.#bands),
       section('Tools', segmented, this.#modelButton),
       section('Selection', this.#count, this.#ids, this.#hint),
+      section('View', this.#keys),
     );
   }
 
@@ -114,14 +120,15 @@ export class Hud {
     );
   }
 
-  showSelection(bayIds: string[], bandIds: string[]): void {
-    if (bayIds.length === 0) {
+  showSelection(bayIds: string[], bandIds: string[], floorIds: string[] = []): void {
+    if (floorIds.length === 0 && bayIds.length === 0) {
       this.#count.textContent = 'nothing selected';
       this.#ids.replaceChildren();
       return;
     }
-    this.#count.textContent = `${bayIds.length} ${bayIds.length === 1 ? 'bay' : 'bays'} in ${bandIds.join(', ')}`;
-    this.#ids.replaceChildren(...bayIds.map((id) => element('span', undefined, id)));
+    const what = floorIds.length === 1 ? 'floor' : 'floors';
+    this.#count.textContent = `${floorIds.length} ${what} in ${bandIds.join(', ')} · ${bayIds.length} bays`;
+    this.#ids.replaceChildren(...floorIds.map((id) => element('span', undefined, id)));
   }
 
   fail(message: string): void {

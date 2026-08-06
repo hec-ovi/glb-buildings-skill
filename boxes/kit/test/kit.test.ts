@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError } from '#spec';
-import { Surface, cap, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, wireRun, type SectionShape } from '#kit';
+import { Surface, cap, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
 
 const plain: SectionShape = {
   bottom: [
@@ -84,7 +84,7 @@ describe('sections', () => {
   });
 
   it('runs cables up one face as closed boxes', () => {
-    const parts = wireRun({ ...plain, floors: 2, height: 6.4 }, 'S');
+    const parts = dress({ ...plain, floors: 2, height: 6.4 }, { wires: 'S' });
     expect(parts).toHaveLength(1);
     for (const part of parts) expect(windingProblems(part)).toEqual([]);
     expect(shellProblems(parts)).toEqual([]);
@@ -117,6 +117,45 @@ describe('templates', () => {
       template('nope');
     } catch (error) {
       expect((error as BuildingError).code).toBe('E_UNKNOWN_TEMPLATE');
+    }
+  });
+});
+
+describe('fake parts', () => {
+  const bulk: SectionShape = { ...plain, floors: 4, height: 12.8 };
+
+  it('stands greebles off the faces as closed boxes, and repeats them for the same seed', () => {
+    const once = dress(bulk, { greebles: 0.5, seed: 42 });
+    const again = dress(bulk, { greebles: 0.5, seed: 42 });
+    const other = dress(bulk, { greebles: 0.5, seed: 43 });
+
+    expect(once[0]!.positions).toEqual(again[0]!.positions);
+    expect(once[0]!.positions).not.toEqual(other[0]!.positions);
+    expect(windingProblems(once[0]!)).toEqual([]);
+    expect(shellProblems(once)).toEqual([]);
+  });
+
+  it('gives more parts at a higher density, and none at zero', () => {
+    const light = dress(bulk, { greebles: 0.2, seed: 7 });
+    const heavy = dress(bulk, { greebles: 0.9, seed: 7 });
+    expect(dress(bulk, { greebles: 0 })).toEqual([]);
+    expect(triangleCount(heavy[0]!)).toBeGreaterThan(triangleCount(light[0]!));
+  });
+
+  it('builds balconies with a rounded front, closed, one per floor', () => {
+    const parts = dress(bulk, { balconies: 'S' });
+    expect(windingProblems(parts[0]!)).toEqual([]);
+    expect(shellProblems(parts)).toEqual([]);
+    // A rounded front means more than the four sides of a box.
+    expect(triangleCount(parts[0]!)).toBeGreaterThan(4 * 12);
+  });
+
+  it('stands columns at the corners, along the faces, or only in gaps', () => {
+    for (const style of ['corners', 'ribs', 'partial'] as const) {
+      const parts = dress(bulk, { columns: style, seed: 5 });
+      expect(parts.length, style).toBe(1);
+      expect(windingProblems(parts[0]!), style).toEqual([]);
+      expect(shellProblems(parts), style).toEqual([]);
     }
   });
 });
