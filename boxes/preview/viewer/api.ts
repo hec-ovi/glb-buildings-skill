@@ -18,6 +18,20 @@ export async function postSelection(selection: Omit<Selection, 'at'>): Promise<v
   });
 }
 
+export async function fetchProjects(): Promise<{ projects: string[]; current?: string }> {
+  const res = await fetch('/api/projects');
+  if (!res.ok) return { projects: [] };
+  return res.json() as Promise<{ projects: string[]; current?: string }>;
+}
+
+export async function useProject(name: string): Promise<void> {
+  await fetch('/api/projects', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}
+
 /** Fires whenever the document or the built file changes on disk. */
 export function onChange(handler: () => void): () => void {
   const source = new EventSource('/api/events');

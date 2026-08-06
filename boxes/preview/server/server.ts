@@ -20,6 +20,12 @@ export type PreviewOptions = {
   host?: string;
   /** Print a line per request. On for the CLI, off in tests. */
   log?: boolean;
+  /** Lets the page list the buildings and switch between them. */
+  projects?: {
+    list(): Promise<string[]>;
+    current(): Promise<string | undefined>;
+    use(name: string): Promise<void>;
+  };
 };
 
 export class PreviewServer {
@@ -28,6 +34,7 @@ export class PreviewServer {
   readonly #resolve: (() => Promise<string>) | undefined;
   readonly #watchRoot: string | undefined;
   readonly #log: boolean;
+  readonly #projects: PreviewOptions['projects'];
   readonly #bundle = new ViewerBundle();
   readonly #host: string;
   readonly #port: number;
@@ -41,6 +48,7 @@ export class PreviewServer {
     this.#resolve = options.resolve;
     this.#watchRoot = options.watchRoot;
     this.#log = options.log ?? false;
+    this.#projects = options.projects;
     this.#host = options.host ?? '127.0.0.1';
     this.#port = options.port ?? 4321;
   }
@@ -91,6 +99,8 @@ export class PreviewServer {
     if (path === '/api/model.glb') return this.#model(res);
     if (path === '/api/selection' && req.method === 'POST') return this.#putSelection(req, res);
     if (path === '/api/selection') return this.#json(res, 200, await (await this.#current()).readSelection());
+    if (path === '/api/projects' && req.method === 'POST') return this.#useProject(req, res);
+    if (path === '/api/projects') return this.#listProjects(res);
     if (path === '/api/events') return this.#events(res);
 
     this.#send(res, 404, 'text/plain', 'not found');
@@ -120,6 +130,21 @@ export class PreviewServer {
     for await (const chunk of req) chunks.push(chunk as Buffer);
     const selection = parseSelection(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'));
     this.#json(res, 200, await (await this.#current()).writeSelection(selection));
+  }
+
+  async #listProjects(res: ServerResponse): Promise<void> {
+    if (!this.#projects) return this.#json(res, 200, { projects: [], current: undefined });
+    this.#json(res, 200, { projects: await this.#projects.list(), current: await this.#projects.current() });
+  }
+
+  async #useProject(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (!this.#projects) return this.#send(res, 404, 'text/plain', 'this preview follows one project only');
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const { name } = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as { name?: string };
+    if (!name) return this.#send(res, 400, 'text/plain', 'name a building');
+    await this.#projects.use(name);
+    this.#json(res, 200, { current: name });
   }
 
   #events(res: ServerResponse): void {

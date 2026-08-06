@@ -20,7 +20,7 @@ import { Blueprint } from './Blueprint.ts';
 import { Fly } from './Fly.ts';
 import { Hud } from './Hud.ts';
 import { Picker } from './Picker.ts';
-import { fetchScene, onChange, postSelection } from './api.ts';
+import { fetchProjects, fetchScene, onChange, postSelection, useProject } from './api.ts';
 
 export type BootOptions = {
   stage: HTMLElement;
@@ -39,7 +39,13 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
   const hud = new Hud(panel, {
     onMode: (mode) => picker?.setMode(mode),
     onModel: (show) => show3d?.(show),
+    onProject: (name) => void useProject(name).then(() => listBuildings()),
   });
+
+  const listBuildings = async () => {
+    const { projects, current } = await fetchProjects();
+    hud.listProjects(projects, current);
+  };
 
   const ready = (async () => {
     let renderer: WebGLRenderer;
@@ -148,6 +154,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
       blueprint.showPanels(!modelRoot.visible);
       hud.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
+      void listBuildings();
       if (!keepCamera) frame(blueprint.sizeMetres);
       if (modelRoot.visible) await loadModel();
     };

@@ -10,6 +10,7 @@ const hex = (colour: number) => `#${colour.toString(16).padStart(6, '0')}`;
 export type HudHandlers = {
   onMode: (mode: PickerMode) => void;
   onModel: (show: boolean) => void;
+  onProject?: (name: string) => void;
 };
 
 function element<K extends keyof HTMLElementTagNameMap>(
@@ -37,6 +38,8 @@ export class Hud {
   readonly #ids = element('div', 'ids');
   readonly #hint = element('div', 'hint');
   readonly #keys: HTMLElement;
+  readonly #buildings = element('div', 'buildings');
+  #onProject: ((name: string) => void) | undefined;
   readonly #modeButtons: Record<PickerMode, HTMLButtonElement>;
   readonly #modelButton: HTMLButtonElement;
   #model = false;
@@ -70,9 +73,12 @@ export class Hud {
     keys.style.marginTop = '14px';
     this.#keys = keys;
 
+    this.#onProject = handlers.onProject;
+
     panel.append(
       this.#name,
       this.#size,
+      section('Buildings', this.#buildings),
       section('Bands', this.#bands),
       section('Tools', segmented, this.#modelButton),
       section('Selection', this.#count, this.#ids, this.#hint),
@@ -116,6 +122,23 @@ export class Hud {
         );
         row.append(dot, body);
         return row;
+      }),
+    );
+  }
+
+  /** Every building in the store, the current one marked. Clicking one switches the page. */
+  listProjects(names: string[], current: string | undefined): void {
+    if (names.length < 2) {
+      this.#buildings.replaceChildren(element('div', 'hint', names.length === 1 ? names[0]! : 'no buildings yet'));
+      return;
+    }
+    this.#buildings.replaceChildren(
+      ...names.map((name) => {
+        const button = element('button', 'pick', name);
+        button.dataset.testid = `project-${name}`;
+        button.setAttribute('aria-pressed', String(name === current));
+        button.addEventListener('click', () => this.#onProject?.(name));
+        return button;
       }),
     );
   }

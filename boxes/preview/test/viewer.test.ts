@@ -234,6 +234,26 @@ describe('view controls', () => {
   });
 });
 
+describe('the building picker', () => {
+  it('lists every building and marks the current one', async () => {
+    const onProject = vi.fn();
+    const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {}, onProject });
+    hud.listProjects(['tower-a', 'tower-b'], 'tower-b');
+
+    expect(screen.getByTestId('project-tower-b').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('project-tower-a').getAttribute('aria-pressed')).toBe('false');
+
+    await userEvent.click(screen.getByTestId('project-tower-a'));
+    expect(onProject).toHaveBeenCalledWith('tower-a');
+  });
+
+  it('says the name plainly when there is only one', () => {
+    const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {} });
+    hud.listProjects(['only-one'], 'only-one');
+    expect(document.querySelector('.buildings')!.textContent).toBe('only-one');
+  });
+});
+
 describe('blueprint against the model', () => {
   it('hides the panels while the built model is on, so the two never fight over depth', () => {
     const blueprint = new Blueprint(scene);

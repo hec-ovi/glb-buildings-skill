@@ -75,7 +75,17 @@ export const preview: Verb = {
     const server = new PreviewServer(
       pinned
         ? { dir: project.dir, port, log: true }
-        : { resolve: async () => (await projects.open()).project.dir, watchRoot: projects.root, port, log: true },
+        : {
+            resolve: async () => (await projects.open()).project.dir,
+            watchRoot: projects.root,
+            port,
+            log: true,
+            projects: {
+              list: () => projects.list(),
+              current: () => projects.current(),
+              use: (chosen: string) => projects.use(chosen),
+            },
+          },
     );
 
     let url: string;

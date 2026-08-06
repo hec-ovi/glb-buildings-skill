@@ -47,6 +47,11 @@ beforeAll(async () => {
     resolve: async () => (await projects.open()).project.dir,
     watchRoot: projects.root,
     port: 0,
+    projects: {
+      list: () => projects.list(),
+      current: () => projects.current(),
+      use: (name: string) => projects.use(name),
+    },
   });
   url = await server.start();
 }, 30_000);
@@ -95,6 +100,28 @@ describe('editing while the page is open', () => {
     const switched = nextChange();
     await run(['use', 'tower-a'], projects);
     await switched;
+    expect((await scene()).document.name).toBe('tower-a');
+  });
+});
+
+describe('switching buildings from the page', () => {
+  it('lists them and moves the page to the one that is picked', async () => {
+    await run(['new', 'tower-c', '--floors', '5'], projects);
+
+    const listed = (await (await fetch(new URL('/api/projects', url))).json()) as { projects: string[]; current: string };
+    expect(listed.projects).toContain('tower-a');
+    expect(listed.projects).toContain('tower-c');
+    expect(listed.current).toBe('tower-c');
+
+    const changed = nextChange();
+    const answer = await fetch(new URL('/api/projects', url), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'tower-a' }),
+    });
+    expect(answer.status).toBe(200);
+    await changed;
+
     expect((await scene()).document.name).toBe('tower-a');
   });
 });
