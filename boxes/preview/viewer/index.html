@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>building preview</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #dbe7ff;
+        --muted: #8fa3c8;
+        --panel: #111a30cc;
+        --line: #2b3d63;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        background: #0b1020;
+        color: var(--ink);
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow: hidden;
+      }
+      #stage { position: fixed; inset: 0; }
+      #stage canvas { display: block; }
+      .zone-rect {
+        position: absolute;
+        border: 1px solid #ffb703;
+        background: #ffb70322;
+        pointer-events: none;
+      }
+      .hud {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        width: min(420px, calc(100vw - 32px));
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel);
+        backdrop-filter: blur(6px);
+      }
+      .hud-title { font-weight: 700; margin-bottom: 10px; }
+      .hud-bands { display: grid; gap: 4px; margin-bottom: 12px; color: var(--muted); }
+      .hud-band { display: flex; align-items: center; gap: 8px; }
+      .hud-band b { color: var(--ink); }
+      .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+      .hud-controls { display: flex; gap: 8px; margin-bottom: 10px; }
+      .hud-controls button {
+        font: inherit;
+        color: var(--ink);
+        background: #1b2748;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+      .hud-controls button:hover { background: #24325c; }
+      .hud-selection { color: #ffb703; word-break: break-all; }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <script type="module" src="/viewer.js"></script>
+  </body>
+</html>

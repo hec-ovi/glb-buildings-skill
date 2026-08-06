@@ -20,13 +20,21 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | [`assemble`](../boxes/assemble/CONTRACT.md) | Document plus kit to a placed scene: world transforms, repeated bands, mesh reuse groups | `spec`, `kit` |
 | [`check`](../boxes/check/CONTRACT.md) | The proofs: support, overlap, envelope, human proportions, seam match, triangle budget | `spec`, `kit` |
 | [`glb`](../boxes/glb/CONTRACT.md) | Placed scene plus materials to a GLB per export profile, then the Khronos validator | `spec`, `assemble`, `materials` |
-| [`preview`](../boxes/preview/CONTRACT.md) | three.js viewer, blueprint overlay, click picking, drag zones, and the local server that carries a selection back | `spec` |
+| [`preview`](../boxes/preview/CONTRACT.md) | three.js viewer, blueprint overlay, click picking, drag zones, and the local server that carries a selection back | `spec`, `assemble` |
 | [`cli`](../boxes/cli/CONTRACT.md) | The verbs an agent calls, and the build walk with its gates | every box above |
 | [`skill`](../boxes/skill/CONTRACT.md) | The resolver and the fat sub-skills an agent reads | `cli` |
 
 Edges run one way. `cli` is the only box that touches several: it is the agent's face onto all of them. A box
 reaches another only through the `imports` map in `package.json` (`#spec`, `#kit`, and so on), so a deep import
 is not expressible.
+
+Standing today: `spec`, `assemble` and `preview`. [PLAN.md](PLAN.md) works through the rest.
+
+```bash
+npm install
+npm test                       # every box, one pass
+npm run preview -- ./my-tower  # blueprint editor at http://127.0.0.1:4321
+```
 
 ## Cross-cutting
 

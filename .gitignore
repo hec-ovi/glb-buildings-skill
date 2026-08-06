@@ -10,3 +10,6 @@ docs/private/
 # Agent scratch
 *.probe.*
 .scratch/
+
+# Research store
+.research/

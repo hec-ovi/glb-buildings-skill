@@ -1,0 +1,36 @@
+{
+  "name": "glb-buildings",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
+  "imports": {
+    "#spec": "./boxes/spec/index.ts",
+    "#assemble": "./boxes/assemble/index.ts",
+    "#preview": "./boxes/preview/index.ts"
+  },
+  "bin": {
+    "buildings": "./boxes/cli/bin/buildings.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "preview": "node boxes/preview/bin/preview.ts"
+  },
+  "dependencies": {
+    "esbuild": "^0.25.0",
+    "three": "^0.185.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/user-event": "^14.6.3",
+    "@types/node": "^24.0.0",
+    "@types/three": "^0.185.0",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
