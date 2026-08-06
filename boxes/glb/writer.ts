@@ -43,6 +43,7 @@ function shapeOf(band: PlacedBand, sunk: number): SectionShape {
     top: metres(band.top),
     height: (band.y1 - band.y0) * MM + sunk,
     floors: band.floors.length,
+    chamfer: band.chamfer * MM,
   };
 }
 

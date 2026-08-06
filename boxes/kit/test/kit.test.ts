@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError } from '#spec';
-import { Surface, cap, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
+import { Surface, cap, capRing, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
 
 const plain: SectionShape = {
   bottom: [
@@ -180,5 +180,27 @@ describe('the crown', () => {
     expect(triangleCount(dress(deck, { clutter: 0.9, seed: 2 })[0]!)).toBeGreaterThan(
       triangleCount(dress(deck, { clutter: 0.3, seed: 2 })[0]!),
     );
+  });
+});
+
+describe('chamfered sections', () => {
+  const chamfered: SectionShape = { ...plain, floors: 3, height: 9.6, chamfer: 0.25 };
+
+  it('closes a section that is bevelled top and bottom', () => {
+    const parts = template('bulk-flat').build(chamfered);
+    expect(windingProblems(parts[0]!)).toEqual([]);
+    expect(shellProblems(parts)).toEqual([]);
+  });
+
+  it('pulls the caps in, so the bevel has something to sit on', () => {
+    const plainCap = capRing({ ...chamfered, chamfer: 0 }, 1);
+    const bevelled = capRing(chamfered, 1);
+    expect(Math.abs(bevelled[0]![0])).toBeLessThan(Math.abs(plainCap[0]![0]));
+  });
+
+  it('costs two more rows than an unbevelled section, and nothing else', () => {
+    const flat = triangleCount(template('bulk-flat').build({ ...chamfered, chamfer: 0 })[0]!);
+    const bevel = triangleCount(template('bulk-flat').build(chamfered)[0]!);
+    expect(bevel - flat).toBe(2 * 4 * 2);
   });
 });

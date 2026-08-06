@@ -60,6 +60,8 @@ export type PlacedBand = {
   bottom: Corner[];
   /** And where it ends, after its twist and taper. A section is the loft between the two. */
   top: Corner[];
+  /** Bevel on the top and bottom edges, in millimetres. */
+  chamfer: Mm;
   y0: Mm;
   y1: Mm;
   floors: PlacedFloor[];

@@ -11,7 +11,7 @@
  */
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData } from './geometry.ts';
-import { cap, edgeFacing, ringAt, walls, wires, type SectionShape } from './section.ts';
+import { cap, capRing, edgeFacing, ringAt, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
 import { balconies, BALCONY } from './balcony.ts';
 import { columns, type ColumnStyle } from './columns.ts';
@@ -40,8 +40,8 @@ const TEMPLATES: Template[] = [
     build: (shape) => {
       const skin = new Surface(FACADE);
       walls(skin, shape);
-      cap(skin, ringAt(shape, 0), 0, false);
-      cap(skin, ringAt(shape, 1), shape.height, true);
+      cap(skin, capRing(shape, 0), 0, false);
+      cap(skin, capRing(shape, 1), shape.height, true);
       return surfaces(skin);
     },
   },
@@ -52,8 +52,8 @@ const TEMPLATES: Template[] = [
     build: (shape) => {
       const skin = new Surface(FACADE);
       walls(skin, shape);
-      cap(skin, ringAt(shape, 0), 0, false);
-      cap(skin, ringAt(shape, 1), shape.height, true);
+      cap(skin, capRing(shape, 0), 0, false);
+      cap(skin, capRing(shape, 1), shape.height, true);
       return surfaces(skin);
     },
   },
@@ -64,9 +64,9 @@ const TEMPLATES: Template[] = [
     build: (shape) => {
       const skin = new Surface(FACADE);
       walls(skin, shape);
-      cap(skin, ringAt(shape, 0), 0, false);
+      cap(skin, capRing(shape, 0), 0, false);
       const deck = new Surface(ROOF);
-      cap(deck, ringAt(shape, 1), shape.height, true);
+      cap(deck, capRing(shape, 1), shape.height, true);
       return surfaces(skin, deck);
     },
   },

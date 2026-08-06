@@ -16,6 +16,8 @@ export type SectionShape = {
   height: number;
   /** How many rows the walls are cut into, so a texture tiles once per floor. */
   floors: number;
+  /** Bevel on the top and bottom edges, in metres. The chamfer of a chamfered box. */
+  chamfer?: number;
 };
 
 function lerp(a: Corner, b: Corner, t: number): Corner {
@@ -29,20 +31,54 @@ export function ringAt(shape: SectionShape, t: number): Corner[] {
 
 const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
 
-/** The outside of the section, one row of quads per floor. */
+/** Pull a footprint in toward its own middle, which is what a bevelled edge sits on. */
+export function insetRing(ring: Corner[], by: number): Corner[] {
+  if (by <= 0) return ring;
+  const cx = ring.reduce((sum, c) => sum + c[0], 0) / ring.length;
+  const cz = ring.reduce((sum, c) => sum + c[1], 0) / ring.length;
+  return ring.map(([x, z]) => {
+    const dx = x - cx;
+    const dz = z - cz;
+    const length = Math.hypot(dx, dz) || 1;
+    const pull = Math.min(by, length * 0.9);
+    return [x - (dx / length) * pull, z - (dz / length) * pull] as Corner;
+  });
+}
+
+/** The ring a cap sits on: the bevel pulls the very top and bottom in. */
+export function capRing(shape: SectionShape, end: 0 | 1): Corner[] {
+  return insetRing(ringAt(shape, end), shape.chamfer ?? 0);
+}
+
+function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number): void {
+  for (let i = 0; i < lower.length; i++) {
+    const next = (i + 1) % lower.length;
+    surface.quad(point(lower[i]!, y0), point(lower[next]!, y0), point(upper[next]!, y1), point(upper[i]!, y1));
+  }
+}
+
+/**
+ * The outside of the section, one row of quads per floor, with a bevel at the top and bottom
+ * when the section asks for one. That bevel is what a chamfered box has and a plain box does
+ * not: an edge that catches the light instead of a hard line.
+ */
 export function walls(surface: Surface, shape: SectionShape): void {
   const rows = Math.max(1, shape.floors);
-  for (let row = 0; row < rows; row++) {
-    const lower = ringAt(shape, row / rows);
-    const upper = ringAt(shape, (row + 1) / rows);
-    const y0 = (shape.height * row) / rows;
-    const y1 = (shape.height * (row + 1)) / rows;
+  const chamfer = Math.min(shape.chamfer ?? 0, shape.height / 3);
+  const from = chamfer;
+  const to = shape.height - chamfer;
 
-    for (let i = 0; i < lower.length; i++) {
-      const next = (i + 1) % lower.length;
-      surface.quad(point(lower[i]!, y0), point(lower[next]!, y0), point(upper[next]!, y1), point(upper[i]!, y1));
-    }
+  if (chamfer > 0) band(surface, capRing(shape, 0), ringAt(shape, chamfer / shape.height), 0, chamfer);
+
+  for (let row = 0; row < rows; row++) {
+    const t0 = row / rows;
+    const t1 = (row + 1) / rows;
+    const y0 = from + (to - from) * t0;
+    const y1 = from + (to - from) * t1;
+    band(surface, ringAt(shape, y0 / shape.height), ringAt(shape, y1 / shape.height), y0, y1);
   }
+
+  if (chamfer > 0) band(surface, ringAt(shape, to / shape.height), capRing(shape, 1), to, shape.height);
 }
 
 /** The deck on top, or the underside at the bottom. A fan, so any footprint closes. */

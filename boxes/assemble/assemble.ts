@@ -27,15 +27,14 @@ function footprintRect(doc: BuildingDocument, band: Band): Rect {
  * The footprint as four world corners, turned about the building's own axis. Bands that step,
  * slide or turn all end up as plain polygons, and the junction between two of them is one loft.
  */
-function cornersOf(rect: Rect, degrees: number, shrink = 0, round?: number): Corner[] {
-  const points: Corner[] = round
-    ? ellipse(rect, shrink, round)
-    : [
-        [rect.x0 + shrink, rect.z1 - shrink],
-        [rect.x1 - shrink, rect.z1 - shrink],
-        [rect.x1 - shrink, rect.z0 + shrink],
-        [rect.x0 + shrink, rect.z0 + shrink],
-      ];
+function cornersOf(rect: Rect, degrees: number, shrink = 0, round?: number, corner = 0): Corner[] {
+  const square: Corner[] = [
+    [rect.x0 + shrink, rect.z1 - shrink],
+    [rect.x1 - shrink, rect.z1 - shrink],
+    [rect.x1 - shrink, rect.z0 + shrink],
+    [rect.x0 + shrink, rect.z0 + shrink],
+  ];
+  const points: Corner[] = round ? ellipse(rect, shrink, round) : corner > 0 ? fillet(square, corner) : square;
   if (degrees === 0) return points;
   const angle = (degrees * Math.PI) / 180;
   const cos = Math.cos(angle);
@@ -56,6 +55,37 @@ function ellipse(rect: Rect, shrink: number, segments: number): Corner[] {
     points.push([Math.round(cx + rx * Math.sin(angle)), Math.round(cz + rz * Math.cos(angle))]);
   }
   return points;
+}
+
+/** Replace each corner with a small arc, which is what a bevelled upright edge looks like. */
+function fillet(square: Corner[], radius: Mm, steps = 3): Corner[] {
+  const out: Corner[] = [];
+  const count = square.length;
+
+  for (let i = 0; i < count; i++) {
+    const previous = square[(i + count - 1) % count]!;
+    const corner = square[i]!;
+    const next = square[(i + 1) % count]!;
+
+    const towards = (from: Corner, to: Corner): Corner => {
+      const dx = to[0] - from[0];
+      const dz = to[1] - from[1];
+      const length = Math.hypot(dx, dz) || 1;
+      const cut = Math.min(radius, length / 2);
+      return [from[0] + (dx / length) * cut, from[1] + (dz / length) * cut];
+    };
+
+    const start = towards(corner, previous);
+    const end = towards(corner, next);
+    for (let step = 0; step <= steps; step++) {
+      const t = step / steps;
+      // A quadratic bend through the corner: exact enough at this size, and always convex.
+      const x = (1 - t) * (1 - t) * start[0] + 2 * (1 - t) * t * corner[0] + t * t * end[0];
+      const z = (1 - t) * (1 - t) * start[1] + 2 * (1 - t) * t * corner[1] + t * t * end[1];
+      out.push([Math.round(x), Math.round(z)]);
+    }
+  }
+  return out;
 }
 
 function bayBox(side: Side, rect: Rect, start: Mm, width: Mm, y0: Mm, y1: Mm): Box {
@@ -139,8 +169,9 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       clutter: band.clutter,
       inset: band.inset,
       rect: { x0: rect.x0, x1: rect.x1, z0: rect.z0, z1: rect.z1 },
-      bottom: cornersOf(rect, band.rotation, 0, round),
-      top: cornersOf(rect, band.rotation + band.twist, band.taper, round),
+      bottom: cornersOf(rect, band.rotation, 0, round, band.corner),
+      top: cornersOf(rect, band.rotation + band.twist, band.taper, round, band.corner),
+      chamfer: band.chamfer,
       y0,
       y1: y,
       floors,

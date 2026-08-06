@@ -53,6 +53,10 @@ const bandSchema = z.object({
   /** `box` is four corners, `round` is a cylinder drawn with `segments` of them. */
   shape: z.enum(['box', 'round']).default('box'),
   segments: z.number().int().min(6).max(64).default(16),
+  /** Fillet on the upright corners: the footprint corner becomes a small arc. */
+  corner: mm.nonnegative().default(0),
+  /** Bevel on the top and bottom edges of the section, so they catch the light. */
+  chamfer: mm.nonnegative().default(0),
   /** Step per side: positive pulls the section in, negative hangs it out over the one below. */
   inset: mm.default(0),
   /** Slide the band east or west, and north or south, off the building centre. */

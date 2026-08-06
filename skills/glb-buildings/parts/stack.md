@@ -85,9 +85,15 @@ The three parts of a building do different jobs, and mixing them up is what make
 | `--wires N\|E\|S\|W` | cables climbing one face, tying the section together |
 | `--clutter 0.0 to 1.0` | on a roof section: edge railing, mast with harness rings and spikes, water tank on legs, AC units, solar panels, a utility pole with drooping cables, a small tower |
 | `--shape round --segments 20` | the whole section becomes a cylinder |
+| `--corner 0.6` | rounds the upright corners of the footprint, the way a chamfered box does |
+| `--chamfer 0.25` | bevels the top and bottom edges, so they catch the light instead of reading as a hard line |
 
 All of them are seeded from the section's name, so a rebuild keeps the same arrangement and an edit elsewhere
 never reshuffles it.
+
+`--corner` and `--chamfer` together are what stop a section reading as a raw box: a small fillet on the
+uprights and a 0.2 to 0.3 m bevel top and bottom cost a handful of triangles and change the whole silhouette.
+Use a larger corner on the base and smaller ones as the building rises.
 
 ## Reaching the look
 
