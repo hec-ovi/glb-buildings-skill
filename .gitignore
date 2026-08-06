@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+
+# Raw personal notes
+docs/private/
+
+# Agent scratch
+*.probe.*
+.scratch/
