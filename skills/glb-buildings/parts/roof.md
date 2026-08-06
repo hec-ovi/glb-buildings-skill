@@ -25,8 +25,11 @@ what a stepped building wants.
 | `pipe` | a pipe that bends over and drops to the level below | one cell, and it reaches past the edge |
 | `panel` | a solar panel on short legs | one cell |
 | `mast` | a mast with harness rings and spikes | one cell, 9 to 21 m tall |
-| `tank` | a water tank on four legs | keep the four cells around it clear |
-| `tower` | a small tower, the skyscraper on the skyscraper | keep the four cells around it clear |
+| `tank` | a water tank on four legs | **one cell**, with its neighbours left empty |
+| `tower` | a small tower, the skyscraper on the skyscraper | **one cell**, with its neighbours left empty |
+
+A tank or a tower is one object. `place tank C4` is right; `place tank C4 C5 D4 D5` builds four tanks standing
+inside each other, and the CLI refuses it.
 
 `--turn` is degrees, for the parts that point somewhere: a pipe, a panel, a unit, a tower.
 
@@ -40,7 +43,7 @@ Think in rows and clusters, not in scatter.
   building is plumbed; a pipe in the middle of the deck looks lost.
 - **A tank wants space.** Give it a corner and leave its neighbours empty.
 - **Leave half the deck empty.** A roof that is full reads as noise. Six to ten parts on a 20 x 16 m deck is
-  plenty.
+  plenty, and `place` tells you how full the deck is after every call. Past about half, stop.
 
 ## When you want it filled fast
 

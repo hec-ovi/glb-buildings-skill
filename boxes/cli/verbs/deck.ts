@@ -78,13 +78,30 @@ export const place: Verb = {
       );
     }
 
+    // A tank or a tower is one object that needs room around it, not one per cell.
+    if ((part === 'tank' || part === 'tower') && wanted.length > 1) {
+      throw new BuildingError(
+        'E_DOC_INVALID',
+        `a ${part} stands in one cell and needs its neighbours clear. Name one cell, not ${wanted.length}`,
+        ['cell'],
+      );
+    }
+
     const kept = band.deck.filter((entry) => !wanted.includes(entry.cell));
     const deckNow: DeckPlacement[] = [...kept, ...wanted.map((cell) => ({ cell, part, turn }))];
     const bands = [...doc.bands];
     bands[at] = { ...band, deck: deckNow };
     await project.writeDocument(parseDocument({ ...doc, bands }));
 
-    return { project: name, section: band.id, part, cells: wanted, holds: deckNow.length };
+    const full = Math.round((deckNow.length / grid.length) * 100);
+    return {
+      project: name,
+      section: band.id,
+      part,
+      cells: wanted,
+      deck: `${deckNow.length} of ${grid.length} cells taken, ${full}% full`,
+      ...(full > 55 ? { note: 'a roof past about half full reads as noise; leave space between the parts' } : {}),
+    };
   },
 };
 
