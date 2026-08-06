@@ -58,6 +58,9 @@ export function blockCentre(block: Cell[]): Corner {
   return [x, z];
 }
 
+/** Parts sit this far into the deck. Two faces in the same plane flicker; these never are. */
+const SINK = 0.06;
+
 export type RooftopOptions = {
   /** What the caller put where. */
   placements?: Placement[];
@@ -114,6 +117,7 @@ function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: numb
 
 /** A run of thin bars around the deck edge, with a rail across the top. */
 function railing(surface: Surface, ring: Corner[], y: number, height: number): void {
+  y -= SINK;
   for (let i = 0; i < ring.length; i++) {
     const a = ring[i]!;
     const b = ring[(i + 1) % ring.length]!;
@@ -148,7 +152,7 @@ export function rooftop(surface: Surface, shape: SectionShape, options: RooftopO
     const block = claim(grid, placement.cell, PART_SIZE[placement.part] ?? 1);
     if (!block) continue;
     for (const cell of block) taken.add(cell.name);
-    one(surface, placement.part, blockCentre(block), y, ((placement.turn ?? 0) * Math.PI) / 180, random);
+    one(surface, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random);
   }
 
   const clutter = Math.max(0, Math.min(1, options.clutter ?? 0));
@@ -164,6 +168,6 @@ export function rooftop(surface: Surface, shape: SectionShape, options: RooftopO
     const cell = free[Math.floor(random() * free.length)]!;
     if (taken.has(cell.name)) continue;
     taken.add(cell.name);
-    one(surface, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y, random() * Math.PI, random);
+    one(surface, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y - SINK, random() * Math.PI, random);
   }
 }

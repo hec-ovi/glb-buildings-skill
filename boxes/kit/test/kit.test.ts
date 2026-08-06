@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError } from '#spec';
-import { Surface, cap, capRing, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
+import { Surface, cap, capRing, cylinder, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
 
 const plain: SectionShape = {
   bottom: [
@@ -202,5 +202,28 @@ describe('chamfered sections', () => {
     const flat = triangleCount(template('bulk-flat').build({ ...chamfered, chamfer: 0 })[0]!);
     const bevel = triangleCount(template('bulk-flat').build(chamfered)[0]!);
     expect(bevel - flat).toBe(2 * 4 * 2);
+  });
+});
+
+describe('the shell proof', () => {
+  it('catches one solid that is inside out among many that are not', () => {
+    const good = new Surface('facade').box([-4, 0, -4], [4, 6, 4]).data();
+    const small = new Surface('facade').box([1, 6, 1], [2, 7, 2]).data();
+    const inverted = { ...small, indices: [...small.indices].reverse() };
+
+    expect(shellProblems([good, small])).toEqual([]);
+    const problems = shellProblems([good, inverted]);
+    expect(problems.some((problem) => problem.detail.includes('inside out'))).toBe(true);
+  });
+
+  it('reads a cylinder as a solid, and an upside down one as a fault', () => {
+    const round = new Surface('roof');
+    cylinder(round, [0, 0], 1.2, 0, 2.5, 10);
+    const built = round.data();
+    expect(windingProblems(built)).toEqual([]);
+    expect(shellProblems([built])).toEqual([]);
+
+    const flipped = { ...built, indices: [...built.indices].reverse() };
+    expect(shellProblems([flipped]).some((problem) => problem.detail.includes('inside out'))).toBe(true);
   });
 });

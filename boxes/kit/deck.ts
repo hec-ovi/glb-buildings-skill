@@ -101,13 +101,15 @@ export function cylinder(surface: Surface, centre: Corner, radius: number, y0: n
     ring.push([centre[0] + radius * Math.sin(angle), centre[1] + radius * Math.cos(angle)]);
   }
   const y1 = y0 + height;
+  // Same direction as every other part: walls counter-clockwise seen from outside, top fan up,
+  // bottom fan down. Wound the other way, a cylinder looks transparent and shows its inside.
   for (let i = 0; i < sides; i++) {
     const j = (i + 1) % sides;
-    surface.quad(point(ring[j]!, y0), point(ring[i]!, y0), point(ring[i]!, y1), point(ring[j]!, y1));
+    surface.quad(point(ring[i]!, y0), point(ring[j]!, y0), point(ring[j]!, y1), point(ring[i]!, y1));
   }
   for (let i = 1; i < sides - 1; i++) {
-    surface.quad(point(ring[0]!, y1), point(ring[i + 1]!, y1), point(ring[i]!, y1), point(ring[0]!, y1));
-    surface.quad(point(ring[0]!, y0), point(ring[i]!, y0), point(ring[i + 1]!, y0), point(ring[0]!, y0));
+    surface.quad(point(ring[0]!, y1), point(ring[i]!, y1), point(ring[i + 1]!, y1), point(ring[0]!, y1));
+    surface.quad(point(ring[0]!, y0), point(ring[i + 1]!, y0), point(ring[i]!, y0), point(ring[0]!, y0));
   }
 }
 

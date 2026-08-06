@@ -15,7 +15,7 @@ beforeEach(async () => {
 describe('projects', () => {
   it('starts a building, makes it current, and lists it', async () => {
     expect(await call('new', 'tower-a', '--floors', '10')).toMatchObject({ ok: true, project: 'tower-a' });
-    expect(await call('list')).toMatchObject({ ok: true, current: 'tower-a', projects: ['tower-a'] });
+    expect(await call('list')).toMatchObject({ ok: true, current: 'tower-a', projects: [{ project: 'tower-a', built: false }] });
   });
 
   it('keeps editing the current building when no name is given', async () => {
@@ -132,6 +132,18 @@ describe('build', () => {
     await call('remove-band', 'crown');
     expect(await call('build')).toMatchObject({ ok: false, code: 'E_SEAM_MISMATCH' });
   });
+
+  it('builds every building in one pass', async () => {
+    await call('new', 'tower-a', '--floors', '6');
+    await call('new', 'tower-b', '--floors', '8');
+    const all = (await call('build', '--all')) as unknown as { buildings: number; failed: unknown[]; built: { project: string }[] };
+    expect(all.buildings).toBe(2);
+    expect(all.failed).toEqual([]);
+    expect(all.built.map((one) => one.project).sort()).toEqual(['tower-a', 'tower-b']);
+    expect((await call('list')) as unknown as { projects: { built: boolean }[] }).toMatchObject({
+      projects: [{ built: true }, { built: true }],
+    });
+  }, 30_000);
 
   it('reports nothing picked before the human uses the preview', async () => {
     await call('new', 'tower-a');

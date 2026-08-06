@@ -7,13 +7,8 @@ import { BuildingError, describeSelection, toMetres } from '#spec';
 import type { Verb } from './verb.ts';
 import { parse, text } from './args.ts';
 
-export const build: Verb = {
-  name: 'build',
-  summary: 'write the GLB and prove it before anyone opens it',
-  usage: 'build [name]',
-  async run(args, { projects }) {
-    const { positionals } = parse(args, {});
-    const { name, project } = await projects.open(positionals[0]);
+async function buildOne(projects: Parameters<Verb['run']>[1]['projects'], named: string | undefined) {
+    const { name, project } = await projects.open(named);
     const doc = await project.readDocument();
 
     const result = await buildGlb(doc);
@@ -38,6 +33,31 @@ export const build: Verb = {
       supports: result.supports,
       validator: { errors: 0, warnings: report.warnings.length, infos: report.infos.length },
     };
+}
+
+export const build: Verb = {
+  name: 'build',
+  summary: 'write the GLB and prove it before anyone opens it',
+  usage: 'build [name] [--all]',
+  async run(args, { projects }) {
+    const { positionals, values } = parse(args, { all: { type: 'boolean' } });
+
+    // Every building at once, so a set of them can be checked in one pass.
+    if (values.all === true) {
+      const names = await projects.list();
+      const built: unknown[] = [];
+      const failed: { project: string; message: string }[] = [];
+      for (const name of names) {
+        try {
+          built.push(await buildOne(projects, name));
+        } catch (error) {
+          failed.push({ project: name, message: (error as Error).message });
+        }
+      }
+      return { buildings: built.length, failed, built };
+    }
+
+    return buildOne(projects, positionals[0]);
   },
 };
 

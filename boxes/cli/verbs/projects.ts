@@ -43,7 +43,10 @@ export const listProjects: Verb = {
   async run(_args, { projects }) {
     const names = await projects.list();
     const current = await projects.current();
-    return { current, projects: names, home: projects.root };
+    const built = await Promise.all(
+      names.map(async (name) => ({ project: name, built: (await projects.open(name)).project.hasModel() })),
+    );
+    return { current, projects: built, home: projects.root };
   },
 };
 

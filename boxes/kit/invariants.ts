@@ -47,24 +47,47 @@ export function windingProblems(mesh: MeshData): MeshProblem[] {
 export function shellProblems(meshes: MeshData[]): MeshProblem[] {
   const problems: MeshProblem[] = [];
   const edges = new Map<string, number>();
-  let volume = 0;
   const key = (p: Vec) => p.map((v) => Math.round(v * 1e5)).join(',');
+
+  // Triangles that share an edge belong to the same solid. A section is a pile of solids, and
+  // each one has to be closed and outward facing on its own: summing the volume of all of them
+  // hides a small part that is inside out inside a big one that is not.
+  const triangles: { points: [Vec, Vec, Vec]; group: number }[] = [];
+  const owner = new Map<string, number>();
+  const parent: number[] = [];
+
+  const find = (i: number): number => {
+    let root = i;
+    while (parent[root] !== root) root = parent[root]!;
+    while (parent[i] !== root) {
+      const next = parent[i]!;
+      parent[i] = root;
+      i = next;
+    }
+    return root;
+  };
+  const union = (a: number, b: number) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent[rb] = ra;
+  };
 
   for (const mesh of meshes) {
     for (let t = 0; t < mesh.indices.length; t += 3) {
-      const points = [0, 1, 2].map((i) => vertex(mesh, mesh.indices[t + i]!));
-      const [p0, p1, p2] = points as [Vec, Vec, Vec];
-
-      volume +=
-        (p0[0] * (p1[1] * p2[2] - p2[1] * p1[2]) -
-          p0[1] * (p1[0] * p2[2] - p2[0] * p1[2]) +
-          p0[2] * (p1[0] * p2[1] - p2[0] * p1[1])) /
-        6;
+      const points = [0, 1, 2].map((i) => vertex(mesh, mesh.indices[t + i]!)) as [Vec, Vec, Vec];
+      const index = triangles.length;
+      triangles.push({ points, group: index });
+      parent.push(index);
 
       for (let i = 0; i < 3; i++) {
         const from = key(points[i]!);
         const to = key(points[(i + 1) % 3]!);
         edges.set(`${from}>${to}`, (edges.get(`${from}>${to}`) ?? 0) + 1);
+
+        const undirected = from < to ? `${from}|${to}` : `${to}|${from}`;
+        const met = owner.get(undirected);
+        if (met === undefined) owner.set(undirected, index);
+        else union(met, index);
       }
     }
   }
@@ -75,7 +98,23 @@ export function shellProblems(meshes: MeshData[]): MeshProblem[] {
     if (!edges.has(`${to}>${from}`)) problems.push({ at: edge, detail: 'edge has no opposite, the shell is open' });
   }
 
-  if (volume <= 0) problems.push({ at: 'shell', detail: `enclosed volume is ${volume.toFixed(3)}, the shell is inside out` });
+  const volumes = new Map<number, number>();
+  for (let i = 0; i < triangles.length; i++) {
+    const [p0, p1, p2] = triangles[i]!.points;
+    const part =
+      (p0[0] * (p1[1] * p2[2] - p2[1] * p1[2]) -
+        p0[1] * (p1[0] * p2[2] - p2[0] * p1[2]) +
+        p0[2] * (p1[0] * p2[1] - p2[0] * p1[1])) /
+      6;
+    const root = find(i);
+    volumes.set(root, (volumes.get(root) ?? 0) + part);
+  }
+
+  for (const [root, volume] of volumes) {
+    if (volume > 0) continue;
+    const where = triangles[root]!.points[0].map((v) => v.toFixed(2)).join(', ');
+    problems.push({ at: where, detail: `a solid encloses ${volume.toFixed(3)}, so it is inside out` });
+  }
 
   return problems;
 }

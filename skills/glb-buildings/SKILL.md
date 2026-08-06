@@ -51,7 +51,7 @@ Run `buildings help` for the current list. Today:
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts you can use |
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more cells |
 | `unplace <cell ...> [--section id]` | clear cells |
-| `build [name]` | write the GLB, validated |
+| `build [name] [--all]` | write the GLB, validated. `--all` builds every building you have |
 | `preview [name] [--port 4321]` | open the blueprint editor and stay up |
 | `selection [name]` | what the human last picked in the preview |
 

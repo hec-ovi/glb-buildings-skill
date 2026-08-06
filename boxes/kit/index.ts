@@ -16,4 +16,4 @@ export { greebles, seedOf, type GreebleOptions } from './greebles.ts';
 export { balconies, balconyPlan, prism, BALCONY, type BalconyOptions } from './balcony.ts';
 export { columns, type ColumnStyle } from './columns.ts';
 export { rooftop, deckCells, DECK_PART_NOTES, PART_SIZE, claim, blockCentre, type RooftopOptions, type Placement } from './rooftop.ts';
-export { cells, columnName, CELL, type Cell } from './deck.ts';
+export { cells, columnName, cylinder, block, turbine, pipe, CELL, type Cell } from './deck.ts';
