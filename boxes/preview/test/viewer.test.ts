@@ -233,3 +233,16 @@ describe('view controls', () => {
     expect(c.position).toEqual(still);
   });
 });
+
+describe('blueprint against the model', () => {
+  it('hides the panels while the built model is on, so the two never fight over depth', () => {
+    const blueprint = new Blueprint(scene);
+    expect(blueprint.meshes.every((mesh) => mesh.visible)).toBe(true);
+
+    blueprint.showPanels(false);
+    expect(blueprint.meshes.every((mesh) => mesh.visible)).toBe(false);
+
+    blueprint.showPanels(true);
+    expect(blueprint.meshes.every((mesh) => mesh.visible)).toBe(true);
+  });
+});

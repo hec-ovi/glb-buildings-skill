@@ -176,6 +176,15 @@ export class Blueprint {
     return [...this.#selected];
   }
 
+  /**
+   * With the built model on screen, the blueprint's panels sit in the same place as its walls
+   * and the two fight over depth. Showing only the outlines keeps the drawing readable and
+   * leaves the surfaces to the model.
+   */
+  showPanels(show: boolean): void {
+    for (const mesh of this.meshes) mesh.visible = show;
+  }
+
   /** Metres, for framing the camera. */
   get sizeMetres(): Vector3 {
     return new Vector3(this.scene.size.width * MM, this.scene.size.height * MM, this.scene.size.depth * MM);

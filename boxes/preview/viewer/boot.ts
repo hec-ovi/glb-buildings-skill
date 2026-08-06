@@ -103,6 +103,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
 
     show3d = (show) => {
       modelRoot.visible = show;
+      blueprint?.showPanels(!show);
       if (show && modelRoot.children.length === 0) void loadModel();
     };
 
@@ -144,6 +145,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
         floorIds: picked.floorIds.filter((id) => floors.has(id)),
       };
       blueprint.select(picked.bayIds);
+      blueprint.showPanels(!modelRoot.visible);
       hud.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
       if (!keepCamera) frame(blueprint.sizeMetres);
