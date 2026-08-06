@@ -8,6 +8,7 @@ import { newDocument, type Selection } from '#spec';
 import { Blueprint } from '../viewer/Blueprint.ts';
 import { Hud } from '../viewer/Hud.ts';
 import { Picker } from '../viewer/Picker.ts';
+import { boot } from '../viewer/boot.ts';
 
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 6 });
 const scene = assemble(doc);
@@ -56,6 +57,27 @@ describe('panel', () => {
     hud.showSelection(['body.f1.S0', 'body.f1.S1'], ['body']);
     expect(screen.getByTestId('selection').textContent).toBe('2 bays in body');
     expect([...document.querySelectorAll('.ids span')].map((n) => n.textContent)).toEqual(['body.f1.S0', 'body.f1.S1']);
+  });
+});
+
+describe('boot', () => {
+  it('still shows the panel, and says why, when the browser gives no WebGL context', async () => {
+    const stage = document.createElement('div');
+    const panel = document.createElement('div');
+    document.body.append(stage, panel);
+
+    const { ready } = boot({
+      stage,
+      panel,
+      createRenderer: () => {
+        throw new Error('Error creating WebGL context.');
+      },
+    });
+    await ready;
+
+    expect(screen.getByTestId('mode-pick')).toBeTruthy();
+    expect(screen.getByTestId('model')).toBeTruthy();
+    expect(screen.getByTestId('selection').textContent).toContain('no WebGL context');
   });
 });
 
