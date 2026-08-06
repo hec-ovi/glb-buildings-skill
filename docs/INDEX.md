@@ -18,12 +18,12 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | [`spec`](../boxes/spec/CONTRACT.md) | The building document: bands, floors, bays, the selection, integer millimetres, the closed error set | none |
 | [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: transforms, bays, seams | `spec` |
 | [`kit`](../boxes/kit/CONTRACT.md) | The parts. Floor templates build geometry in metres, with the winding and normals engines expect | `spec` |
-| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the shell proof and the Khronos validator | `spec`, `assemble`, `kit` |
+| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the shell proof, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `materials` |
 | [`preview`](../boxes/preview/CONTRACT.md) | three.js blueprint, click picking, drag zones, and the server that carries a selection back | `spec`, `assemble` |
 | [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |
 | [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and four fat parts. `SKILL.md` is its contract | `cli` |
-| `materials` | Texture sets to materials: atlas packing, baked UVs, real world texel density | not built |
-| `check` | The proofs on the document: support, overlap, envelope, human proportions, triangle budget | not built |
+| [`materials`](../boxes/materials/CONTRACT.md) | Textures written from code: the window grid a facade carries, colour and emissive | none |
+| [`check`](../boxes/check/CONTRACT.md) | The proofs on the document: what rests on what, and by how much | `spec`, `assemble` |
 
 Edges run one way. `cli` is the only box that touches several: it is the agent's face onto all of them. A box
 reaches another only through the `imports` map in `package.json` (`#spec`, `#kit`, and so on), so a deep import

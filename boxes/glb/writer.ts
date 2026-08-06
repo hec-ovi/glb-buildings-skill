@@ -11,6 +11,7 @@ import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
 import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
+import { facadeTexture } from '#materials';
 import { BuildingError, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
@@ -67,10 +68,19 @@ function checkEnds(placed: PlacedScene): void {
   }
 }
 
-function palette(document: Document): Map<string, Material> {
+function palette(document: Document, seed: number): Map<string, Material> {
+  // The facade carries its windows in the texture: one tile is a floor tall and a bay wide, and
+  // the same grid glows, so a flat section reads as a lit building for eight triangles a floor.
+  const skin = facadeTexture({ seed });
+  const colour = document.createTexture('facade-colour').setImage(skin.colour).setMimeType('image/png');
+  const glow = document.createTexture('facade-emissive').setImage(skin.emissive).setMimeType('image/png');
+
   const facade = document
     .createMaterial(FACADE)
-    .setBaseColorFactor([0.62, 0.63, 0.65, 1])
+    .setBaseColorFactor([1, 1, 1, 1])
+    .setBaseColorTexture(colour)
+    .setEmissiveFactor([1, 1, 1])
+    .setEmissiveTexture(glow)
     .setMetallicFactor(0)
     .setRoughnessFactor(0.85);
   document
@@ -126,7 +136,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
   document.createBuffer();
   document.getRoot().getAsset().generator = 'glb-buildings';
 
-  const materials = palette(document);
+  const materials = palette(document, seedOf(doc.name));
   const scene = document.createScene(doc.name);
   const shell: MeshData[] = [];
 
