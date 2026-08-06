@@ -12,7 +12,17 @@ npm link          # puts `buildings` on your PATH
 buildings help
 ```
 
-Without `npm link`, call it in place: `node boxes/cli/bin/buildings.ts help`.
+`npm link` writes into the npm prefix, which is `/usr` on many systems and needs root. When it does, put a
+launcher on your own PATH instead:
+
+```bash
+mkdir -p ~/.local/bin
+printf '#!/bin/sh\nexec node "%s/boxes/cli/bin/buildings.ts" "$@"\n' "$PWD" > ~/.local/bin/buildings
+chmod +x ~/.local/bin/buildings
+```
+
+Either way, `buildings help` should now answer. Without a launcher, call it in place:
+`node boxes/cli/bin/buildings.ts help`.
 
 Projects live in `~/.glb-buildings/projects/<name>/`. Point that somewhere else with `BUILDINGS_HOME`:
 
