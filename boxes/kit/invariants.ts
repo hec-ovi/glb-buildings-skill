@@ -46,11 +46,14 @@ export function windingProblems(mesh: MeshData): MeshProblem[] {
  */
 export const MAX_PROUD = 3;
 
+/** How far a part may rise above its section's top: a mast and a tower, and no more. */
+export const MAX_ABOVE = 12;
+
 /**
  * Every solid has to hug its section. A part floating out in the air, or standing off the wall
  * by metres, is caught here rather than in a screenshot.
  */
-export function proudProblems(meshes: MeshData[], footprint: { x0: number; x1: number; z0: number; z1: number }): MeshProblem[] {
+export function proudProblems(meshes: MeshData[], footprint: { x0: number; x1: number; z0: number; z1: number; height?: number }): MeshProblem[] {
   const problems: MeshProblem[] = [];
 
   for (const mesh of meshes) {
@@ -63,6 +66,15 @@ export function proudProblems(meshes: MeshData[], footprint: { x0: number; x1: n
       maxX = Math.max(maxX, mesh.positions[i]!);
       minZ = Math.min(minZ, mesh.positions[i + 2]!);
       maxZ = Math.max(maxZ, mesh.positions[i + 2]!);
+    }
+
+    let above = -Infinity;
+    for (let i = 1; i < mesh.positions.length; i += 3) above = Math.max(above, mesh.positions[i]!);
+    if (footprint.height !== undefined && above - footprint.height > MAX_ABOVE) {
+      problems.push({
+        at: mesh.material,
+        detail: `a part stands ${(above - footprint.height).toFixed(2)} m above the section, which is taller than anything the kit puts on a roof`,
+      });
     }
 
     const proud = Math.max(footprint.x0 - minX, maxX - footprint.x1, footprint.z0 - minZ, maxZ - footprint.z1);

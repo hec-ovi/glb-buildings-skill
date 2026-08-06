@@ -66,17 +66,20 @@ export type RooftopOptions = {
   placements?: Placement[];
   /** Fill what is left, 0 to 1. */
   clutter?: number;
+  /** The footprint of the section above, whose cells are not roof at all. */
+  covered?: Corner[];
   seed: number;
 };
 
-function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: number, random: () => number): void {
+function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: number, random: () => number, ring: Corner[]): void {
   switch (part) {
     case 'unit':
       return block(surface, at, 1.3 + random() * 0.6, 0.9 + random() * 0.5, y, 0.7 + random() * 0.5, turn);
     case 'turbine':
       return turbine(surface, at, y, random);
     case 'pipe':
-      return pipe(surface, at, [at[0] + Math.sin(turn), at[1] + Math.cos(turn)], y, random);
+      // The pipe finds the edge for itself: dropped anywhere else it would run inside the wall.
+      return pipe(surface, at, ring, y, random);
     case 'panel': {
       block(surface, at, 0.12, 0.12, y, 0.5);
       block(surface, [at[0] + 0.5, at[1]], 0.12, 0.12, y, 0.9);
@@ -85,15 +88,20 @@ function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: numb
     case 'vent':
       return cylinder(surface, at, 0.35 + random() * 0.25, y, 1 + random() * 1.4, 8);
     case 'mast': {
-      const height = 9 + random() * 12;
-      block(surface, at, 0.5, 0.5, y, height);
-      const rings = 2 + Math.round(random() * 2);
+      const height = 3.5 + random() * 3.5;
+      const shaft = 0.35;
+      block(surface, at, shaft, shaft, y, height);
+      const rings = 1 + Math.round(random());
       for (let i = 1; i <= rings; i++) {
         const level = y + (height * i) / (rings + 1);
-        block(surface, at, 1.5, 0.28, level, 0.22);
-        block(surface, at, 0.28, 1.5, level, 0.22);
+        block(surface, at, 0.9, 0.18, level, 0.16);
+        block(surface, at, 0.18, 0.9, level, 0.16);
       }
-      for (const dx of [-0.35, 0.35]) block(surface, [at[0] + dx, at[1]], 0.1, 0.1, y + height, 2 + random() * 3);
+      // Spikes stand on the shaft, inside its width, and reach down into it so they are part
+      // of the same solid rather than two bars floating beside it.
+      for (const dx of [-shaft / 4, shaft / 4]) {
+        block(surface, [at[0] + dx, at[1]], 0.07, 0.07, y + height - 0.2, 1 + random() * 1.2);
+      }
       return;
     }
     case 'tank': {
@@ -111,7 +119,7 @@ function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: numb
       return block(surface, at, 0.3, 0.3, y + legs + 3.2, 0.9);
     }
     case 'tower':
-      return block(surface, at, 2.6 + random() * 1.4, 2.6 + random() * 1.4, y, 5 + random() * 8, turn);
+      return block(surface, at, 2.4 + random() * 1.2, 2.4 + random() * 1.2, y, 4 + random() * 5, turn);
   }
 }
 
@@ -137,22 +145,22 @@ function railing(surface: Surface, ring: Corner[], y: number, height: number): v
 /** The parts a quick fill reaches for, and how often. */
 const FILL: DeckPart[] = ['unit', 'unit', 'vent', 'turbine', 'pipe', 'panel', 'unit', 'turbine'];
 
-export function deckCells(shape: SectionShape): Cell[] {
-  return cells(ringAt(shape, 1));
+export function deckCells(shape: SectionShape, covered?: Corner[]): Cell[] {
+  return cells(ringAt(shape, 1), 0.6, covered);
 }
 
 export function rooftop(surface: Surface, shape: SectionShape, options: RooftopOptions): void {
   const random = rng(options.seed);
   const deck = ringAt(shape, 1);
   const y = shape.height;
-  const grid = cells(deck);
+  const grid = cells(deck, 0.6, options.covered);
   const taken = new Set<string>();
 
   for (const placement of options.placements ?? []) {
     const block = claim(grid, placement.cell, PART_SIZE[placement.part] ?? 1);
     if (!block) continue;
     for (const cell of block) taken.add(cell.name);
-    one(surface, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random);
+    one(surface, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random, deck);
   }
 
   const clutter = Math.max(0, Math.min(1, options.clutter ?? 0));
@@ -168,6 +176,6 @@ export function rooftop(surface: Surface, shape: SectionShape, options: RooftopO
     const cell = free[Math.floor(random() * free.length)]!;
     if (taken.has(cell.name)) continue;
     taken.add(cell.name);
-    one(surface, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y - SINK, random() * Math.PI, random);
+    one(surface, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y - SINK, random() * Math.PI, random, deck);
   }
 }

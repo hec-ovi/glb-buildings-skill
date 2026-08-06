@@ -49,8 +49,12 @@ export function onDeck(ring: Corner[], p: Corner): boolean {
   return positive === 0 || negative === 0;
 }
 
-/** Every cell of the deck whose four corners are inside the footprint, in a stable order. */
-export function cells(ring: Corner[], margin = 0.6): Cell[] {
+/**
+ * Every cell of the deck whose four corners are inside the footprint, in a stable order. Cells
+ * under the section above are left out: a roof only exists where the sky does, and a part
+ * standing on a covered cell would be inside the building.
+ */
+export function cells(ring: Corner[], margin = 0.6, covered?: Corner[]): Cell[] {
   const xs = ring.map((c) => c[0]);
   const zs = ring.map((c) => c[1]);
   const x0 = Math.min(...xs);
@@ -71,6 +75,7 @@ export function cells(ring: Corner[], margin = 0.6): Cell[] {
         [x - half, z + half],
       ];
       if (!corners.every((corner) => onDeck(ring, corner))) continue;
+      if (covered && corners.some((corner) => onDeck(covered, corner))) continue;
       found.push({ name: `${columnName(column)}${row + 1}`, centre: [x, z], size: CELL, column, row });
     }
   }
@@ -135,25 +140,52 @@ export function turbine(surface: Surface, centre: Corner, y: number, random: () 
   }
 }
 
+/** The nearest point on a footprint's edge, and how far away it is. */
+export function nearestEdge(ring: Corner[], from: Corner): { at: Corner; away: Corner; distance: number } {
+  let best: Corner = ring[0]!;
+  let outward: Corner = [0, 1];
+  let distance = Infinity;
+
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % ring.length]!;
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const length2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((from[0] - a[0]) * dx + (from[1] - a[1]) * dz) / length2));
+    const on: Corner = [a[0] + dx * t, a[1] + dz * t];
+    const gap = Math.hypot(on[0] - from[0], on[1] - from[1]);
+    if (gap >= distance) continue;
+    distance = gap;
+    best = on;
+    const length = Math.hypot(dx, dz) || 1;
+    outward = [dz / length, -dx / length];
+  }
+  return { at: best, away: outward, distance };
+}
+
 /**
- * A pipe standing on the deck, bending over and dropping to the level below. The elbow is two
- * short straights rather than a real sweep: at this size nobody can tell, and it stays cheap.
+ * A pipe standing on the deck, running across to the nearest edge and dropping down the outside
+ * of the building. The run finds the edge itself, so a pipe placed in the middle of a deck still
+ * comes down where a pipe should rather than through the wall.
+ *
+ * The elbow is a short straight rather than a real sweep: at this size nobody can tell.
  */
-export function pipe(surface: Surface, centre: Corner, toward: Corner, y: number, random: () => number): void {
-  const radius = 0.28 + random() * 0.22;
-  const rise = 1.6 + random() * 2.4;
+export function pipe(surface: Surface, centre: Corner, ring: Corner[], y: number, random: () => number): void {
+  const radius = 0.24 + random() * 0.18;
+  const rise = 1.4 + random() * 1.8;
   const drop = 3 + random() * 5;
 
   cylinder(surface, centre, radius, y, rise, 8);
 
-  const dx = toward[0] - centre[0];
-  const dz = toward[1] - centre[1];
-  const length = Math.hypot(dx, dz) || 1;
-  const reach = 0.9 + random() * 0.8;
-  const out: Corner = [centre[0] + (dx / length) * reach, centre[1] + (dz / length) * reach];
+  const edge = nearestEdge(ring, centre);
+  const out: Corner = [
+    edge.at[0] + edge.away[0] * (radius + 0.12),
+    edge.at[1] + edge.away[1] * (radius + 0.12),
+  ];
 
-  // The bend across, then the run back down the outside.
-  const turn = Math.atan2(dz, dx);
-  block(surface, [(centre[0] + out[0]) / 2, (centre[1] + out[1]) / 2], reach, radius * 2, y + rise, radius * 2, -turn);
+  const run = Math.hypot(out[0] - centre[0], out[1] - centre[1]);
+  const turn = Math.atan2(out[1] - centre[1], out[0] - centre[0]);
+  block(surface, [(centre[0] + out[0]) / 2, (centre[1] + out[1]) / 2], run, radius * 2, y + rise, radius * 2, -turn);
   cylinder(surface, out, radius, y + rise - drop, drop, 8);
 }

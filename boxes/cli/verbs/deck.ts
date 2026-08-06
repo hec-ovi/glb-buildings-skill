@@ -18,14 +18,17 @@ async function target(projects: Parameters<Verb['run']>[1]['projects'], named: s
   const at = named ? doc.bands.findIndex((band) => band.id === named) : doc.bands.length - 1;
   if (at === -1) throw new BuildingError('E_DOC_INVALID', `no section named ${named}`, ['bands', String(named)]);
 
-  const section = assemble(doc).bands[at]!;
+  const placed = assemble(doc);
+  const section = placed.bands[at]!;
+  const above = placed.bands[at + 1];
   const shape = {
     bottom: section.bottom.map(([x, z]) => [x * MM, z * MM] as [number, number]),
     top: section.top.map(([x, z]) => [x * MM, z * MM] as [number, number]),
     height: (section.y1 - section.y0) * MM,
     floors: section.floors.length,
   };
-  return { name, project, doc, at, band: doc.bands[at]!, grid: deckCells(shape) };
+  const covered = above ? above.bottom.map(([x, z]) => [x * MM, z * MM] as [number, number]) : undefined;
+  return { name, project, doc, at, band: doc.bands[at]!, grid: deckCells(shape, covered) };
 }
 
 export const deck: Verb = {

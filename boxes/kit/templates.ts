@@ -95,6 +95,7 @@ export type Dressing = {
   greebles?: number;
   clutter?: number;
   deck?: { cell: string; part: string; turn?: number }[];
+  covered?: [number, number][];
   seed?: number;
 };
 
@@ -112,6 +113,7 @@ export function dress(shape: SectionShape, options: Dressing): MeshData[] {
     rooftop(surface, shape, {
       clutter: options.clutter,
       placements: (options.deck ?? []) as never,
+      covered: options.covered,
       seed: (options.seed ?? 1) ^ 0x9e37,
     });
   }

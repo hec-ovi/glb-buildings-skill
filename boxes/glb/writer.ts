@@ -121,6 +121,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
 
   placed.bands.forEach((band, index) => {
     const sunk = index === 0 ? 0 : BITE;
+    const above = placed.bands[index + 1];
     const shape = shapeOf(band, sunk);
     const parts = template(band.template).build(shape);
     parts.push(
@@ -131,6 +132,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
         greebles: band.greebles,
         clutter: band.clutter,
         deck: band.deck,
+        covered: above ? metres(above.bottom) : undefined,
         seed: seedOf(`${doc.name}/${band.id}`),
       }),
     );
@@ -144,7 +146,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
 
     const xs = shape.bottom.concat(shape.top).map(([x]) => x);
     const zs = shape.bottom.concat(shape.top).map(([, z]) => z);
-    const adrift = proudProblems(parts, { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) });
+    const adrift = proudProblems(parts, { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs), height: shape.height });
     if (adrift.length > 0) {
       throw new BuildingError('E_FLOATING_PART', `section ${band.id}: ${adrift[0]!.detail}`, ['bands', band.id]);
     }
