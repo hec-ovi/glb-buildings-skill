@@ -3,6 +3,8 @@
  * inside out, so geometry is checked here, where it is made.
  */
 import { normalOf, type MeshData, type Vec } from './geometry.ts';
+import { outsideBy } from './plan.ts';
+import { ringAt, type SectionShape } from './section.ts';
 
 export type MeshProblem = { at: string; detail: string };
 
@@ -88,19 +90,18 @@ export function proudProblems(meshes: MeshData[], footprint: { x0: number; x1: n
   return problems;
 }
 
-/**
- * A closed shell: every edge is shared by exactly two triangles running opposite ways, and
- * the enclosed volume is positive, which is only true when the whole thing faces outward.
- */
-export function shellProblems(meshes: MeshData[]): MeshProblem[] {
-  const problems: MeshProblem[] = [];
-  const edges = new Map<string, number>();
-  const key = (p: Vec) => p.map((v) => Math.round(v * 1e5)).join(',');
+type Triangle = [Vec, Vec, Vec];
 
-  // Triangles that share an edge belong to the same solid. A section is a pile of solids, and
-  // each one has to be closed and outward facing on its own: summing the volume of all of them
-  // hides a small part that is inside out inside a big one that is not.
-  const triangles: { points: [Vec, Vec, Vec]; group: number }[] = [];
+const corner = (p: Vec) => p.map((v) => Math.round(v * 1e5)).join(',');
+
+/**
+ * Triangles grouped into solids: two that share an edge are the same piece. A section is a pile
+ * of separate solids, and each one has to hold up on its own, so every proof below works on one
+ * group at a time. Summing over the lot hides a small part that is wrong inside a big one that
+ * is not.
+ */
+export function solids(meshes: MeshData[]): Triangle[][] {
+  const triangles: Triangle[] = [];
   const owner = new Map<string, number>();
   const parent: number[] = [];
 
@@ -114,28 +115,65 @@ export function shellProblems(meshes: MeshData[]): MeshProblem[] {
     }
     return root;
   };
-  const union = (a: number, b: number) => {
-    const ra = find(a);
-    const rb = find(b);
-    if (ra !== rb) parent[rb] = ra;
-  };
 
   for (const mesh of meshes) {
     for (let t = 0; t < mesh.indices.length; t += 3) {
-      const points = [0, 1, 2].map((i) => vertex(mesh, mesh.indices[t + i]!)) as [Vec, Vec, Vec];
+      const points = [0, 1, 2].map((i) => vertex(mesh, mesh.indices[t + i]!)) as Triangle;
       const index = triangles.length;
-      triangles.push({ points, group: index });
+      triangles.push(points);
       parent.push(index);
 
       for (let i = 0; i < 3; i++) {
-        const from = key(points[i]!);
-        const to = key(points[(i + 1) % 3]!);
-        edges.set(`${from}>${to}`, (edges.get(`${from}>${to}`) ?? 0) + 1);
+        const from = corner(points[i]!);
+        const to = corner(points[(i + 1) % 3]!);
+        const edge = from < to ? `${from}|${to}` : `${to}|${from}`;
+        const met = owner.get(edge);
+        if (met === undefined) owner.set(edge, index);
+        else {
+          const a = find(met);
+          const b = find(index);
+          if (a !== b) parent[b] = a;
+        }
+      }
+    }
+  }
 
-        const undirected = from < to ? `${from}|${to}` : `${to}|${from}`;
-        const met = owner.get(undirected);
-        if (met === undefined) owner.set(undirected, index);
-        else union(met, index);
+  const groups = new Map<number, Triangle[]>();
+  triangles.forEach((points, i) => {
+    const root = find(i);
+    const group = groups.get(root);
+    if (group) group.push(points);
+    else groups.set(root, [points]);
+  });
+  return [...groups.values()];
+}
+
+/** Six times the volume a solid encloses. Positive when it faces outward. */
+function volumeOf(group: Triangle[]): number {
+  let total = 0;
+  for (const [p0, p1, p2] of group) {
+    total +=
+      p0[0] * (p1[1] * p2[2] - p2[1] * p1[2]) -
+      p0[1] * (p1[0] * p2[2] - p2[0] * p1[2]) +
+      p0[2] * (p1[0] * p2[1] - p2[0] * p1[1]);
+  }
+  return total / 6;
+}
+
+/**
+ * A closed shell: every edge is shared by exactly two triangles running opposite ways, and
+ * the enclosed volume is positive, which is only true when the whole thing faces outward.
+ */
+export function shellProblems(meshes: MeshData[]): MeshProblem[] {
+  const problems: MeshProblem[] = [];
+  const edges = new Map<string, number>();
+
+  for (const mesh of meshes) {
+    for (let t = 0; t < mesh.indices.length; t += 3) {
+      const points = [0, 1, 2].map((i) => vertex(mesh, mesh.indices[t + i]!)) as Triangle;
+      for (let i = 0; i < 3; i++) {
+        const edge = `${corner(points[i]!)}>${corner(points[(i + 1) % 3]!)}`;
+        edges.set(edge, (edges.get(edge) ?? 0) + 1);
       }
     }
   }
@@ -146,22 +184,49 @@ export function shellProblems(meshes: MeshData[]): MeshProblem[] {
     if (!edges.has(`${to}>${from}`)) problems.push({ at: edge, detail: 'edge has no opposite, the shell is open' });
   }
 
-  const volumes = new Map<number, number>();
-  for (let i = 0; i < triangles.length; i++) {
-    const [p0, p1, p2] = triangles[i]!.points;
-    const part =
-      (p0[0] * (p1[1] * p2[2] - p2[1] * p1[2]) -
-        p0[1] * (p1[0] * p2[2] - p2[0] * p1[2]) +
-        p0[2] * (p1[0] * p2[1] - p2[0] * p1[1])) /
-      6;
-    const root = find(i);
-    volumes.set(root, (volumes.get(root) ?? 0) + part);
+  for (const group of solids(meshes)) {
+    const volume = volumeOf(group);
+    if (volume > 0) continue;
+    const where = group[0]![0].map((v) => v.toFixed(2)).join(', ');
+    problems.push({ at: where, detail: `a solid encloses ${volume.toFixed(3)}, so it is inside out` });
   }
 
-  for (const [root, volume] of volumes) {
-    if (volume > 0) continue;
-    const where = triangles[root]!.points[0].map((v) => v.toFixed(2)).join(', ');
-    problems.push({ at: where, detail: `a solid encloses ${volume.toFixed(3)}, so it is inside out` });
+  return problems;
+}
+
+/**
+ * How far past the section a part has to reach to count as standing on it. More than the bite a
+ * part takes into the wall behind it, so a part built inside out, which pokes out by its bite
+ * and hides the rest of itself in the building, cannot pass for one that stands proud.
+ */
+export const SHOWS = 0.05;
+
+/**
+ * Everything a section wears is meant to be seen: a column, a panel, a balcony, a pipe, a tank.
+ * A part that never reaches out of the section is not decoration, it is a mistake nobody can see
+ * from the outside, and it flickers against whatever wall it is buried in.
+ *
+ * Each solid is measured against the footprint at its own height, so a taper or a twist never
+ * makes an honest part read as buried, and a part on the deck reaches out through the top.
+ */
+export function sunkProblems(meshes: MeshData[], shape: SectionShape): MeshProblem[] {
+  const problems: MeshProblem[] = [];
+
+  for (const group of solids(meshes)) {
+    let reach = -Infinity;
+    for (const points of group) {
+      for (const [x, y, z] of points) {
+        const t = Math.max(0, Math.min(1, y / (shape.height || 1)));
+        reach = Math.max(reach, outsideBy(ringAt(shape, t), [x, z]), y - shape.height);
+      }
+    }
+    if (reach >= SHOWS) continue;
+
+    const where = group[0]![0].map((v) => v.toFixed(2)).join(', ');
+    problems.push({
+      at: where,
+      detail: `a part stands ${Math.max(0, reach).toFixed(2)} m out of the section, so it is buried in it`,
+    });
   }
 
   return problems;

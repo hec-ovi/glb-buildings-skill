@@ -6,7 +6,8 @@
  * Each slab is a closed prism built from its plan outline, so it stacks with everything else.
  */
 import { Surface, type Vec } from './geometry.ts';
-import { BITE, ringAt, type Corner, type SectionShape } from './section.ts';
+import { outwardAt, tangentAt, type Corner } from './plan.ts';
+import { BITE, ringAt, type SectionShape } from './section.ts';
 
 export type BalconyOptions = {
   /** Which face, as an edge index: 0 south, 1 east, 2 north, 3 west. */
@@ -33,11 +34,9 @@ export function balconyPlan(ring: Corner[], options: BalconyOptions): Corner[] {
   const edge = options.edge % ring.length;
   const a = ring[edge]!;
   const b = ring[(edge + 1) % ring.length]!;
-  const dx = b[0] - a[0];
-  const dz = b[1] - a[1];
-  const run = Math.hypot(dx, dz) || 1;
-  const along: Corner = [dx / run, dz / run];
-  const out: Corner = [dz / run, -dx / run];
+  const run = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const along = tangentAt(ring, edge);
+  const out = outwardAt(ring, edge);
 
   const margin = (1 - options.span) / 2;
   const from = run * margin;
@@ -57,9 +56,7 @@ export function balconyPlan(ring: Corner[], options: BalconyOptions): Corner[] {
     plan.push(at(centre - half * Math.cos(angle), straight + radius * Math.sin(angle)));
   }
   plan.push(at(to, -BITE));
-  // Walked out from the wall and back, which is the opposite way round from a footprint; the
-  // prism needs the same direction as the section it hangs on.
-  return dedupe(plan).reverse();
+  return dedupe(plan);
 }
 
 /** A rounded end can land exactly on the point before it; two copies of a point make an edge

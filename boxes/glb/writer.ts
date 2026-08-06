@@ -10,7 +10,7 @@
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
-import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
+import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, sunkProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
 import { facadeTexture } from '#materials';
 import { BuildingError, type BuildingDocument } from '#spec';
 
@@ -148,24 +148,29 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     const above = placed.bands[index + 1];
     const shape = shapeOf(band, sunk);
     const parts = template(band.template).build(shape);
-    parts.push(
-      ...dress(shape, {
-        wires: band.wires,
-        balconies: band.balconies,
-        columns: band.columns,
-        greebles: band.greebles,
-        clutter: band.clutter,
-        deck: band.deck,
-        covered: above ? metres(above.bottom) : undefined,
-        seed: seedOf(`${doc.name}/${band.id}`),
-      }),
-    );
+    const worn = dress(shape, {
+      wires: band.wires,
+      balconies: band.balconies,
+      columns: band.columns,
+      greebles: band.greebles,
+      clutter: band.clutter,
+      deck: band.deck,
+      covered: above ? metres(above.bottom) : undefined,
+      seed: seedOf(`${doc.name}/${band.id}`),
+    });
+    parts.push(...worn);
 
     // Every section is closed on its own. Proving them one at a time is what keeps a stack of
     // stepped, slid and turned masses honest, without welding them into one surface.
     const open = shellProblems(parts);
     if (open.length > 0) {
       throw new BuildingError('E_GLB_INVALID', `section ${band.id} is not closed: ${open[0]!.detail} at ${open[0]!.at}`, ['bands', band.id]);
+    }
+
+    // And everything the section wears has to be seen from outside it.
+    const buried = sunkProblems(worn, shape);
+    if (buried.length > 0) {
+      throw new BuildingError('E_OVERLAP', `section ${band.id}: ${buried[0]!.detail}, at ${buried[0]!.at}`, ['bands', band.id]);
     }
 
     const xs = shape.bottom.concat(shape.top).map(([x]) => x);

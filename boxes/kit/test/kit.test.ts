@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError } from '#spec';
-import { Surface, cap, capRing, cylinder, junction, ringAt, proudProblems, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
+import { Surface, cap, capRing, cylinder, junction, ringAt, proudProblems, shellProblems, sunkProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
 
 const plain: SectionShape = {
   bottom: [
@@ -157,6 +157,40 @@ describe('fake parts', () => {
       expect(windingProblems(parts[0]!), style).toEqual([]);
       expect(shellProblems(parts), style).toEqual([]);
     }
+  });
+});
+
+describe('everything a section wears is on the outside of it', () => {
+  const bulk: SectionShape = { ...plain, floors: 4, height: 12.8 };
+  const worn = {
+    'corner columns': { columns: 'corners' },
+    ribs: { columns: 'ribs' },
+    'columns in the gaps': { columns: 'partial', seed: 5 },
+    greebles: { greebles: 0.6, seed: 3 },
+    balconies: { balconies: 'S' },
+    cables: { wires: 'E' },
+    'a deck': { clutter: 0.8, seed: 9 },
+  } as const;
+
+  for (const [what, options] of Object.entries(worn)) {
+    it(`stands ${what} where they can be seen`, () => {
+      expect(sunkProblems(dress(bulk, options), bulk)).toEqual([]);
+    });
+  }
+
+  it('hangs a balcony on the face that was asked for', () => {
+    const parts = dress(bulk, { balconies: 'S' });
+    const zs = parts[0]!.positions.filter((_, i) => i % 3 === 2);
+    // S is +Z, and the section ends at 7: the slab reaches past it and never crosses the middle.
+    expect(Math.max(...zs)).toBeGreaterThan(7);
+    expect(Math.min(...zs)).toBeGreaterThan(0);
+  });
+
+  it('catches a part built the wrong way round, buried in the wall', () => {
+    const inside = new Surface('facade').box([-1, 1, -1], [1, 2, 1]).data();
+    const problems = sunkProblems([inside], bulk);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]!.detail).toContain('buried');
   });
 });
 

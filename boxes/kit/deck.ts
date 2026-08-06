@@ -6,7 +6,7 @@
  * Seeded, so the same deck lays out the same way every build.
  */
 import { Surface, type Vec } from './geometry.ts';
-import type { Corner } from './section.ts';
+import { insideRing, nearestOn, outwardAt, type Corner } from './plan.ts';
 
 export const CELL = 2;
 
@@ -35,20 +35,6 @@ export function rng(seed: number): () => number {
   };
 }
 
-/** Convex footprint, so one sign test per edge decides whether a point is on the deck. */
-export function onDeck(ring: Corner[], p: Corner): boolean {
-  let positive = 0;
-  let negative = 0;
-  for (let i = 0; i < ring.length; i++) {
-    const a = ring[i]!;
-    const b = ring[(i + 1) % ring.length]!;
-    const side = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
-    if (side > 0) positive += 1;
-    if (side < 0) negative += 1;
-  }
-  return positive === 0 || negative === 0;
-}
-
 /**
  * Every cell of the deck whose four corners are inside the footprint, in a stable order. Cells
  * under the section above are left out: a roof only exists where the sky does, and a part
@@ -74,8 +60,8 @@ export function cells(ring: Corner[], margin = 0.6, covered?: Corner[]): Cell[] 
         [x + half, z + half],
         [x - half, z + half],
       ];
-      if (!corners.every((corner) => onDeck(ring, corner))) continue;
-      if (covered && corners.some((corner) => onDeck(covered, corner))) continue;
+      if (!corners.every((corner) => insideRing(ring, corner))) continue;
+      if (covered && corners.some((corner) => insideRing(covered, corner))) continue;
       found.push({ name: `${columnName(column)}${row + 1}`, centre: [x, z], size: CELL, column, row });
     }
   }
@@ -140,28 +126,10 @@ export function turbine(surface: Surface, centre: Corner, y: number, random: () 
   }
 }
 
-/** The nearest point on a footprint's edge, and how far away it is. */
+/** The nearest point on a footprint's edge, which way is out from there, and how far away it is. */
 export function nearestEdge(ring: Corner[], from: Corner): { at: Corner; away: Corner; distance: number } {
-  let best: Corner = ring[0]!;
-  let outward: Corner = [0, 1];
-  let distance = Infinity;
-
-  for (let i = 0; i < ring.length; i++) {
-    const a = ring[i]!;
-    const b = ring[(i + 1) % ring.length]!;
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    const length2 = dx * dx + dz * dz || 1;
-    const t = Math.max(0, Math.min(1, ((from[0] - a[0]) * dx + (from[1] - a[1]) * dz) / length2));
-    const on: Corner = [a[0] + dx * t, a[1] + dz * t];
-    const gap = Math.hypot(on[0] - from[0], on[1] - from[1]);
-    if (gap >= distance) continue;
-    distance = gap;
-    best = on;
-    const length = Math.hypot(dx, dz) || 1;
-    outward = [dz / length, -dx / length];
-  }
-  return { at: best, away: outward, distance };
+  const { at, edge, distance } = nearestOn(ring, from);
+  return { at, away: outwardAt(ring, edge), distance };
 }
 
 /**

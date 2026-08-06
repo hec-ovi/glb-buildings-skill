@@ -7,7 +7,7 @@
  * never reshuffles it.
  */
 import { Surface, type Vec } from './geometry.ts';
-import { BITE, ringAt, type Corner, type SectionShape } from './section.ts';
+import { BITE, outwardAt, ringAt, type Corner, type SectionShape } from './section.ts';
 
 export type GreebleOptions = {
   /** 0 to 1: how much of the face carries a part. */
@@ -59,19 +59,15 @@ function part(
 ): void {
   const next = (edge + 1) % lower.length;
   const face = (ring: Corner[], t: number, out: number): Corner => {
-    const a = ring[edge]!;
-    const b = ring[next]!;
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    const length = Math.hypot(dx, dz) || 1;
-    const outward: Corner = [dz / length, -dx / length];
-    const on = lerp(a, b, t);
+    const outward = outwardAt(ring, edge);
+    const on = lerp(ring[edge]!, ring[next]!, t);
     return [on[0] + outward[0] * out, on[1] + outward[1] * out];
   };
 
-  // The back of the panel sits inside the wall: two faces in the same plane flicker.
-  const bottom: Corner[] = [face(lower, from, -BITE), face(lower, to, -BITE), face(lower, to, stand), face(lower, from, stand)];
-  const top: Corner[] = [face(upper, from, -BITE), face(upper, to, -BITE), face(upper, to, stand), face(upper, from, stand)];
+  // Outer face first, then the back, which sits inside the wall: two faces in the same plane
+  // flicker. Round the same way as a footprint, so the panel faces out.
+  const bottom: Corner[] = [face(lower, from, stand), face(lower, to, stand), face(lower, to, -BITE), face(lower, from, -BITE)];
+  const top: Corner[] = [face(upper, from, stand), face(upper, to, stand), face(upper, to, -BITE), face(upper, from, -BITE)];
 
   for (let i = 0; i < 4; i++) {
     const j = (i + 1) % 4;

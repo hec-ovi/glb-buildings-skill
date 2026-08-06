@@ -6,10 +6,11 @@
  * Everything here is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
 import { Surface, type Vec } from './geometry.ts';
+import { insetRing, lerp, outwardAt, type Corner } from './plan.ts';
 import { windowRow, WINDOW, type WindowStyle } from './openings.ts';
 
-/** A footprint corner on the ground plane, in metres. Order S, E, N, W. */
-export type Corner = [number, number];
+export type { Corner };
+export { insetRing, insideRing, middleOf, outwardAt } from './plan.ts';
 
 export type SectionShape = {
   bottom: Corner[];
@@ -23,30 +24,12 @@ export type SectionShape = {
   windows?: WindowStyle;
 };
 
-function lerp(a: Corner, b: Corner, t: number): Corner {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
-}
-
 /** The footprint partway up the section. */
 export function ringAt(shape: SectionShape, t: number): Corner[] {
   return shape.bottom.map((corner, i) => lerp(corner, shape.top[i]!, t));
 }
 
 const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
-
-/** Pull a footprint in toward its own middle, which is what a bevelled edge sits on. */
-export function insetRing(ring: Corner[], by: number): Corner[] {
-  if (by <= 0) return ring;
-  const cx = ring.reduce((sum, c) => sum + c[0], 0) / ring.length;
-  const cz = ring.reduce((sum, c) => sum + c[1], 0) / ring.length;
-  return ring.map(([x, z]) => {
-    const dx = x - cx;
-    const dz = z - cz;
-    const length = Math.hypot(dx, dz) || 1;
-    const pull = Math.min(by, length * 0.9);
-    return [x - (dx / length) * pull, z - (dz / length) * pull] as Corner;
-  });
-}
 
 /** The ring a cap sits on: the bevel pulls the very top and bottom in. */
 export function capRing(shape: SectionShape, end: 0 | 1): Corner[] {
@@ -85,10 +68,7 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
     if (!shape.windows || !pane) continue;
 
     // A floor with windows: every face is cut into bays and each bay gets a pane.
-    for (let i = 0; i < lower.length; i++) {
-      const next = (i + 1) % lower.length;
-      windowRow(pane, [lower[i]!, lower[next]!], [upper[i]!, upper[next]!], y0, y1, shape.windows);
-    }
+    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, y0, y1, shape.windows);
   }
 
   if (chamfer > 0) band(surface, ringAt(shape, to / shape.height), capRing(shape, 1), to, shape.height);
@@ -111,12 +91,8 @@ export function edgeFacing(ring: Corner[], side: 'N' | 'E' | 'S' | 'W'): number 
   let best = 0;
   let score = -Infinity;
   for (let i = 0; i < ring.length; i++) {
-    const a = ring[i]!;
-    const b = ring[(i + 1) % ring.length]!;
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    const length = Math.hypot(dx, dz) || 1;
-    const dot = (dz / length) * wx + (-dx / length) * wz;
+    const out = outwardAt(ring, i);
+    const dot = out[0] * wx + out[1] * wz;
     if (dot > score) {
       score = dot;
       best = i;
@@ -178,7 +154,7 @@ export function tubeRing(shape: SectionShape, t: number, edge: number, along: nu
   const dz = b[1] - a[1];
   const length = Math.hypot(dx, dz) || 1;
   const tangent: Corner = [dx / length, dz / length];
-  const outward: Corner = [dz / length, -dx / length];
+  const outward = outwardAt(ring, edge);
   const centre: Corner = [a[0] + dx * along, a[1] + dz * along];
   const half = thickness / 2;
 
@@ -186,7 +162,9 @@ export function tubeRing(shape: SectionShape, t: number, edge: number, along: nu
     centre[0] + tangent[0] * side + outward[0] * out,
     centre[1] + tangent[1] * side + outward[1] * out,
   ];
-  return [at(-half, -BITE), at(half, -BITE), at(half, stand), at(-half, stand)];
+  // Outer face first, then the back inside the wall: the same way round a footprint goes, so
+  // the upright built from it comes out facing out.
+  return [at(-half, stand), at(half, stand), at(half, -BITE), at(-half, -BITE)];
 }
 
 /** Two footprints are the same when every corner matches, so no junction is needed. */

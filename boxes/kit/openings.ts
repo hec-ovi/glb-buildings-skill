@@ -7,7 +7,7 @@
  * Twelve triangles each, and it cannot break the shell.
  */
 import { Surface, type Vec } from './geometry.ts';
-import type { Corner } from './section.ts';
+import { outwardAt, type Corner } from './section.ts';
 
 export type WindowStyle = {
   /** How wide a bay is, in metres. The row is split into whole bays. */
@@ -22,7 +22,7 @@ export type WindowStyle = {
   depth: number;
 };
 
-export const WINDOW: WindowStyle = { bay: 3, from: 0.22, to: 0.78, sill: 0.3, head: 0.8, depth: 0.06 };
+export const WINDOW: WindowStyle = { bay: 3, from: 0.22, to: 0.78, sill: 0.3, head: 0.8, depth: 0.09 };
 
 const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
 
@@ -30,24 +30,23 @@ function lerp(a: Corner, b: Corner, t: number): Corner {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
 
-/** One row of panes along one edge of one floor. */
+/** One row of panes along one edge of one floor, `edge` being the edge of the lower ring. */
 export function windowRow(
   pane: Surface,
-  lower: [Corner, Corner],
-  upper: [Corner, Corner],
+  lowerRing: Corner[],
+  upperRing: Corner[],
+  edge: number,
   y0: number,
   y1: number,
   style: WindowStyle = WINDOW,
 ): void {
+  const next = (edge + 1) % lowerRing.length;
+  const lower: [Corner, Corner] = [lowerRing[edge]!, lowerRing[next]!];
+  const upper: [Corner, Corner] = [upperRing[edge]!, upperRing[next]!];
   const [a0, a1] = lower;
-  const [b0, b1] = upper;
   const run = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
   const bays = Math.max(1, Math.round(run / style.bay));
-
-  const dx = a1[0] - a0[0];
-  const dz = a1[1] - a0[1];
-  const length = Math.hypot(dx, dz) || 1;
-  const outward: Corner = [dz / length, -dx / length];
+  const outward = outwardAt(lowerRing, edge);
 
   const rise = y1 - y0;
   const sill = y0 + rise * style.sill;
@@ -63,8 +62,9 @@ export function windowRow(
       return [on[0] + outward[0] * out, on[1] + outward[1] * out];
     };
 
-    const bottom = [at(left, lower, back), at(right, lower, back), at(right, lower, style.depth), at(left, lower, style.depth)];
-    const top = [at(left, upper, back), at(right, upper, back), at(right, upper, style.depth), at(left, upper, style.depth)];
+    // Glass first, then the back inside the reveal: the same way round a footprint goes.
+    const bottom = [at(left, lower, style.depth), at(right, lower, style.depth), at(right, lower, back), at(left, lower, back)];
+    const top = [at(left, upper, style.depth), at(right, upper, style.depth), at(right, upper, back), at(left, upper, back)];
 
     for (let i = 0; i < 4; i++) {
       const j = (i + 1) % 4;

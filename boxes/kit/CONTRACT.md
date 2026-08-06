@@ -11,11 +11,11 @@ taper are all the same operation. Sections are closed solids that sink slightly 
 kitbashed building is assembled, which is why any two of them meet without a transition piece.
 
 ```
-SectionShape { bottom: Corner[], top: Corner[], height, floors }
+SectionShape { bottom: Corner[], top: Corner[], height, floors, chamfer?, windows? }
 ```
 
-Corners are world X and Z in metres, order S, E, N, W. `y=0` is the section's underside. Walls are cut into one
-row of quads per floor, so a texture tiles once per floor.
+Corners are world X and Z in metres, `y=0` is the section's underside, and a footprint is convex. Walls are cut
+into one row of quads per floor, so a texture tiles once per floor.
 
 ## In and out
 
@@ -24,10 +24,17 @@ row of quads per floor, so a texture tiles once per floor.
 | `template(id)` | template id | the `Template`, or `E_UNKNOWN_TEMPLATE` |
 | `templates()` | | every template with its tier and one-line purpose |
 | `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
-| `wireRun(shape, side)` | shape, `N`/`E`/`S`/`W` | cables climbing that face, as closed tubes |
-| `walls` / `cap` / `junction` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
+| `dress(shape, options)` | shape, what it wears | cables, columns, balconies, greebles, deck parts, as one mesh |
+| `walls` / `cap` / `capRing` / `junction` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
+| `outwardAt(ring, edge)` | footprint, edge | the way out at that edge |
+| `outsideBy(ring, point)` | footprint, point | metres past the footprint, negative inside |
+| `insideRing` / `nearestOn` / `insetRing` / `middleOf` / `tangentAt` | footprints | the rest of the plan arithmetic |
+| `cells(ring, margin, covered?)` | deck footprint | the two metre grid, named `A1`, `B3` |
 | `windingProblems(mesh)` | one mesh | where a normal disagrees with its triangle, or a triangle has no area |
 | `shellProblems(meshes)` | a section's meshes | where it is open, doubled, or inside out |
+| `sunkProblems(meshes, shape)` | what a section wears | which parts are buried inside it |
+| `proudProblems(meshes, box)` | meshes, the section's box | which parts have drifted off it |
+| `solids(meshes)` | meshes | triangles grouped into separate solids |
 | `new Surface(material)` | material name | a builder: `.quad()`, `.box()`, `.cap()`, `.data()` |
 
 ## Templates
@@ -38,13 +45,17 @@ row of quads per floor, so a texture tiles once per floor.
 | `main-plain` | full | the base: taller walls, and the underside that closes the building |
 | `roof-parapet` | light | the crown: a parapet and the roof deck |
 
-Materials are named, not built here: `facade` and `roof`.
+Materials are named, not built here: `facade`, `glass` and `roof`.
 
 ## Invariants
 
 - Front faces are counter-clockwise seen from outside, and every stored normal agrees with its triangle's
   winding. `windingProblems` returns nothing for any template output.
 - Every section is a closed solid with positive volume. `shellProblems` returns nothing, at any twist or taper.
+- Every part a section wears reaches at least `SHOWS` (5 cm) out of it, measured against the footprint at the
+  part's own height. Nothing the kit builds is buried in a wall or flush with one.
+- Which way is out comes from `outwardAt`, measured against the middle of the footprint, never from the
+  winding, so a ring wound either way dresses the same.
 - A triangle with no area is never written: a collapsed corner drops out instead of carrying a zero normal.
 - UVs come from real-world size: one texture tile per `TILE` metres.
 
