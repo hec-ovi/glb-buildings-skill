@@ -2,29 +2,36 @@
 import { assemble, describeSeam, seamsMatch } from '#assemble';
 import { templates } from '#kit';
 import { bandFloorHeight, newDocument, toMetres } from '#spec';
+import { join } from 'node:path';
+import { LOCAL, Projects } from '../projects.ts';
 import type { Verb } from './verb.ts';
-import { count, metres, need, parse } from './args.ts';
+import { count, need, parse, text } from './args.ts';
 
 export const newProject: Verb = {
   name: 'new',
   summary: 'start a building and make it the current one',
-  usage: 'new <name> [--width 18] [--depth 14] [--floors 14]',
-  async run(args, { projects }) {
+  usage: 'new <name> [--width 18] [--depth 14] [--floors 14] [--here]',
+  async run(args, ctx) {
     const { positionals, values } = parse(args, {
       width: { type: 'string' },
       depth: { type: 'string' },
       floors: { type: 'string' },
+      here: { type: 'boolean' },
     });
     const name = need(positionals, 0, 'project name');
+    // --here keeps projects beside the work, which is the answer when the home is not writable.
+    const projects = values.here === true ? new Projects(join(process.cwd(), LOCAL)) : ctx.projects;
     const project = await projects.create(name);
+    const width = text(values.width);
+    const depth = text(values.depth);
     const doc = newDocument(name, {
-      width: values.width ? Number(values.width) : undefined,
-      depth: values.depth ? Number(values.depth) : undefined,
+      width: width ? Number(width) : undefined,
+      depth: depth ? Number(depth) : undefined,
       floors: count(values.floors, 'floors'),
     });
     await project.writeDocument(doc);
     await projects.use(name);
-    return { project: name, path: project.dir, bands: doc.bands.map((b) => b.id) };
+    return { project: name, path: project.dir, home: projects.root, bands: doc.bands.map((b) => b.id) };
   },
 };
 
@@ -80,6 +87,7 @@ export const show: Verb = {
 
     return {
       project: name,
+      home: projects.root,
       size: {
         width: toMetres(placed.size.width),
         depth: toMetres(placed.size.depth),

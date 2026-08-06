@@ -4,19 +4,27 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { assemble } from '#assemble';
 import { BuildingError, parseSelection } from '#spec';
-import { Project } from './project.ts';
+import { Project, watchTree } from './project.ts';
 import { ViewerBundle } from './bundle.ts';
 
 const INDEX = fileURLToPath(new URL('../viewer/index.html', import.meta.url));
 
 export type PreviewOptions = {
-  dir: string;
+  /** A fixed project folder. */
+  dir?: string;
+  /** Or follow whatever project is current: resolved on every request. */
+  resolve?: () => Promise<string>;
+  /** What to watch while following, usually the projects root. */
+  watchRoot?: string;
   port?: number;
   host?: string;
 };
 
 export class PreviewServer {
+  /** The fixed project, when the server was given one. */
   readonly project: Project;
+  readonly #resolve: (() => Promise<string>) | undefined;
+  readonly #watchRoot: string | undefined;
   readonly #bundle = new ViewerBundle();
   readonly #host: string;
   readonly #port: number;
@@ -25,7 +33,10 @@ export class PreviewServer {
   #unwatch: (() => void) | undefined;
 
   constructor(options: PreviewOptions) {
-    this.project = new Project(options.dir);
+    if (!options.dir && !options.resolve) throw new Error('preview needs a dir or a resolve');
+    this.project = new Project(options.dir ?? '.');
+    this.#resolve = options.resolve;
+    this.#watchRoot = options.watchRoot;
     this.#host = options.host ?? '127.0.0.1';
     this.#port = options.port ?? 4321;
   }
@@ -41,7 +52,9 @@ export class PreviewServer {
       server.listen(this.#port, this.#host, ok);
     });
 
-    this.#unwatch = this.project.watch(() => this.#broadcast());
+    this.#unwatch = this.#watchRoot
+      ? watchTree(this.#watchRoot, () => this.#broadcast())
+      : this.project.watch(() => this.#broadcast());
     return this.url;
   }
 
@@ -69,20 +82,27 @@ export class PreviewServer {
     if (path === '/api/scene') return this.#scene(res);
     if (path === '/api/model.glb') return this.#model(res);
     if (path === '/api/selection' && req.method === 'POST') return this.#putSelection(req, res);
-    if (path === '/api/selection') return this.#json(res, 200, await this.project.readSelection());
+    if (path === '/api/selection') return this.#json(res, 200, await (await this.#current()).readSelection());
     if (path === '/api/events') return this.#events(res);
 
     this.#send(res, 404, 'text/plain', 'not found');
   }
 
+  /** The project this request is about: the fixed one, or whichever is current. */
+  async #current(): Promise<Project> {
+    return this.#resolve ? new Project(await this.#resolve()) : this.project;
+  }
+
   async #scene(res: ServerResponse): Promise<void> {
-    const document = await this.project.readDocument();
-    this.#json(res, 200, { document, scene: assemble(document), hasModel: this.project.hasModel() });
+    const project = await this.#current();
+    const document = await project.readDocument();
+    this.#json(res, 200, { document, scene: assemble(document), hasModel: project.hasModel() });
   }
 
   async #model(res: ServerResponse): Promise<void> {
-    if (!this.project.hasModel()) return this.#send(res, 404, 'text/plain', 'no build yet');
-    const glb = await this.project.readModel();
+    const project = await this.#current();
+    if (!project.hasModel()) return this.#send(res, 404, 'text/plain', 'no build yet');
+    const glb = await project.readModel();
     res.writeHead(200, { 'content-type': 'model/gltf-binary', 'cache-control': 'no-store' });
     res.end(glb);
   }
@@ -91,7 +111,7 @@ export class PreviewServer {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
     const selection = parseSelection(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'));
-    this.#json(res, 200, await this.project.writeSelection(selection));
+    this.#json(res, 200, await (await this.#current()).writeSelection(selection));
   }
 
   #events(res: ServerResponse): void {

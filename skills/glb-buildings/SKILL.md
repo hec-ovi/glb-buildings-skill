@@ -19,6 +19,9 @@ Match the request to a row, open the file it names (next to this one), then run 
 
 ## Always
 
+0. **Set up once, if the home is not writable.** `buildings new <name> --here` keeps projects in a
+   `.buildings` folder next to your work, which is what a sandboxed agent needs. Every later verb finds it on
+   its own, with no environment variable to repeat. `buildings show` prints the `home` it is using.
 1. **Know which building you are editing.** `buildings list` shows the projects and the current one.
    `buildings new <name>` starts one and makes it current; `buildings use <name>` switches. Every other verb
    works on the current project, so you say the name once.
@@ -66,8 +69,16 @@ A stack of **bands**, bottom to top, over one rectangular footprint. A band repe
   seam, so it needs a transition band or it will not close.
 - The building must close into one shell: a `main` band at the bottom (it carries the underside) and a `roof`
   band at the top (it carries the deck). `build` refuses otherwise, and says where.
+- Setbacks (`--inset`) and turns (`--rotation`) do not stack yet: the kit has no transition part, so a band
+  that is inset or turned leaves the shell open and `build` refuses. Keep both at 0 and say so rather than
+  building something that fails.
 - Keep the file plain: no compression extensions, one UV set, metres, Y up. The CLI already does this; do not
   ask for anything else.
+
+## Never read the source
+
+`buildings help`, `buildings show` and the error messages are the whole surface. Reading the repository's code
+is never part of the job, and neither is editing any file: the verbs write everything.
 
 ## When a verb fails
 

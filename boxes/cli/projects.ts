@@ -9,9 +9,18 @@ import { join } from 'node:path';
 import { Project } from '#preview';
 import { BuildingError } from '#spec';
 
-/** Override with BUILDINGS_HOME. Never a path baked into the code. */
-export function home(): string {
-  return process.env.BUILDINGS_HOME ?? join(homedir(), '.glb-buildings');
+/** A projects root next to the work, for agents that cannot write outside their workspace. */
+export const LOCAL = '.buildings';
+
+/**
+ * Where projects live, in order: `BUILDINGS_HOME`, then a `.buildings` folder in the current
+ * directory, then `~/.glb-buildings`. The middle one is what a sandboxed agent uses: it makes
+ * the folder once with `new --here` and every later verb finds it without an env var.
+ */
+export function home(cwd = process.cwd()): string {
+  if (process.env.BUILDINGS_HOME) return process.env.BUILDINGS_HOME;
+  if (existsSync(join(cwd, LOCAL))) return join(cwd, LOCAL);
+  return join(homedir(), '.glb-buildings');
 }
 
 const NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
@@ -62,7 +71,14 @@ export class Projects {
     if (existsSync(this.path(name))) {
       throw new BuildingError('E_DOC_INVALID', `project ${name} already exists`, ['project', name]);
     }
-    await mkdir(this.path(name), { recursive: true });
+    try {
+      await mkdir(this.path(name), { recursive: true });
+    } catch (error) {
+      const detail = (error as NodeJS.ErrnoException).code === 'EACCES' || (error as NodeJS.ErrnoException).code === 'EPERM'
+        ? `cannot write in ${this.root}. Run the same command with --here to keep projects in ${LOCAL} next to your work, or set BUILDINGS_HOME`
+        : (error as Error).message;
+      throw new BuildingError('E_DOC_INVALID', detail, ['project', name]);
+    }
     return new Project(this.path(name));
   }
 

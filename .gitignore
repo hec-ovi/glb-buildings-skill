@@ -13,3 +13,6 @@ docs/private/
 
 # Research store
 .research/
+
+# Workspace-local projects
+.buildings/

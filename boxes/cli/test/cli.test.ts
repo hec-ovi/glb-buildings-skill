@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { mkdtemp } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -39,6 +39,36 @@ describe('projects', () => {
   });
 });
 
+describe('a sandboxed agent', () => {
+  it('keeps projects beside the work with --here, and finds them again without a flag', async () => {
+    const work = await mkdtemp(join(tmpdir(), 'work-'));
+    const previous = process.cwd();
+    process.chdir(work);
+    try {
+      const made = (await run(['new', 'tower-a', '--here'])) as unknown as { ok: boolean; home: string };
+      expect(made.ok).toBe(true);
+      expect(made.home).toBe(join(work, '.buildings'));
+      expect(existsSync(join(work, '.buildings', 'projects', 'tower-a'))).toBe(true);
+      expect(await run(['show'])).toMatchObject({ project: 'tower-a', home: join(work, '.buildings') });
+    } finally {
+      process.chdir(previous);
+    }
+  });
+
+  it('says what to do when the home cannot be written', async () => {
+    const locked = await mkdtemp(join(tmpdir(), 'locked-'));
+    await mkdir(join(locked, 'projects'));
+    await chmod(join(locked, 'projects'), 0o500);
+    try {
+      const answer = (await run(['new', 'tower-a'], new Projects(locked))) as unknown as { ok: boolean; message: string };
+      expect(answer.ok).toBe(false);
+      expect(answer.message).toContain('--here');
+    } finally {
+      await chmod(join(locked, 'projects'), 0o700);
+    }
+  });
+});
+
 describe('bands', () => {
   it('adds, changes and removes a band', async () => {
     await call('new', 'tower-a');
@@ -69,6 +99,22 @@ describe('build', () => {
     expect(built.validator.errors).toBe(0);
     expect(built.nodes).toBe(12);
     expect(built.triangles).toBeLessThan(200);
+  });
+
+  it('names both bands when a setback breaks the stack, instead of leaving a raw edge', async () => {
+    await call('new', 'tower-a');
+    await call('set-band', 'body', '--inset', '1.5');
+    const answer = (await call('build')) as unknown as { ok: boolean; code: string; message: string };
+    expect(answer).toMatchObject({ ok: false, code: 'E_SEAM_MISMATCH' });
+    expect(answer.message).toContain('body');
+    expect(answer.message).toContain('ground');
+    expect(answer.message).toContain('inset');
+  });
+
+  it('says which band is missing when the stack has no roof on top', async () => {
+    await call('new', 'tower-a');
+    await call('remove-band', 'crown');
+    expect(await call('build')).toMatchObject({ ok: false, code: 'E_SEAM_MISMATCH' });
   });
 
   it('reports nothing picked before the human uses the preview', async () => {

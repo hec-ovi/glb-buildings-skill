@@ -5,7 +5,7 @@ import { buildGlb, validateGlb } from '#glb';
 import { PreviewServer } from '#preview';
 import { BuildingError, describeSelection, toMetres } from '#spec';
 import type { Verb } from './verb.ts';
-import { parse } from './args.ts';
+import { parse, text } from './args.ts';
 
 export const build: Verb = {
   name: 'build',
@@ -46,14 +46,28 @@ export const preview: Verb = {
   usage: 'preview [name] [--port 4321]',
   async run(args, { projects }) {
     const { positionals, values } = parse(args, { port: { type: 'string' } });
-    const { name, project } = await projects.open(positionals[0]);
-    const server = new PreviewServer({ dir: project.dir, port: values.port ? Number(values.port) : 4321 });
+    const pinned = positionals[0];
+    const { name, project } = await projects.open(pinned);
+    const port = text(values.port) ? Number(text(values.port)) : 4321;
+
+    // With no name the preview follows the current project, so one server keeps up with the work.
+    const server = new PreviewServer(
+      pinned
+        ? { dir: project.dir, port }
+        : { resolve: async () => (await projects.open()).project.dir, watchRoot: projects.root, port },
+    );
     const url = await server.start();
 
     process.on('SIGINT', () => void server.close().then(() => process.exit(0)));
     process.on('SIGTERM', () => void server.close().then(() => process.exit(0)));
 
-    return { project: name, url, picks: project.selectionPath, note: 'running until you stop it' };
+    return {
+      project: name,
+      url,
+      follows: pinned ? 'this project only' : 'whichever project is current',
+      picks: project.selectionPath,
+      note: 'running until you stop it',
+    };
   },
 };
 

@@ -2,7 +2,7 @@
 import { BAND_KINDS, BuildingError, TIERS, parseDocument, type Band, type BuildingDocument } from '#spec';
 import { TEMPLATE_IDS } from '#kit';
 import type { Verb } from './verb.ts';
-import { count, degrees, metres, need, parse, type FlagSpec } from './args.ts';
+import { count, degrees, metres, need, parse, text, type FlagSpec } from './args.ts';
 
 const FLAGS: FlagSpec = {
   kind: { type: 'string' },
@@ -53,9 +53,9 @@ export const addBand: Verb = {
 
     const band: Band = {
       id,
-      kind: oneOf(values.kind, BAND_KINDS, 'kind') ?? 'bulk',
-      tier: oneOf(values.tier, TIERS, 'tier') ?? 'flat',
-      template: checkTemplate(values.template) ?? 'bulk-flat',
+      kind: oneOf(text(values.kind), BAND_KINDS, 'kind') ?? 'bulk',
+      tier: oneOf(text(values.tier), TIERS, 'tier') ?? 'flat',
+      template: checkTemplate(text(values.template)) ?? 'bulk-flat',
       floors: count(values.floors, 'floors') ?? 1,
       inset: metres(values.inset, 'inset') ?? 0,
       rotation: degrees(values.rotation) ?? 0,
@@ -67,12 +67,12 @@ export const addBand: Verb = {
         throw new BuildingError('E_BAND_ID_DUPLICATE', `band ${id} already exists`, ['bands', id]);
       }
       const bands = [...doc.bands];
-      const anchor = values.after ?? values.before;
+      const anchor = text(values.after) ?? text(values.before);
       const at = anchor ? bands.findIndex((b) => b.id === anchor) : -1;
       if (anchor && at === -1) throw new BuildingError('E_DOC_INVALID', `no band named ${anchor}`, ['bands', anchor]);
 
       if (at === -1) bands.push(band);
-      else bands.splice(values.after ? at + 1 : at, 0, band);
+      else bands.splice(text(values.after) ? at + 1 : at, 0, band);
       return { ...doc, bands };
     });
   },
@@ -95,9 +95,9 @@ export const setBand: Verb = {
       const bands = [...doc.bands];
       bands[at] = {
         ...band,
-        kind: oneOf(values.kind, BAND_KINDS, 'kind') ?? band.kind,
-        tier: oneOf(values.tier, TIERS, 'tier') ?? band.tier,
-        template: checkTemplate(values.template) ?? band.template,
+        kind: oneOf(text(values.kind), BAND_KINDS, 'kind') ?? band.kind,
+        tier: oneOf(text(values.tier), TIERS, 'tier') ?? band.tier,
+        template: checkTemplate(text(values.template)) ?? band.template,
         floors: count(values.floors, 'floors') ?? band.floors,
         inset: metres(values.inset, 'inset') ?? band.inset,
         rotation: degrees(values.rotation) ?? band.rotation,

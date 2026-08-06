@@ -5,6 +5,28 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { EMPTY_SELECTION, parseDocument, parseSelection, type BuildingDocument, type Selection } from '#spec';
 
+/**
+ * Watch a whole projects root: any document, build or current-project change under it counts.
+ * This is what lets one preview follow whichever building is being edited.
+ */
+export function watchTree(root: string, onChange: () => void): () => void {
+  if (!existsSync(root)) return () => {};
+  const watched = new Set(['building.json', 'model.glb', 'current']);
+  let timer: NodeJS.Timeout | undefined;
+
+  const watcher = watch(root, { recursive: true }, (_event, name) => {
+    if (name !== null && !watched.has(String(name).split(/[\\/]/).pop() ?? '')) return;
+    clearTimeout(timer);
+    timer = setTimeout(onChange, 80);
+  });
+  watcher.on('error', () => {});
+
+  return () => {
+    clearTimeout(timer);
+    watcher.close();
+  };
+}
+
 export class Project {
   readonly dir: string;
 

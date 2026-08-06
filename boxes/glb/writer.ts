@@ -7,7 +7,7 @@
  * nothing is mirrored, so every node transform keeps a positive determinant.
  */
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
-import { assemble, type PlacedBand, type PlacedScene } from '#assemble';
+import { assemble, describeSeam, seamsMatch, type PlacedBand, type PlacedScene } from '#assemble';
 import { FACADE, ROOF, shellProblems, template, triangleCount, type MeshData } from '#kit';
 import { BuildingError, type BuildingDocument } from '#spec';
 
@@ -110,8 +110,43 @@ function yaw(degrees: number): [number, number, number, number] {
   return [0, Math.sin(half), 0, Math.cos(half)];
 }
 
+/**
+ * The cheap proof, run before any geometry: bands that do not share a seam cannot close into
+ * a building, and the message names both of them instead of leaving a raw open edge behind.
+ */
+function checkStack(placed: PlacedScene): void {
+  const first = placed.bands[0]!;
+  const last = placed.bands.at(-1)!;
+
+  if (first.kind !== 'main') {
+    throw new BuildingError('E_SEAM_MISMATCH', `the bottom band ${first.id} is ${first.kind}; a building needs a main band at the bottom to carry its underside`, ['bands', first.id]);
+  }
+  if (last.kind !== 'roof') {
+    throw new BuildingError('E_SEAM_MISMATCH', `the top band ${last.id} is ${last.kind}; a building needs a roof band on top to carry its deck`, ['bands', last.id]);
+  }
+
+  for (const band of placed.bands) {
+    if (band.rotation !== 0) {
+      throw new BuildingError('E_SEAM_MISMATCH', `band ${band.id} is turned ${band.rotation} degrees, and a turned band does not meet its neighbours yet. Set rotation to 0`, ['bands', band.id, 'rotation']);
+    }
+  }
+
+  for (let i = 1; i < placed.bands.length; i++) {
+    const below = placed.bands[i - 1]!;
+    const band = placed.bands[i]!;
+    if (seamsMatch(below.seam, band.seam)) continue;
+    throw new BuildingError(
+      'E_SEAM_MISMATCH',
+      `band ${band.id} (${describeSeam(band.seam)}) does not stack on ${below.id} (${describeSeam(below.seam)}). ` +
+        'A setback needs a transition the kit does not have yet: give both bands the same inset',
+      ['bands', band.id, 'inset'],
+    );
+  }
+}
+
 export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
   const placed = assemble(doc);
+  checkStack(placed);
   const document = new Document();
   document.createBuffer();
   document.getRoot().getAsset().generator = 'glb-buildings';

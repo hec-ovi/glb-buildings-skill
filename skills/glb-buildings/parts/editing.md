@@ -9,8 +9,9 @@ pick lands where you can read it.
 buildings preview
 ```
 
-It prints the URL and stays up, so run it in a second terminal or in the background. The page repaints itself
-whenever you change the building, so the human sees your edits without touching anything.
+It prints the URL and stays up, so run it in a second terminal or in the background. With no name it follows
+whichever project is current, so `buildings use <other>` moves the page too, and the page repaints itself
+whenever you change the building. The human sees your edits without touching anything.
 
 ## Read the pick
 
