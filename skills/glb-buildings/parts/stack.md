@@ -70,8 +70,10 @@ The three parts of a building do different jobs, and mixing them up is what make
 - **The bulk** is repetitive on purpose. It is meant to be similar and fake: `--greebles 0.3` to `0.5` so it
   is not a bare box, `--columns ribs` or `partial`, `--balconies S`, and a step or two between runs. Do not
   make every bulk section different; two or three variations, repeated, is what reads as a building.
-- **The top** is where the silhouette is made: `--clutter 0.6` on the roof section puts a mast with harness
-  rings, air conditioning units and a small tower on the deck. This is the one place to spend detail.
+- **The top** is where the silhouette is made, and no two roofs should look the same. `--clutter` decides how
+  much stands there: a railing and units from 0.2, a water tank from 0.25, a pole with its cable harness from
+  0.35, solar panels and a small tower from 0.5. Each roof is seeded from its own section name, so two
+  buildings never get the same arrangement. This is the one place to spend detail.
 
 ## Dressing a section
 
@@ -81,7 +83,7 @@ The three parts of a building do different jobs, and mixing them up is what make
 | `--columns corners\|ribs\|partial` | uprights: at the corners, every few metres, or only in gaps |
 | `--balconies N\|E\|S\|W` | a slab with a rounded front, one per floor of the section |
 | `--wires N\|E\|S\|W` | cables climbing one face, tying the section together |
-| `--clutter 0.0 to 1.0` | on a roof section: mast, harness rings, AC units, a small tower |
+| `--clutter 0.0 to 1.0` | on a roof section: edge railing, mast with harness rings and spikes, water tank on legs, AC units, solar panels, a utility pole with drooping cables, a small tower |
 | `--shape round --segments 20` | the whole section becomes a cylinder |
 
 All of them are seeded from the section's name, so a rebuild keeps the same arrangement and an edit elsewhere
