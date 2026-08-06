@@ -1,6 +1,6 @@
 /** The parts. Geometry in metres, correct winding, and the proofs that keep it that way. */
 export { Surface, normalOf, triangleCount, TILE, type MeshData, type Vec } from './geometry.ts';
-export { windingProblems, shellProblems, type MeshProblem } from './invariants.ts';
+export { windingProblems, shellProblems, proudProblems, MAX_PROUD, type MeshProblem } from './invariants.ts';
 export { walls, cap, capRing, insetRing, junction, wires, ringAt, sameRing, edgeFacing, tubeRing, type SectionShape, type Corner } from './section.ts';
 export {
   template,

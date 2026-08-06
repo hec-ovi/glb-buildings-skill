@@ -64,7 +64,12 @@ function corner(surface: Surface, shape: SectionShape, vertex: number, size: num
     // The corner's outward direction is the way neither edge goes.
     const out: Corner = [-(a[0] + b[0]), -(a[1] + b[1])];
     const length = Math.hypot(out[0], out[1]) || 1;
-    const push: Corner = [(out[0] / length) * (stand - BITE), (out[1] / length) * (stand - BITE)];
+
+    // Anchored to the corner: the column reaches `stand` past it and the rest of it sits inside
+    // the section. Centred on the corner instead, most of the column hangs in the air, which is
+    // what makes it read as a second box stuck on the side.
+    const reach = stand - half;
+    const push: Corner = [(out[0] / length) * reach, (out[1] / length) * reach];
     const centre: Corner = [here[0] + push[0], here[1] + push[1]];
 
     // Same direction round as a footprint, or the column comes out inside out.

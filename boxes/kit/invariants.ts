@@ -41,6 +41,42 @@ export function windingProblems(mesh: MeshData): MeshProblem[] {
 }
 
 /**
+ * How far a part may reach past its section's own footprint. A balcony reaches about 1.8 m and
+ * a pipe about the same; past this, a part is not attached to the building any more.
+ */
+export const MAX_PROUD = 3;
+
+/**
+ * Every solid has to hug its section. A part floating out in the air, or standing off the wall
+ * by metres, is caught here rather than in a screenshot.
+ */
+export function proudProblems(meshes: MeshData[], footprint: { x0: number; x1: number; z0: number; z1: number }): MeshProblem[] {
+  const problems: MeshProblem[] = [];
+
+  for (const mesh of meshes) {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (let i = 0; i < mesh.positions.length; i += 3) {
+      minX = Math.min(minX, mesh.positions[i]!);
+      maxX = Math.max(maxX, mesh.positions[i]!);
+      minZ = Math.min(minZ, mesh.positions[i + 2]!);
+      maxZ = Math.max(maxZ, mesh.positions[i + 2]!);
+    }
+
+    const proud = Math.max(footprint.x0 - minX, maxX - footprint.x1, footprint.z0 - minZ, maxZ - footprint.z1);
+    if (proud > MAX_PROUD) {
+      problems.push({
+        at: `${mesh.material}`,
+        detail: `a part reaches ${proud.toFixed(2)} m past the section's footprint, so it is not on the building`,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
  * A closed shell: every edge is shared by exactly two triangles running opposite ways, and
  * the enclosed volume is positive, which is only true when the whole thing faces outward.
  */

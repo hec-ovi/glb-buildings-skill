@@ -10,7 +10,7 @@
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
-import { FACADE, ROOF, dress, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
+import { FACADE, ROOF, dress, proudProblems, seedOf, shellProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
 import { BuildingError, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
@@ -140,6 +140,13 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     const open = shellProblems(parts);
     if (open.length > 0) {
       throw new BuildingError('E_GLB_INVALID', `section ${band.id} is not closed: ${open[0]!.detail} at ${open[0]!.at}`, ['bands', band.id]);
+    }
+
+    const xs = shape.bottom.concat(shape.top).map(([x]) => x);
+    const zs = shape.bottom.concat(shape.top).map(([, z]) => z);
+    const adrift = proudProblems(parts, { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) });
+    if (adrift.length > 0) {
+      throw new BuildingError('E_FLOATING_PART', `section ${band.id}: ${adrift[0]!.detail}`, ['bands', band.id]);
     }
 
     const y = band.y0 * MM - sunk;

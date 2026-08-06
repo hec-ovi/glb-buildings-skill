@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError } from '#spec';
-import { Surface, cap, capRing, cylinder, junction, ringAt, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
+import { Surface, cap, capRing, cylinder, junction, ringAt, proudProblems, shellProblems, template, templates, triangleCount, walls, windingProblems, dress, type SectionShape } from '#kit';
 
 const plain: SectionShape = {
   bottom: [
@@ -225,5 +225,26 @@ describe('the shell proof', () => {
 
     const flipped = { ...built, indices: [...built.indices].reverse() };
     expect(shellProblems([flipped]).some((problem) => problem.detail.includes('inside out'))).toBe(true);
+  });
+});
+
+describe('parts stay on their section', () => {
+  const footprint = { x0: -9, x1: 9, z0: -7, z1: 7 };
+
+  it('anchors a corner column to the corner, mostly inside the section', () => {
+    const parts = dress({ ...plain, floors: 3, height: 9.6 }, { columns: 'corners' });
+    expect(proudProblems(parts, footprint)).toEqual([]);
+
+    const xs = parts[0]!.positions.filter((_, i) => i % 3 === 0);
+    // It reaches past the corner by a hand's width, not by half its own size.
+    expect(Math.max(...xs) - footprint.x1).toBeLessThan(0.4);
+    expect(Math.max(...xs)).toBeGreaterThan(footprint.x1);
+  });
+
+  it('catches a part that has drifted off the building', () => {
+    const adrift = new Surface('facade').box([40, 0, 40], [41, 2, 41]).data();
+    const problems = proudProblems([adrift], footprint);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]!.detail).toContain('past the section');
   });
 });
