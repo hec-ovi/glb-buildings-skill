@@ -18,6 +18,7 @@ import { Picker } from './Picker.ts';
 import { fetchScene, onChange, postSelection } from './api.ts';
 
 const stage = document.getElementById('stage') as HTMLDivElement;
+const panel = document.getElementById('panel') as HTMLElement;
 
 const renderer = new WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -43,8 +44,10 @@ modelRoot.visible = false;
 scene.add(modelRoot);
 
 let blueprint: Blueprint | undefined;
+/** What the human picked last, kept across document reloads. */
+let picked: { bayIds: string[]; bandIds: string[] } = { bayIds: [], bandIds: [] };
 
-const hud = new Hud(document.body, {
+const hud = new Hud(panel, {
   onMode: (mode) => picker.setMode(mode),
   onModel: (show) => {
     modelRoot.visible = show;
@@ -57,6 +60,7 @@ const picker = new Picker(
   camera,
   new Blueprint({ name: '', size: { width: 0, depth: 0, height: 0 }, bands: [] }),
   (selection) => {
+    picked = { bayIds: selection.bayIds, bandIds: selection.bandIds };
     hud.showSelection(selection.bayIds, selection.bandIds);
     void postSelection(selection);
   },
@@ -92,6 +96,13 @@ async function load(keepCamera = false): Promise<void> {
   scene.add(blueprint.root);
   picker.retarget(blueprint);
   hud.describe(payload.document, payload.scene);
+
+  // Keep the highlight after a rebuild, minus any bay the new document no longer has.
+  const alive = new Set(blueprint.handles.map((handle) => handle.bay.id));
+  picked = { bayIds: picked.bayIds.filter((id) => alive.has(id)), bandIds: picked.bandIds };
+  blueprint.select(picked.bayIds);
+  hud.showSelection(picked.bayIds, picked.bandIds);
+
   if (!keepCamera) frame(blueprint.sizeMetres);
   if (modelRoot.visible) await loadModel();
 }

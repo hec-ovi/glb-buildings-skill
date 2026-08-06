@@ -33,6 +33,7 @@ export class Picker {
   #dragging = false;
   #start = new Vector2();
   #end = new Vector2();
+  #downPixels: [number, number] = [0, 0];
   readonly #ray = new Raycaster();
   readonly #rect: HTMLDivElement;
 
@@ -85,6 +86,7 @@ export class Picker {
   }
 
   #down = (event: PointerEvent): void => {
+    this.#downPixels = [event.clientX, event.clientY];
     if (this.mode !== 'zone') return;
     this.#dragging = true;
     this.#start = this.#ndc(event);
@@ -92,6 +94,12 @@ export class Picker {
     this.#rect.hidden = false;
     this.#paintRect();
   };
+
+  /** A pointer that travelled was the camera being moved, not a click on a bay. */
+  #travelled(event: PointerEvent): boolean {
+    const [x, y] = this.#downPixels;
+    return Math.abs(event.clientX - x) > 4 || Math.abs(event.clientY - y) > 4;
+  }
 
   #move = (event: PointerEvent): void => {
     if (!this.#dragging) return;
@@ -101,7 +109,7 @@ export class Picker {
 
   #up = (event: PointerEvent): void => {
     if (this.mode === 'pick') {
-      this.#pick(event);
+      if (!this.#travelled(event)) this.#pick(event);
       return;
     }
     if (!this.#dragging) return;

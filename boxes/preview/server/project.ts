@@ -52,11 +52,16 @@ export class Project {
     return stamped;
   }
 
-  /** Call back when the document or the built file changes. Returns a closer. */
+  /**
+   * Call back when the document or the built file changes. The selection file is ignored:
+   * the viewer writes it on every pick, and reloading there would wipe what was just picked.
+   */
   watch(onChange: () => void): () => void {
     const watchers: FSWatcher[] = [];
+    const watched = new Set(['building.json', 'model.glb']);
     let timer: NodeJS.Timeout | undefined;
-    const fire = () => {
+    const fire = (_event: string, name: string | Buffer | null) => {
+      if (name !== null && !watched.has(String(name))) return;
       clearTimeout(timer);
       timer = setTimeout(onChange, 80);
     };

@@ -7,59 +7,128 @@
     <style>
       :root {
         color-scheme: dark;
-        --ink: #dbe7ff;
-        --muted: #8fa3c8;
-        --panel: #111a30cc;
-        --line: #2b3d63;
+        --bg: #0b1020;
+        --panel: #0e1526;
+        --line: #1f2b45;
+        --ink: #e6edff;
+        --muted: #7f8fb0;
+        --accent: #ffb703;
+        --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; margin: 0; }
       body {
-        background: #0b1020;
+        display: flex;
+        background: var(--bg);
         color: var(--ink);
-        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        font: 13px/1.55 var(--sans);
         overflow: hidden;
       }
-      #stage { position: fixed; inset: 0; }
+
+      #panel {
+        flex: none;
+        width: 320px;
+        height: 100%;
+        overflow-y: auto;
+        padding: 20px 18px 28px;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+      }
+      #stage { position: relative; flex: 1; min-width: 0; }
       #stage canvas { display: block; }
+
       .zone-rect {
         position: absolute;
-        border: 1px solid #ffb703;
-        background: #ffb70322;
+        border: 1px solid var(--accent);
+        background: #ffb70318;
         pointer-events: none;
       }
-      .hud {
-        position: fixed;
-        top: 16px;
-        left: 16px;
-        width: min(420px, calc(100vw - 32px));
-        padding: 14px 16px;
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        background: var(--panel);
-        backdrop-filter: blur(6px);
+
+      .name { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+      .sub { color: var(--muted); font-family: var(--mono); font-size: 12px; margin-top: 3px; }
+
+      .section { margin-top: 24px; }
+      .section > h2 {
+        margin: 0 0 10px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
       }
-      .hud-title { font-weight: 700; margin-bottom: 10px; }
-      .hud-bands { display: grid; gap: 4px; margin-bottom: 12px; color: var(--muted); }
-      .hud-band { display: flex; align-items: center; gap: 8px; }
-      .hud-band b { color: var(--ink); }
-      .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-      .hud-controls { display: flex; gap: 8px; margin-bottom: 10px; }
-      .hud-controls button {
-        font: inherit;
-        color: var(--ink);
-        background: #1b2748;
+
+      .band {
+        display: grid;
+        grid-template-columns: 10px 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 8px 10px;
         border: 1px solid var(--line);
-        border-radius: 6px;
-        padding: 5px 10px;
+        border-radius: 8px;
+        background: #121b30;
+      }
+      .band + .band { margin-top: 6px; }
+      .band .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
+      .band .id { font-weight: 600; }
+      .band .meta { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+
+      .segmented { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+      .segmented button {
+        flex: 1;
+        font: inherit;
+        color: var(--muted);
+        background: #121b30;
+        border: 0;
+        padding: 7px 0;
         cursor: pointer;
       }
-      .hud-controls button:hover { background: #24325c; }
-      .hud-selection { color: #ffb703; word-break: break-all; }
+      .segmented button + button { border-left: 1px solid var(--line); }
+      .segmented button:hover { color: var(--ink); }
+      .segmented button[aria-pressed='true'] { background: var(--accent); color: #16110a; font-weight: 650; }
+
+      .switch {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 8px;
+        padding: 7px 10px;
+        font: inherit;
+        color: var(--ink);
+        background: #121b30;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .switch:hover { border-color: #2c3d63; }
+      .switch .state { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+      .switch[aria-pressed='true'] .state { color: var(--accent); }
+
+      .count { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+      .ids {
+        margin-top: 8px;
+        max-height: 210px;
+        overflow-y: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .ids span {
+        padding: 2px 6px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #121b30;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink);
+      }
+      .hint { color: var(--muted); font-size: 12px; }
+      .path { margin-top: 10px; color: var(--muted); font-family: var(--mono); font-size: 11px; word-break: break-all; }
     </style>
   </head>
   <body>
+    <aside id="panel"></aside>
     <div id="stage"></div>
-    <script type="module" src="/viewer.js"></script>
   </body>
 </html>

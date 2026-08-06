@@ -1,7 +1,7 @@
 import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { newDocument } from '#spec';
 import { PreviewServer, Project } from '#preview';
 
@@ -54,6 +54,23 @@ describe('preview server', () => {
     const onDisk = JSON.parse(await readFile(join(dir, 'selection.json'), 'utf8'));
     expect(onDisk.bayIds).toEqual(['body.f1.S0']);
     expect((await (await fetch(new URL('/api/selection', url))).json()).bayIds).toEqual(['body.f1.S0']);
+  });
+
+  it('reloads on a document change and stays put when a selection is written', async () => {
+    const watched = await mkdtemp(join(tmpdir(), 'preview-watch-'));
+    const project = new Project(watched);
+    await project.writeDocument(newDocument('watch-me'));
+
+    let changes = 0;
+    const stop = project.watch(() => (changes += 1));
+
+    await project.writeSelection({ mode: 'pick', at: '', bayIds: ['body.f1.S0'], bandIds: ['body'], floorIds: ['body.f1'] });
+    await new Promise((ok) => setTimeout(ok, 300));
+    expect(changes).toBe(0);
+
+    await project.writeDocument(newDocument('watch-me', { floors: 8 }));
+    await vi.waitFor(() => expect(changes).toBeGreaterThan(0), { timeout: 2000 });
+    stop();
   });
 
   it('answers the error shape when the document is unreadable', async () => {
