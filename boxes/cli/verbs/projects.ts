@@ -1,5 +1,6 @@
 /** Verbs about which building we are editing. */
-import { assemble, describeSeam, seamsMatch } from '#assemble';
+import { assemble } from '#assemble';
+import { supports } from '#check';
 import { templates } from '#kit';
 import { bandFloorHeight, newDocument, toMetres } from '#spec';
 import { join } from 'node:path';
@@ -68,20 +69,29 @@ export const show: Verb = {
     const doc = await project.readDocument();
     const placed = assemble(doc);
 
+    const resting = supports(placed);
+
     const bands = placed.bands.map((band, i) => {
-      const below = placed.bands[i - 1];
+      const written = doc.bands[i]!;
+      const support = resting.find((entry) => entry.band === band.id);
       return {
         id: band.id,
         kind: band.kind,
         tier: band.tier,
         template: band.template,
         floors: band.floors.length,
-        floorHeight: toMetres(bandFloorHeight(doc, doc.bands[i]!)),
-        inset: toMetres(band.inset),
-        rotation: band.rotation,
+        floorHeight: toMetres(bandFloorHeight(doc, written)),
         base: toMetres(band.y0),
-        seam: describeSeam(band.seam),
-        stacksOnBelow: below ? seamsMatch(below.seam, band.seam) : true,
+        width: toMetres(band.rect.x1 - band.rect.x0),
+        depth: toMetres(band.rect.z1 - band.rect.z0),
+        inset: toMetres(written.inset),
+        shiftX: toMetres(written.shiftX),
+        shiftZ: toMetres(written.shiftZ),
+        rotation: written.rotation,
+        twist: written.twist,
+        taper: toMetres(written.taper),
+        wires: written.wires,
+        restsOn: support?.reads ?? 'the ground',
       };
     });
 

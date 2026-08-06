@@ -30,12 +30,21 @@ describe('projects', () => {
     expect(await call('show')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
   });
 
-  it('describes the stack band by band, with the seams that let them stack', async () => {
+  it('describes every section with the shape it was given and what it rests on', async () => {
     await call('new', 'tower-a', '--width', '18', '--depth', '14', '--floors', '12');
-    const shown = (await call('show')) as unknown as { size: { height: number }; floors: number; bands: { id: string; stacksOnBelow: boolean }[] };
+    await call('set-band', 'body', '--inset', '1.5', '--twist', '20', '--wires', 'S');
+    const shown = (await call('show')) as unknown as {
+      size: { height: number };
+      floors: number;
+      bands: { id: string; width: number; inset: number; twist: number; wires: string; restsOn: string }[];
+    };
     expect(shown.floors).toBe(12);
     expect(shown.size.height).toBeCloseTo(37.4, 3);
-    expect(shown.bands.every((band) => band.stacksOnBelow)).toBe(true);
+
+    const body = shown.bands.find((band) => band.id === 'body')!;
+    expect(body).toMatchObject({ inset: 1.5, twist: 20, wires: 'S', width: 15 });
+    expect(body.restsOn).toContain('rests on 100% of ground');
+    expect(shown.bands[0]!.restsOn).toBe('the ground');
   });
 });
 

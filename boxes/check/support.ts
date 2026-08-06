@@ -20,6 +20,8 @@ export type Support = {
   share: number;
   /** True when the section's middle is over thin air. */
   offCentre: boolean;
+  /** True when this section is bigger in plan than the one carrying it. */
+  widerThanBelow: boolean;
   reads: string;
 };
 
@@ -33,18 +35,23 @@ export function supports(scene: PlacedScene): Support[] {
     const seat = toPoints(below.top);
 
     const footArea = area(foot);
+    const seatArea = area(seat);
     const shared = footArea === 0 ? 0 : area(overlap(foot, seat)) / footArea;
     const offCentre = !inside(seat, centroid(foot));
+    const widerThanBelow = footArea > seatArea * 1.02;
+
+    const reads =
+      shared >= CANTILEVER
+        ? `rests on ${Math.round(shared * 100)}% of ${below.id}`
+        : `cantilevers: only ${Math.round(shared * 100)}% of it lands on ${below.id}`;
 
     found.push({
       band: band.id,
       on: below.id,
       share: Math.round(shared * 100) / 100,
       offCentre,
-      reads:
-        shared >= CANTILEVER
-          ? `rests on ${Math.round(shared * 100)}% of ${below.id}`
-          : `cantilevers: only ${Math.round(shared * 100)}% of it lands on ${below.id}`,
+      widerThanBelow,
+      reads: widerThanBelow ? `${reads}, and is wider than it` : reads,
     });
   }
 

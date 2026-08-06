@@ -72,6 +72,9 @@ anything special (a twist, a cantilever, cables crossing floors) belongs to one 
   under 20%, or with its middle out past the edge, it is refused and named. Slide it back, widen what is under
   it, or make it smaller.
 - A **cantilever** (under half of it resting) is allowed and is often the point. Say so when you report.
+- A section that is bigger in plan than the one under it is reported as `wider than it`. Fine for a platform,
+  wrong for a tower: keep sections narrowing as they rise unless the user asked otherwise.
+- `--inset` steps in from the section's own footprint, so `--width 12 --inset 2` gives 8. Use one or the other.
 - The stack needs a `main` section at the bottom and a `roof` section on top. `build` refuses otherwise.
 - Keep the file plain: no compression extensions, one UV set, metres, Y up. The CLI already does this; do not
   ask for anything else.

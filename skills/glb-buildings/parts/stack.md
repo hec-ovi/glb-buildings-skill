@@ -54,6 +54,14 @@ Every section has to land on the one below it. `build` measures it and tells you
 
 So a wide base with a narrower tower on it works; a tower sliding off its base does not.
 
+## Two traps
+
+- **`--inset` applies on top of `--width`.** A section given `--width 12 --inset 2` ends up 8 wide. Use one or
+  the other: `--width` to say the size outright, `--inset` to step in from what the section already had.
+- **A building gets narrower as it rises.** If a section is bigger in plan than the one carrying it, `show` and
+  `build` say `and is wider than it`. That is right for a deliberate platform or an overhang and wrong
+  everywhere else: a tower that widens toward the top reads upside down. Check the line before you report.
+
 ## Reaching the look
 
 - **Sections, not one extruded box.** Three to six sections make a building read as a building. Vary their
