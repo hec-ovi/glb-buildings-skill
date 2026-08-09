@@ -12,12 +12,12 @@ It is three things that fit together, and you can use any one of them on its own
 | --- | --- |
 | **the toolkit** | `buildings`, a CLI. Every action is one verb that answers with one JSON object |
 | **the service** | a local preview server, started by `buildings preview`. A three.js page on 127.0.0.1 |
-| **the skill** | markdown an agent reads to drive the toolkit. No MCP, no plugin runtime: it shells out |
+| **the skill** | the markdown an agent reads to drive the toolkit. Transport is a shell call, not MCP |
 
 ## Three drivers, two prompts
 
-The same brief, handed to three different models, each driving the same CLI through the same
-skill. Nothing was hand-modelled and no JSON was hand-edited: every one of these is verbs.
+One brief, three models, the same CLI and the same skill behind each. No geometry was hand-modelled
+and no document was hand-edited: every result below is verb calls.
 
 ### Opus 5
 
@@ -45,10 +45,9 @@ skill, ran 21 commands, one failed, recovered, done in about two and a half minu
 
 ![the local model building its tower](docs/showcase/local-spire.gif)
 
-106 m, 5 sections, 14 composed elements, 4,340 triangles, validator clean. Built by
-**gemma-4-26b-a4b-qat-q4** served locally on `llama.cpp`, driven by
-[noob-cli](https://github.com/hec-ovi/noob-cli) with the skill dropped into `.noob/skills/`.
-Note the brief: it was handed one and wrote its own, then built it.
+106 m, 5 sections, 14 composed elements, 4,340 triangles, validator clean. Served locally on `llama.cpp`
+and driven by [noob-cli](https://github.com/hec-ovi/noob-cli), with the skill installed at
+`.noob/skills/`. Worth noting: it was handed a brief, wrote its own, and built that instead.
 
 ## Benchmark
 
@@ -63,39 +62,46 @@ Two briefs, three drivers, isolated stores so nothing raced. Every file validato
 | gemma-4-26b | spire-local | 105.9 m | 5 | 14 | 4,340 | — | — | ~35 min |
 | gemma-4-26b | market-local | 18.2 m | 3 | 1 | 72 | — | — | ~35 min |
 
-**What that says.** The toolkit and the skill run end to end on a local 26B model through
-[noob-cli](https://github.com/hec-ovi/noob-cli), on one machine, with no cloud in the loop: it ran
-`doctor`, read the answers, shaped a five section tower with a twist, composed a facade, laid out a
-roof and produced a validated glTF file. It is slower and it gives up on detail sooner. Its weak
-run stalled on cell arithmetic and shipped massing only, and said so plainly rather than pretending
-it had not.
+**Reading the table.** The toolkit and skill run end to end on a locally served model through
+[noob-cli](https://github.com/hec-ovi/noob-cli), with no cloud dependency: environment check,
+five-section stack with a twist, facade composition, roof layout, validated glTF out. The cost is
+throughput and detail density, not correctness — every output in this table passed the same proofs
+and the same Khronos validation as the hosted models.
 
-Every failure in that table taught the tool something. The benchmark is what found three real
-defects: two sessions sharing one store could edit each other's buildings (now `--project`), a mast
-could draw itself taller than the proof that keeps parts on a building (now capped), and placing
-anything meant doing arithmetic against a grid you cannot see (now `put --row --wide --tall
---every`, where the face works out the columns and steps over what is taken). That last one is
-aimed squarely at the small model.
+The failure column is the useful one. This benchmark is what surfaced three defects worth fixing:
+two sessions sharing a store could edit each other's buildings (now scoped by `--project`); a mast
+could generate itself taller than the invariant that keeps parts attached, failing a build over a
+value the caller never chose (now bounded at the source); and placement required coordinate
+arithmetic against a grid the caller cannot see (now `put --row --wide --tall --every`, where the
+face resolves columns and steps over occupied cells). The third is the one that moves the floor for
+constrained models.
 
 ## The agentic workflow
 
-A building is not one prompt. It is two passes that never need each other in context:
+A building is decomposed into passes that share no context. Each pass has one job, one vocabulary,
+and a bounded space to work in. The document on disk is the only interface between them.
 
-**The architect** reads the description and settles the massing: the footprint, how many floors,
-how the mass splits into sections, which one is the base and which the crown. It works in metres
-and sections, and it builds once to prove the thing stands up before anyone draws a window. It
-never looks at a facade.
+**Pass one, massing.** Footprint, floor count, how the mass divides into sections, which section is
+base and which is crown. It works in metres and section ids, and it runs `build` before any facade
+work begins, so the support proof settles the geometry while a change is still cheap. It never
+addresses a window.
 
-**A facade job per section design** takes one section, reads its grid, and composes cells. It sees
-its own 10 cm grid and nothing else. A forty floor tower is four to six of these jobs, not forty,
-because a section repeats one floor design.
+**Pass two, one job per section design.** A section repeats a single floor design, so a forty floor
+tower is four to six facade jobs, not forty. Each job loads one section's 10 cm grid and composes
+against it. It does not need the massing rationale, the other sections, or the roof.
 
-Then the roof, laid out as a floor plan of named cells, and the runs, which are paths of points.
+**Pass three, roof and services.** The deck is a named-cell floor plan; ducts, pipes and cables are
+polylines with a profile.
 
-Neither pass has to hold the other in its head, and the document on disk is the only seam between
-them. That is what makes the work fit a small model: every context is a bounded, integer,
-occupancy-checked space that refuses invalid input, so no pass has to review the pass before it.
-The tool says no; the model does not have to be careful.
+The property that makes this work on a constrained model is that **every pass operates in a space
+that rejects invalid input at the point of entry**. Cells are integers and singly-owned. Contact,
+support share and triangle budget are proved before a file is written. An overlap is refused with
+both parties named, not detected downstream. So no pass has to validate the pass before it, and no
+pass has to be careful — correctness is a property of the surface, not of the caller.
+
+Concretely, that is what lets a 35B model on one workstation produce a validated glTF: it is not
+holding a building in its head. It is answering bounded questions against a surface that will not
+let it be wrong.
 
 ## Requirements
 
@@ -160,9 +166,10 @@ page to find out.
 The portable unit is [`skills/glb-buildings/`](skills/glb-buildings/): one `SKILL.md` resolver that routes an
 intent to one of seven fat parts. An agent holds the resolver plus one part, never all of it.
 
-Copy the folder into wherever your agent reads skills from, and it drives the CLI by shelling out. There is
-no MCP server and no tool schema, so anything that can run a command can use it, including a small local
-model.
+Copy the folder wherever your agent loads skills from. The transport is a shell call, so the requirement on
+the host is a subprocess and a JSON parser rather than an MCP client or a plugin runtime. The trade is no
+typed tool schema, which is why the drift test asserts that `SKILL.md` names every verb the CLI actually
+exposes.
 
 ## Faces are grids
 
