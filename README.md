@@ -14,11 +14,10 @@ It is three things that fit together, and you can use any one of them on its own
 | **the service** | a local preview server, started by `buildings preview`. A three.js page on 127.0.0.1 |
 | **the skill** | the markdown an agent reads to drive the toolkit. Transport is a shell call, not MCP |
 
-## Four drivers, two prompts
+## Three drivers, two prompts
 
-Two briefs, four models, the same CLI and the same skill behind each. Two run in a datacentre and two
-on one workstation. No geometry was hand-modelled and no document was hand-edited: every result below
-is verb calls.
+Two briefs, three models, the same CLI and the same skill behind each. Two hosted, one on a workstation.
+No geometry was hand-modelled and no document was hand-edited: every result below is verb calls.
 
 ### Opus 5
 
@@ -50,18 +49,9 @@ skill, ran 21 commands, one failed, recovered, done in about two and a half minu
 112.6 m, 4 sections, 57 elements, 10,576 triangles, validator clean, in 6m 15s. The densest facade in
 the set. Q8_0 on one workstation, driven by [noob-cli](https://github.com/hec-ovi/noob-cli).
 
-### Gemma 4 26B-A4B, local
-
-> *"A tall, thin office tower with a tapering top and some balconies"*
-
-![Gemma building its tower](docs/showcase/gemma-spire.gif)
-
-106 m, 5 sections, 14 elements, 4,340 triangles, validator clean. Same machine, same skill. Handed a
-brief, it wrote its own and built that instead.
-
 ## Benchmark
 
-Two briefs, four drivers, a store each so nothing raced. Every file validator clean.
+Two briefs, three drivers, a store each so nothing raced. Every file validator clean.
 
 | driver | building | height | sections | elements | triangles | calls | failed | time |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -71,7 +61,6 @@ Two briefs, four drivers, a store each so nothing raced. Every file validator cl
 | Haiku 4.5 | market-haiku | 21.4 m | 3 | 6 | 2,232 | 21 | 1 | 2m 28s |
 | Qwen3.6-35B (local) | spire-qwen | 112.6 m | 4 | 57 | 10,576 | 127 | 11 | 6m 15s |
 | Qwen3.6-35B (local) | market-qwen | 20.7 m | 3 | 19 | 3,236 | 223 | 13 | 9m 15s |
-| Gemma 4 26B (local) | spire-gemma | 105.9 m | 5 | 14 | 4,340 | — | — | — |
 
 Local runs: Q8_0 on one Strix Halo box, served through
 [llama-vulkan-strix](https://github.com/hec-ovi/llama-vulkan-strix), driven by
