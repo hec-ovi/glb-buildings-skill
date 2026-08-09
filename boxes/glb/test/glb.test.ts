@@ -43,9 +43,14 @@ describe('buildGlb', () => {
           : band,
       ),
     });
-    const { stats } = await buildGlb(composed);
+    const { glb, stats } = await buildGlb(composed);
     // Walls, roof, and the two the face asked for.
     expect(stats.materials).toBe(4);
+
+    // And the picture behind the glazing is one picture: two materials point at it, and the file
+    // carries a colour map and an emissive map, not a copy per material.
+    const written = await new NodeIO().readBinary(glb);
+    expect(written.getRoot().listTextures()).toHaveLength(2);
   });
 
   it('steps a section in over the one below, and keeps every section closed', async () => {

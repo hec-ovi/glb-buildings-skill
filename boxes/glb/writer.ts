@@ -7,7 +7,7 @@
  * where one hangs out, a twisted collar where one turns. Nodes only translate up, so every
  * transform keeps a positive determinant and nothing is mirrored or scaled.
  */
-import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
+import { Document, NodeIO, type Material, type Mesh, type Texture } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
 import { dressFaces, type Element, type FacePlan } from '#facade';
@@ -121,14 +121,18 @@ function palette(document: Document, seed: number): (name: string) => Material {
 function makers(document: Document, seed: number): Record<string, () => Material> {
   // The facade carries its windows in the texture: one tile is a floor tall and a bay wide, and
   // the same grid glows, so a flat section reads as a lit building for eight triangles a floor.
-  // Made once, on the first material that wants it, and shared by the glazing.
-  let skin: { colour: Uint8Array; emissive: Uint8Array } | undefined;
+  // Drawn once and shared by every material that wants it: two materials pointing at one picture,
+  // not two copies of it in the file.
+  let skin: { colour: Texture; glow: Texture } | undefined;
   const drawn = () => {
-    if (!skin) skin = facadeTexture({ seed });
-    return {
-      colour: document.createTexture('facade-colour').setImage(skin.colour).setMimeType('image/png'),
-      glow: document.createTexture('facade-emissive').setImage(skin.emissive).setMimeType('image/png'),
-    };
+    if (!skin) {
+      const drawing = facadeTexture({ seed });
+      skin = {
+        colour: document.createTexture('facade-colour').setImage(drawing.colour).setMimeType('image/png'),
+        glow: document.createTexture('facade-emissive').setImage(drawing.emissive).setMimeType('image/png'),
+      };
+    }
+    return skin;
   };
 
   // Glass is the same picture with a sheen on it: a pane covers the window it is built over, so
