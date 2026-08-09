@@ -84,6 +84,7 @@ export const preview: Verb = {
               list: () => projects.list(),
               current: () => projects.current(),
               use: (chosen: string) => projects.use(chosen),
+              dirOf: (chosen: string) => projects.path(chosen),
             },
           },
     );

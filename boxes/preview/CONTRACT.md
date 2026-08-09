@@ -20,8 +20,8 @@ rectangle lands in `selection.json`.
 
 `PreviewOptions` is `{ dir }` for one fixed project, or `{ resolve, watchRoot }` to follow whichever project
 is current: `resolve` runs per request, `watchRoot` is the tree whose changes trigger a reload. Add
-`projects` (`list`, `current`, `use`) to let the page switch between buildings. `port` defaults to 4321,
-`host` to 127.0.0.1, and `log` prints one line per request.
+`projects` (`list`, `current`, `use`, `dirOf`) to let the page navigate between buildings. `port` defaults to
+4321, `host` to 127.0.0.1, and `log` prints one line per request.
 
 ## The project folder
 
@@ -42,7 +42,7 @@ selection.json     what the human last picked
 | `GET /api/model.glb` | the built file, or 404 before the first build |
 | `GET /api/selection` | the current selection |
 | `POST /api/selection` | stores it, stamps `at`, gives it back |
-| `GET /api/projects` | `{ projects, current }`, empty unless the server was given a store |
+| `GET /api/projects` | `{ projects, current }`, one `ProjectCard` per building, empty unless the server was given a store |
 | `POST /api/projects` | `{ name }` makes that building current |
 | `GET /api/events` | server sent events, `changed` when the document or the build file changes |
 
@@ -50,19 +50,27 @@ Failures answer 400 with the `BuildingError` shape: `{ code, message, at }`.
 
 ## The viewer
 
-- Orbit, pan and zoom with the mouse; W A S D move, Q E turn, R F rise and fall. The blueprint is instanced,
-  one draw per section, so a 40 floor tower stays interactive.
-- Sections are coloured by kind, floors are outlined, and the panel lists every one with its tier, floor
-  height and template.
-- `mode: pick` selects the bay under the cursor. `mode: zone` drags a rectangle and selects every bay whose
-  centre is inside it and whose face turns toward the camera, so the far side of the building is never caught.
-- `built model: on` loads `build/model.glb` over the blueprint and hides the blueprint panels. Evening light,
-  so a dark facade stays dark and its lit windows are the brightest thing on it.
-- With a store behind it, the panel lists every building and switching one makes it current for the CLI too.
-- The page reloads its scene when the document changes on disk, keeping the camera and the selection where
-  they were.
-- Every failure is written into the panel, so a browser without WebGL or a document that will not parse shows
-  a sentence instead of a blank page.
+Two panels around the stage. `Models` down the side is the navigator, `Bar` along the bottom is the building
+that is open.
+
+**Models.** One row per building: its name, whether it is built, its floors, sections and height, and the
+line `describeBuilding` reads off its document. The open one carries the accent. Clicking a row makes that
+building current, for the page and for the CLI alike. The foot counts what the store holds.
+
+**Bar.** The open building's name and size, a strip of its sections coloured by kind, the two tools, and the
+file out. `mode: pick` selects the bay under the cursor; `mode: zone` drags a rectangle and selects every bay
+whose centre is inside it and whose face turns toward the camera, so the far side is never caught. `built
+model: on` loads `build/model.glb` over the blueprint and hides the blueprint panels. `export` hands over the
+built file as `<name>.glb`, and is offered only once a build exists.
+
+**The stage.** Hold left to pan, hold right to orbit, wheel to zoom; W A S D move, Q E turn, R F rise and
+fall. Only the primary button picks, so driving the camera never changes the selection. The blueprint is
+instanced, one draw per section, so a 40 floor tower stays interactive. Evening light, so a dark facade stays
+dark and its lit windows are the brightest thing on it.
+
+The page reloads its scene when the document changes on disk, keeping the camera and the selection where they
+were. Every failure is written into the bar, so a browser without WebGL or a document that will not parse
+shows a sentence instead of a blank page.
 
 ## The selection
 
@@ -86,8 +94,11 @@ Failures answer 400 with the `BuildingError` shape: `{ code, message, at }`.
 ## Invariants
 
 - A stored selection always carries the server's timestamp, never the client's.
-- The viewer never writes the document; it only reads the scene and posts selections.
+- The viewer never writes the document; it reads the scene, posts selections, and switches which building is
+  current.
 - Bay ids in a selection exist in the scene the viewer was showing.
+- A building whose document will not parse still gets a row in the navigator, carrying the reason.
+- Nothing in the page is rounded.
 
 ## Depends on
 

@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { assemble } from '#assemble';
-import { BuildingError, parseSelection } from '#spec';
+import { BuildingError, describeBuilding, parseSelection } from '#spec';
 import { Project, watchTree } from './project.ts';
 import { ViewerBundle } from './bundle.ts';
 
@@ -20,12 +20,24 @@ export type PreviewOptions = {
   host?: string;
   /** Print a line per request. On for the CLI, off in tests. */
   log?: boolean;
-  /** Lets the page list the buildings and switch between them. */
+  /** Lets the page list the buildings, read what each one is, and switch between them. */
   projects?: {
     list(): Promise<string[]>;
     current(): Promise<string | undefined>;
     use(name: string): Promise<void>;
+    /** Where a named building lives, so the page can say what is in it. */
+    dirOf(name: string): string;
   };
+};
+
+/** One row of the navigator: what a building is, without opening it. */
+export type ProjectCard = {
+  name: string;
+  floors: number;
+  sections: number;
+  height: number;
+  reads: string;
+  built: boolean;
 };
 
 export class PreviewServer {
@@ -133,8 +145,32 @@ export class PreviewServer {
   }
 
   async #listProjects(res: ServerResponse): Promise<void> {
-    if (!this.#projects) return this.#json(res, 200, { projects: [], current: undefined });
-    this.#json(res, 200, { projects: await this.#projects.list(), current: await this.#projects.current() });
+    const store = this.#projects;
+    if (!store) return this.#json(res, 200, { projects: [], current: undefined });
+
+    const names = await store.list();
+    const projects = await Promise.all(names.map((name) => this.#card(store.dirOf(name), name)));
+    this.#json(res, 200, { projects, current: await store.current() });
+  }
+
+  /** One building read off its own document. A broken one still gets a row, saying so. */
+  async #card(dir: string, name: string): Promise<ProjectCard> {
+    const project = new Project(dir);
+    try {
+      const document = await project.readDocument();
+      const scene = assemble(document);
+      return {
+        name,
+        floors: scene.bands.reduce((n, band) => n + band.floors.length, 0),
+        sections: scene.bands.length,
+        height: scene.size.height,
+        reads: describeBuilding(document),
+        built: project.hasModel(),
+      };
+    } catch (error) {
+      const detail = error instanceof BuildingError ? error.message : String(error);
+      return { name, floors: 0, sections: 0, height: 0, reads: detail, built: project.hasModel() };
+    }
   }
 
   async #useProject(req: IncomingMessage, res: ServerResponse): Promise<void> {

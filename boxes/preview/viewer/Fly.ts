@@ -61,7 +61,8 @@ export class Fly {
     const turn = Fly.TURN * seconds;
 
     const forward = new Vector3(-offset.x, 0, -offset.z).normalize();
-    const right = new Vector3(forward.z, 0, -forward.x);
+    // forward x up, so D goes to the right of the screen rather than across it the other way.
+    const right = new Vector3(-forward.z, 0, forward.x);
     const move = new Vector3();
 
     if (this.#down.has('w')) move.addScaledVector(forward, pace);

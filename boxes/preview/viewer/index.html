@@ -8,143 +8,188 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0b1020;
-        --panel: #0e1526;
-        --line: #1f2b45;
-        --ink: #e6edff;
-        --muted: #7f8fb0;
-        --accent: #ffb703;
+        --bg: #0c0c0e;
+        --panel: #121214;
+        --raised: #17171a;
+        --line: #26262b;
+        --line-soft: #1d1d21;
+        --ink: #ececee;
+        --muted: #74757c;
+        --accent: #f2622e;
+        --accent-ink: #140800;
+        --figure: #3ddc84;
         --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; margin: 0; }
       body {
-        display: flex;
+        display: grid;
+        grid-template-columns: 296px 1fr;
+        grid-template-rows: 1fr auto;
         background: var(--bg);
         color: var(--ink);
         font: 13px/1.55 var(--sans);
         overflow: hidden;
       }
 
-      #panel {
-        flex: none;
-        width: 320px;
-        height: 100%;
-        overflow-y: auto;
-        padding: 20px 18px 28px;
-        background: var(--panel);
-        border-right: 1px solid var(--line);
-      }
-      #stage { position: relative; flex: 1; min-width: 0; }
-      #stage canvas { display: block; }
-
-      .zone-rect {
-        position: absolute;
-        border: 1px solid var(--accent);
-        background: #ffb70318;
-        pointer-events: none;
-      }
-
-      .name { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
-      .sub { color: var(--muted); font-family: var(--mono); font-size: 12px; margin-top: 3px; }
-
-      .section { margin-top: 24px; }
-      .section > h2 {
-        margin: 0 0 10px;
-        font-size: 10px;
+      h1, h2 { margin: 0; }
+      h2 {
+        font-size: 9.5px;
         font-weight: 600;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
         color: var(--muted);
       }
+      .figure { color: var(--figure); font-family: var(--mono); }
+      .hint { color: var(--muted); font-size: 11.5px; }
 
-      .band {
-        display: grid;
-        grid-template-columns: 10px 1fr;
-        gap: 10px;
-        align-items: start;
-        padding: 8px 10px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: #121b30;
+      /* the navigator down the side */
+      #models {
+        grid-row: 1 / 3;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
       }
-      .band + .band { margin-top: 6px; }
-      .band .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
-      .band .id { font-weight: 600; }
-      .band .meta { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
-
-      .segmented { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-      .segmented button {
-        flex: 1;
-        font: inherit;
+      #models .head { padding: 18px 18px 14px; border-bottom: 1px solid var(--line); }
+      #models .title { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+      #models .rows { flex: 1; min-height: 0; overflow-y: auto; }
+      #models .empty { padding: 18px; color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+      #models .total {
+        padding: 12px 18px;
+        border-top: 1px solid var(--line);
         color: var(--muted);
-        background: #121b30;
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .row {
+        display: block;
+        width: 100%;
+        padding: 13px 18px 14px;
+        font: inherit;
+        text-align: left;
+        color: var(--ink);
+        background: transparent;
         border: 0;
-        padding: 7px 0;
+        border-bottom: 1px solid var(--line-soft);
+        border-left: 2px solid transparent;
+        cursor: pointer;
+      }
+      .row:hover { background: var(--raised); }
+      .row[aria-pressed='true'] { background: var(--raised); border-left-color: var(--accent); }
+      .row[aria-pressed='true'] .row-name { color: var(--accent); }
+
+      .row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+      .row-name { font-size: 14px; font-weight: 600; }
+      .tag {
+        padding: 1px 6px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .tag.built { color: var(--figure); border-color: #23412f; }
+      .row-figures { margin-top: 5px; color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+      .row-reads { margin-top: 6px; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+
+      /* the stage */
+      #stage { position: relative; min-width: 0; min-height: 0; }
+      #stage canvas { display: block; }
+      .zone-rect {
+        position: absolute;
+        border: 1px solid var(--accent);
+        background: #f2622e1f;
+        pointer-events: none;
+      }
+
+      /* the building's own bar */
+      #bar {
+        display: grid;
+        grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) auto minmax(240px, 300px);
+        gap: 26px;
+        align-items: start;
+        padding: 14px 20px 16px;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+      }
+      .bar-block { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+      .bar-block.grow { min-width: 0; }
+      .bar-block.identity { gap: 3px; justify-content: center; }
+      .bar-name { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+      .bar-size { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+
+      .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+      .chip {
+        display: grid;
+        grid-template-columns: 8px 1fr;
+        gap: 8px;
+        align-items: start;
+        flex: none;
+        padding: 7px 10px;
+        background: var(--raised);
+        border: 1px solid var(--line);
+      }
+      .chip .dot { width: 8px; height: 8px; margin-top: 5px; }
+      .chip-id { font-weight: 600; font-size: 12px; }
+      .chip-meta { color: var(--muted); font-family: var(--mono); font-size: 10.5px; white-space: nowrap; }
+
+      .segmented { display: flex; border: 1px solid var(--line); }
+      .segmented button {
+        min-width: 62px;
+        padding: 6px 12px;
+        font: inherit;
+        font-size: 12px;
+        color: var(--muted);
+        background: var(--raised);
+        border: 0;
         cursor: pointer;
       }
       .segmented button + button { border-left: 1px solid var(--line); }
       .segmented button:hover { color: var(--ink); }
-      .segmented button[aria-pressed='true'] { background: var(--accent); color: #16110a; font-weight: 650; }
+      .segmented button[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); font-weight: 650; }
 
-      .switch {
+      .action {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        width: 100%;
-        margin-top: 8px;
-        padding: 7px 10px;
-        font: inherit;
-        color: var(--ink);
-        background: #121b30;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        cursor: pointer;
-      }
-      .switch:hover { border-color: #2c3d63; }
-      .switch .state { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
-      .switch[aria-pressed='true'] .state { color: var(--accent); }
-
-      .buildings { display: flex; flex-wrap: wrap; gap: 4px; }
-      .buildings .pick {
+        gap: 14px;
+        padding: 6px 12px;
         font: inherit;
         font-size: 12px;
-        color: var(--muted);
-        background: #121b30;
+        color: var(--ink);
+        text-decoration: none;
+        background: var(--raised);
         border: 1px solid var(--line);
-        border-radius: 6px;
-        padding: 4px 8px;
         cursor: pointer;
       }
-      .buildings .pick:hover { color: var(--ink); border-color: #2c3d63; }
-      .buildings .pick[aria-pressed='true'] { background: var(--accent); color: #16110a; font-weight: 650; }
+      .action:hover { border-color: #3a3a42; }
+      .action .state { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+      .action[aria-pressed='true'] { border-color: var(--accent); }
+      .action[aria-pressed='true'] .state { color: var(--accent); }
+      .action[aria-disabled='true'] { cursor: not-allowed; color: var(--muted); }
+      .action[aria-disabled='true']:hover { border-color: var(--line); }
 
-      .count { font-family: var(--mono); font-size: 12px; color: var(--accent); }
-      .ids {
-        margin-top: 8px;
-        max-height: 210px;
-        overflow-y: auto;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
+      .read { font-family: var(--mono); font-size: 11.5px; color: var(--ink); }
+      .ids { display: flex; gap: 4px; overflow-x: auto; max-height: 24px; }
       .ids span {
-        padding: 2px 6px;
+        flex: none;
+        padding: 1px 6px;
+        background: var(--raised);
         border: 1px solid var(--line);
-        border-radius: 5px;
-        background: #121b30;
         font-family: var(--mono);
-        font-size: 11px;
-        color: var(--ink);
+        font-size: 10.5px;
       }
-      .hint { color: var(--muted); font-size: 12px; }
-      .path { margin-top: 10px; color: var(--muted); font-family: var(--mono); font-size: 11px; word-break: break-all; }
     </style>
   </head>
   <body>
-    <aside id="panel"><div class="name">building preview</div><div class="sub" id="boot">starting the viewer...</div></aside>
+    <aside id="models"><div class="head"><h1 class="title">Models</h1></div></aside>
     <div id="stage"></div>
+    <footer id="bar"><div class="bar-block identity"><div class="bar-name">building preview</div><div class="bar-size">starting the viewer...</div></div></footer>
     <script type="module" src="/viewer.js"></script>
   </body>
 </html>

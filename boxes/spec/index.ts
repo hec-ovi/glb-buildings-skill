@@ -20,6 +20,8 @@ export {
   type BuildingDocument,
 } from './document.ts';
 
+export { describeBuilding } from './describe.ts';
+
 export {
   selectionSchema,
   parseSelection,

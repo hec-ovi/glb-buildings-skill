@@ -92,6 +92,8 @@ export class Picker {
   }
 
   #down = (event: PointerEvent): void => {
+    // The primary button selects. The others drive the camera, so they never pick.
+    if (event.button !== 0) return;
     this.#downPixels = [event.clientX, event.clientY];
     if (this.mode !== 'zone') return;
     this.#dragging = true;
@@ -114,6 +116,7 @@ export class Picker {
   };
 
   #up = (event: PointerEvent): void => {
+    if (event.button !== 0) return;
     if (this.mode === 'pick') {
       if (!this.#travelled(event)) this.#pick(event);
       return;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BuildingError, newDocument, parseDocument, partition, bayCount } from '#spec';
+import { BuildingError, describeBuilding, newDocument, parseDocument, partition, bayCount } from '#spec';
 
 const valid = {
   version: 1,
@@ -73,6 +73,34 @@ describe('partition', () => {
   it('fits at least one bay per side', () => {
     expect(bayCount(1200, 3000)).toBe(1);
     expect(bayCount(18000, 3000)).toBe(6);
+  });
+});
+
+describe('describeBuilding', () => {
+  const plain = newDocument('tower-a', { width: 18, depth: 14, floors: 24 });
+
+  it('sizes a plain building and says it carries nothing', () => {
+    const line = describeBuilding(plain);
+    expect(line).toContain('24 floors in three sections');
+    expect(line).toContain('18 x 14 m');
+    expect(line).toContain('Plain masses');
+  });
+
+  it('names the move and what it wears, once each however many sections carry it', () => {
+    const worn = parseDocument({
+      ...plain,
+      bands: plain.bands.map((band) =>
+        band.kind === 'bulk' ? { ...band, twist: 20, windows: true, balconies: 'S' } : { ...band, windows: true },
+      ),
+    });
+    const line = describeBuilding(worn);
+    expect(line).toContain('A twisted run');
+    expect(line.match(/cut windows/g)).toHaveLength(1);
+    expect(line).toContain('balconies');
+  });
+
+  it('gives the same document the same line, so a rebuild never rewrites the list', () => {
+    expect(describeBuilding(plain)).toBe(describeBuilding(parseDocument(plain)));
   });
 });
 

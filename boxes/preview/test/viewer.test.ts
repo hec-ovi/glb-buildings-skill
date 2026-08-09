@@ -5,8 +5,10 @@ import { PerspectiveCamera, Vector3 } from 'three';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { assemble } from '#assemble';
 import { newDocument, type Selection } from '#spec';
+import type { ProjectCard } from '#preview';
+import { Bar } from '../viewer/Bar.ts';
 import { Blueprint } from '../viewer/Blueprint.ts';
-import { Hud } from '../viewer/Hud.ts';
+import { Models } from '../viewer/Models.ts';
 import { Picker } from '../viewer/Picker.ts';
 import { boot } from '../viewer/boot.ts';
 import { Fly } from '../viewer/Fly.ts';
@@ -14,23 +16,24 @@ import { Fly } from '../viewer/Fly.ts';
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 6 });
 const scene = assemble(doc);
 
+const bar = () => new Bar(document.body, { onMode: () => {}, onModel: () => {} });
+
 beforeEach(() => {
   document.body.replaceChildren();
 });
 
-describe('panel', () => {
-  it('names the building and lists every band with its tier and floor count', () => {
-    const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {} });
-    hud.describe(doc, scene);
+describe('the building bar', () => {
+  it('names the building and lists every section with its tier and floor count', () => {
+    bar().describe(doc, scene, false);
     expect(screen.getByText('tower-a')).toBeTruthy();
-    expect(document.querySelector('.sub')!.textContent).toContain('6 floors');
-    expect(document.querySelectorAll('.band')).toHaveLength(3);
-    expect(document.body.textContent).toContain('bulk-flat');
+    expect(document.querySelector('.bar-size')!.textContent).toContain('6 floors');
+    expect(document.querySelectorAll('.chip')).toHaveLength(3);
+    expect(document.body.textContent).toContain('bulk');
   });
 
   it('switches between pick and zone, and shows which one is on', async () => {
     const onMode = vi.fn();
-    new Hud(document.body, { onMode, onModel: () => {} });
+    new Bar(document.body, { onMode, onModel: () => {} });
     const pick = screen.getByTestId('mode-pick');
     const zone = screen.getByTestId('mode-zone');
     expect(pick.getAttribute('aria-pressed')).toBe('true');
@@ -46,30 +49,44 @@ describe('panel', () => {
 
   it('turns the built model on and off', async () => {
     const onModel = vi.fn();
-    new Hud(document.body, { onMode: () => {}, onModel });
+    new Bar(document.body, { onMode: () => {}, onModel });
     await userEvent.click(screen.getByTestId('model'));
     expect(onModel).toHaveBeenCalledWith(true);
     await userEvent.click(screen.getByTestId('model'));
     expect(onModel).toHaveBeenLastCalledWith(false);
   });
 
+  it('offers the file only once a build exists, named after the building', () => {
+    const panel = bar();
+    panel.describe(doc, scene, false);
+    const link = screen.getByTestId('export');
+    expect(link.getAttribute('aria-disabled')).toBe('true');
+    expect(link.getAttribute('href')).toBeNull();
+
+    panel.describe(doc, scene, true);
+    expect(link.getAttribute('aria-disabled')).toBe('false');
+    expect(link.getAttribute('href')).toBe('/api/model.glb');
+    expect(link.getAttribute('download')).toBe('tower-a.glb');
+  });
+
   it('reports the floors that are selected, one chip each', () => {
-    const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {} });
-    hud.showSelection(['body.f1.S0', 'body.f1.S1'], ['body'], ['body.f1']);
+    bar().showSelection(['body.f1.S0', 'body.f1.S1'], ['body'], ['body.f1']);
     expect(screen.getByTestId('selection').textContent).toBe('1 floor in body · 2 bays');
     expect([...document.querySelectorAll('.ids span')].map((n) => n.textContent)).toEqual(['body.f1']);
   });
 });
 
 describe('boot', () => {
-  it('still shows the panel, and says why, when the browser gives no WebGL context', async () => {
+  it('still shows both panels, and says why, when the browser gives no WebGL context', async () => {
     const stage = document.createElement('div');
-    const panel = document.createElement('div');
-    document.body.append(stage, panel);
+    const side = document.createElement('div');
+    const bottom = document.createElement('div');
+    document.body.append(stage, side, bottom);
 
     const { ready } = boot({
       stage,
-      panel,
+      side,
+      bar: bottom,
       createRenderer: () => {
         throw new Error('Error creating WebGL context.');
       },
@@ -78,6 +95,7 @@ describe('boot', () => {
 
     expect(screen.getByTestId('mode-pick')).toBeTruthy();
     expect(screen.getByTestId('model')).toBeTruthy();
+    expect(side.textContent).toContain('Models');
     expect(screen.getByTestId('selection').textContent).toContain('no WebGL context');
   });
 });
@@ -185,7 +203,15 @@ describe('view controls', () => {
     fly.press('s', false);
     fly.press('d', true);
     fly.step(0.5);
-    expect(Math.abs(c.position.x)).toBeGreaterThan(0);
+    // Looking down -Z, the right of the screen is +X.
+    expect(c.position.x).toBeGreaterThan(0);
+
+    // And A goes the other way, from its own start, so the two cannot both drift one way.
+    const back = camera();
+    const strafe = new Fly(back, new Vector3(0, 20, 0));
+    strafe.press('a', true);
+    strafe.step(0.5);
+    expect(back.position.x).toBeLessThan(0);
   });
 
   it('turns around the target with Q and E, keeping its distance', () => {
@@ -234,23 +260,40 @@ describe('view controls', () => {
   });
 });
 
-describe('the building picker', () => {
-  it('lists every building and marks the current one', async () => {
+describe('the navigator', () => {
+  const card = (name: string, over: Partial<ProjectCard> = {}): ProjectCard => ({
+    name,
+    floors: 6,
+    sections: 3,
+    height: 20_600,
+    reads: `${name} reads like this`,
+    built: false,
+    ...over,
+  });
+
+  it('shows what each building is, and marks the one that is open', async () => {
     const onProject = vi.fn();
-    const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {}, onProject });
-    hud.listProjects(['tower-a', 'tower-b'], 'tower-b');
+    const models = new Models(document.body, { onProject });
+    models.show([card('tower-a', { built: true }), card('tower-b', { floors: 12 })], 'tower-b');
 
     expect(screen.getByTestId('project-tower-b').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByTestId('project-tower-a').getAttribute('aria-pressed')).toBe('false');
+    const open = screen.getByTestId('project-tower-a');
+    expect(open.getAttribute('aria-pressed')).toBe('false');
+    expect(open.textContent).toContain('tower-a reads like this');
+    expect(open.textContent).toContain('6');
+    expect(open.textContent).toContain('built');
 
-    await userEvent.click(screen.getByTestId('project-tower-a'));
+    await userEvent.click(open);
     expect(onProject).toHaveBeenCalledWith('tower-a');
   });
 
-  it('says the name plainly when there is only one', () => {
-    const hud = new Hud(document.body, { onMode: () => {}, onModel: () => {} });
-    hud.listProjects(['only-one'], 'only-one');
-    expect(document.querySelector('.buildings')!.textContent).toBe('only-one');
+  it('counts what the store holds, and says so when it holds nothing', () => {
+    const models = new Models(document.body, { onProject: () => {} });
+    models.show([card('a', { floors: 4, built: true }), card('b', { floors: 6 })], 'a');
+    expect(document.querySelector('.total')!.textContent).toBe('2 buildings · 10 floors · 1 built');
+
+    models.show([], undefined);
+    expect(document.querySelector('.empty')!.textContent).toContain('buildings new');
   });
 });
 

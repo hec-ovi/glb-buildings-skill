@@ -1,7 +1,7 @@
 /**
- * Starting the viewer. The panel is built first and every failure is written into it, so a
- * browser without WebGL, or a document that does not parse, shows a sentence instead of a
- * blank page.
+ * Starting the viewer. Both panels are built before anything touches WebGL, and every failure
+ * is written into the bar, so a browser without a context, or a document that does not parse,
+ * shows a sentence instead of a blank page.
  */
 import {
   AmbientLight,
@@ -10,6 +10,7 @@ import {
   GridHelper,
   Group,
   HemisphereLight,
+  MOUSE,
   PerspectiveCamera,
   Scene,
   Vector3,
@@ -17,35 +18,41 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Bar } from './Bar.ts';
 import { Blueprint } from './Blueprint.ts';
 import { Fly } from './Fly.ts';
-import { Hud } from './Hud.ts';
+import { Models } from './Models.ts';
 import { Picker } from './Picker.ts';
 import { fetchProjects, fetchScene, onChange, postSelection, useProject } from './api.ts';
 
 export type BootOptions = {
   stage: HTMLElement;
-  panel: HTMLElement;
+  /** The navigator down the side, and the building's own bar along the bottom. */
+  side: HTMLElement;
+  bar: HTMLElement;
   /** Swapped in tests to stand in for a browser that cannot give a WebGL context. */
   createRenderer?: () => WebGLRenderer;
 };
 
 const EMPTY_SCENE = { name: '', size: { width: 0, depth: 0, height: 0 }, bands: [] };
 
-export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
-  const { stage, panel } = options;
+export function boot(options: BootOptions): { bar: Bar; models: Models; ready: Promise<void> } {
+  const { stage } = options;
   let picker: Picker | undefined;
   let show3d: ((show: boolean) => void) | undefined;
 
-  const hud = new Hud(panel, {
+  const bar = new Bar(options.bar, {
     onMode: (mode) => picker?.setMode(mode),
     onModel: (show) => show3d?.(show),
+  });
+
+  const models = new Models(options.side, {
     onProject: (name) => void useProject(name).then(() => listBuildings()),
   });
 
   const listBuildings = async () => {
     const { projects, current } = await fetchProjects();
-    hud.listProjects(projects, current);
+    models.show(projects, current);
   };
 
   const ready = (async () => {
@@ -53,7 +60,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
     try {
       renderer = (options.createRenderer ?? (() => new WebGLRenderer({ antialias: true })))();
     } catch (error) {
-      hud.fail(`this browser gave no WebGL context: ${(error as Error).message}`);
+      bar.fail(`this browser gave no WebGL context: ${(error as Error).message}`);
       return;
     }
 
@@ -80,6 +87,8 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
     const camera = new PerspectiveCamera(45, 1, 0.1, 5000);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    // Hold left to slide the building around, hold right to swing around it.
+    controls.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
 
     const fly = new Fly(camera, controls.target, () => controls.update());
     fly.listen(window);
@@ -93,7 +102,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
       new Blueprint(EMPTY_SCENE),
       (selection) => {
         picked = { bayIds: selection.bayIds, bandIds: selection.bandIds, floorIds: selection.floorIds };
-        hud.showSelection(selection.bayIds, selection.bandIds, selection.floorIds);
+        bar.showSelection(selection.bayIds, selection.bandIds, selection.floorIds);
         void postSelection(selection);
       },
       (enabled) => {
@@ -108,7 +117,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
         modelRoot.add(gltf.scene);
       } catch {
         modelRoot.clear();
-        hud.fail('no build yet, run the build verb first');
+        bar.fail('no build yet, run the build verb first');
       }
     };
 
@@ -145,7 +154,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
       blueprint = new Blueprint(payload.scene);
       scene.add(blueprint.root);
       picker!.retarget(blueprint);
-      hud.describe(payload.document, payload.scene);
+      bar.describe(payload.document, payload.scene, payload.hasModel);
 
       // Keep the highlight after a rebuild, minus any bay the new document no longer has.
       const alive = new Set(blueprint.handles.map((handle) => handle.bay.id));
@@ -157,7 +166,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
       };
       blueprint.select(picked.bayIds);
       blueprint.showPanels(!modelRoot.visible);
-      hud.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
+      bar.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
       void listBuildings();
       if (!keepCamera) frame(blueprint.sizeMetres);
@@ -170,7 +179,7 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
     };
 
     window.addEventListener('resize', resize);
-    window.addEventListener('error', (event) => hud.fail(event.message));
+    window.addEventListener('error', (event) => bar.fail(event.message));
     resize();
 
     let last = performance.now();
@@ -182,14 +191,14 @@ export function boot(options: BootOptions): { hud: Hud; ready: Promise<void> } {
       renderer.render(scene, camera);
     });
 
-    onChange(() => void load(true).catch((error: unknown) => hud.fail(String(error))));
+    onChange(() => void load(true).catch((error: unknown) => bar.fail(String(error))));
 
     try {
       await load();
     } catch (error) {
-      hud.fail(`could not read the document: ${(error as Error).message}`);
+      bar.fail(`could not read the document: ${(error as Error).message}`);
     }
   })();
 
-  return { hud, ready };
+  return { bar, models, ready };
 }

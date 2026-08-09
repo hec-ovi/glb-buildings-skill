@@ -51,6 +51,7 @@ beforeAll(async () => {
       list: () => projects.list(),
       current: () => projects.current(),
       use: (name: string) => projects.use(name),
+      dirOf: (name: string) => projects.path(name),
     },
   });
   url = await server.start();
@@ -108,10 +109,17 @@ describe('switching buildings from the page', () => {
   it('lists them and moves the page to the one that is picked', async () => {
     await run(['new', 'tower-c', '--floors', '5'], projects);
 
-    const listed = (await (await fetch(new URL('/api/projects', url))).json()) as { projects: string[]; current: string };
-    expect(listed.projects).toContain('tower-a');
-    expect(listed.projects).toContain('tower-c');
+    const listed = (await (await fetch(new URL('/api/projects', url))).json()) as {
+      projects: { name: string; floors: number; sections: number; reads: string; built: boolean }[];
+      current: string;
+    };
+    expect(listed.projects.map((card) => card.name)).toEqual(expect.arrayContaining(['tower-a', 'tower-c']));
     expect(listed.current).toBe('tower-c');
+
+    // Each row says what that building is, so the navigator reads without opening any of them.
+    const towerC = listed.projects.find((card) => card.name === 'tower-c')!;
+    expect(towerC).toMatchObject({ floors: 5, sections: 3, built: false });
+    expect(towerC.reads).toContain('5 floors in three sections');
 
     const changed = nextChange();
     const answer = await fetch(new URL('/api/projects', url), {

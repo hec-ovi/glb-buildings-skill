@@ -17,6 +17,7 @@ Axes: X east, Y up, Z south. Side `S` faces +Z and is the front of the building.
 | `parseDocument(value)` | anything parsed from JSON | `BuildingDocument`, normalised, defaults filled |
 | `newDocument(name, {width, depth, floors})` | metres, floor count | a three section starting document |
 | `bandFloorHeight(doc, band)` | document, band | the floor to floor height that band uses, mm |
+| `describeBuilding(doc)` | document | one line: how big it is and what makes it itself |
 | `parseSelection(value)` | anything parsed from JSON | `Selection` |
 | `describeSelection(selection)` | selection | one line an agent can read |
 | `partition(total, count)` | mm, count | whole millimetre parts summing back to `total` exactly |

@@ -1,11 +1,12 @@
-/** The preview page: find the two containers, start the viewer. */
+/** The preview page: find the three containers, start the viewer. */
 import { boot } from './boot.ts';
 
 const stage = document.getElementById('stage');
-const panel = document.getElementById('panel');
+const side = document.getElementById('models');
+const bar = document.getElementById('bar');
 
-if (!stage || !panel) {
-  document.body.textContent = 'preview page is missing its stage or panel element';
+if (!stage || !side || !bar) {
+  document.body.textContent = 'preview page is missing the stage, the navigator or the bar';
 } else {
-  boot({ stage, panel });
+  boot({ stage, side, bar });
 }

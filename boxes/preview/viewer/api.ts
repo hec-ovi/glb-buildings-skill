@@ -1,6 +1,7 @@
 /** Everything the viewer needs from its server. */
 import type { PlacedScene } from '#assemble';
 import type { BuildingDocument, Selection } from '#spec';
+import type { ProjectCard } from '../server/server.ts';
 
 export type ScenePayload = { document: BuildingDocument; scene: PlacedScene; hasModel: boolean };
 
@@ -18,10 +19,10 @@ export async function postSelection(selection: Omit<Selection, 'at'>): Promise<v
   });
 }
 
-export async function fetchProjects(): Promise<{ projects: string[]; current?: string }> {
+export async function fetchProjects(): Promise<{ projects: ProjectCard[]; current?: string }> {
   const res = await fetch('/api/projects');
   if (!res.ok) return { projects: [] };
-  return res.json() as Promise<{ projects: string[]; current?: string }>;
+  return res.json() as Promise<{ projects: ProjectCard[]; current?: string }>;
 }
 
 export async function useProject(name: string): Promise<void> {
