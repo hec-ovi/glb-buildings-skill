@@ -64,12 +64,13 @@ model: on` loads `build/model.glb` over the blueprint and hides the blueprint pa
 built file as `<name>.glb`, and is offered only once a build exists.
 
 **The stage.** Hold left to pan, hold right to orbit, wheel to zoom; W A S D move, Q E turn, R F rise and
-fall. Only the primary button picks, so driving the camera never changes the selection. The blueprint is
-instanced, one draw per section, so a 40 floor tower stays interactive. Evening light, so a dark facade stays
-dark and its lit windows are the brightest thing on it.
+fall. A turn always swings around the middle of the building, whatever the pan was looking at, so the
+building never leaves the screen. Only the primary button picks, so driving the camera never changes the
+selection. The blueprint is instanced, one draw per section, so a 40 floor tower stays interactive. Evening
+light, so a dark facade stays dark and its lit windows are the brightest thing on it.
 
 The page reloads its scene when the document changes on disk, keeping the camera and the selection where they
-were. Every failure is written into the bar, so a browser without WebGL or a document that will not parse
+were. Opening another building from the navigator is the exception: it frames the new one whole. Every failure is written into the bar, so a browser without WebGL or a document that will not parse
 shows a sentence instead of a blank page.
 
 ## The selection
