@@ -18,7 +18,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Bar } from './Bar.ts';
+import { Bar, type View } from './Bar.ts';
 import { Blueprint } from './Blueprint.ts';
 import { Fly } from './Fly.ts';
 import { Models } from './Models.ts';
@@ -39,11 +39,11 @@ const EMPTY_SCENE = { name: '', size: { width: 0, depth: 0, height: 0 }, bands: 
 export function boot(options: BootOptions): { bar: Bar; models: Models; ready: Promise<void> } {
   const { stage } = options;
   let picker: Picker | undefined;
-  let show3d: ((show: boolean) => void) | undefined;
+  let showView: ((view: View) => void) | undefined;
 
   const bar = new Bar(options.bar, {
     onMode: (mode) => picker?.setMode(mode),
-    onModel: (show) => show3d?.(show),
+    onView: (view) => showView?.(view),
   });
 
   // Opening another building shows it whole, rather than through the camera the last one left.
@@ -126,10 +126,15 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       }
     };
 
-    show3d = (show) => {
-      modelRoot.visible = show;
-      blueprint?.showPanels(!show);
-      if (show && modelRoot.children.length === 0) void loadModel();
+    // Three ways to look at it: the drawing, the drawing over the built file, and the building
+    // on its own with nothing drawn over it.
+    let view: View = 'blueprint';
+    showView = (next) => {
+      view = next;
+      modelRoot.visible = view !== 'blueprint';
+      blueprint?.showPanels(view === 'blueprint');
+      blueprint?.showOutlines(view !== 'final');
+      if (modelRoot.visible && modelRoot.children.length === 0) void loadModel();
     };
 
     const frame = (size: Vector3) => {
@@ -170,7 +175,8 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
         floorIds: picked.floorIds.filter((id) => floors.has(id)),
       };
       blueprint.select(picked.bayIds);
-      blueprint.showPanels(!modelRoot.visible);
+      blueprint.showPanels(view === 'blueprint');
+      blueprint.showOutlines(view !== 'final');
       bar.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
       void listBuildings();

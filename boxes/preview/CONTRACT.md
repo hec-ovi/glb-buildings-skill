@@ -57,11 +57,21 @@ that is open.
 line `describeBuilding` reads off its document. The open one carries the accent. Clicking a row makes that
 building current, for the page and for the CLI alike. The foot counts what the store holds.
 
-**Bar.** The open building's name and size, a strip of its sections coloured by kind, the two tools, and the
-file out. `mode: pick` selects the bay under the cursor; `mode: zone` drags a rectangle and selects every bay
-whose centre is inside it and whose face turns toward the camera, so the far side is never caught. `built
-model: on` loads `build/model.glb` over the blueprint and hides the blueprint panels. `export` hands over the
-built file as `<name>.glb`, and is offered only once a build exists.
+**Bar.** The open building's name and size, a strip of its sections coloured by kind, the tools, the view, and
+the file out. `mode: pick` selects the bay under the cursor; `mode: zone` drags a rectangle and selects every
+bay whose centre is inside it and whose face turns toward the camera, so the far side is never caught.
+`export` hands over the built file as `<name>.glb`, and is offered only once a build exists.
+
+**View** is three ways to look at the same building:
+
+| view | what is on screen |
+| --- | --- |
+| `blueprint` | the drawing on its own: bay panels and section outlines, no model |
+| `model` | `build/model.glb` with the section outlines over it, panels hidden so the two never fight over depth |
+| `final` | the building on its own, nothing drawn over it. What the file actually looks like |
+
+Section outlines are coloured by kind, amber for `main`, cyan for `bulk`, pink for `custom`, green for
+`roof`. None of it is in the exported file.
 
 **The stage.** Hold left to pan, hold right to orbit, wheel to zoom; W A S D move, Q E turn, R F rise and
 fall. A turn swings around whatever the camera is looking at, so panning first is how you choose what to

@@ -95,6 +95,7 @@ function floorOutline(band: PlacedBand, positions: number[]): void {
 export class Blueprint {
   readonly root = new Group();
   readonly meshes: InstancedMesh[] = [];
+  readonly #lines: LineSegments[] = [];
   readonly handles: BayHandle[] = [];
   readonly #byMesh = new Map<InstancedMesh, BayHandle[]>();
   readonly scene: PlacedScene;
@@ -155,6 +156,7 @@ export class Blueprint {
       new LineBasicMaterial({ color: BAND_COLOUR[band.kind] ?? 0x8899bb, transparent: true, opacity: 0.75 }),
     );
     group.add(lines);
+    this.#lines.push(lines);
   }
 
   handleAt(mesh: InstancedMesh, instance: number): BayHandle | undefined {
@@ -183,6 +185,11 @@ export class Blueprint {
    */
   showPanels(show: boolean): void {
     for (const mesh of this.meshes) mesh.visible = show;
+  }
+
+  /** The section outlines. Off is how the finished building is looked at, with nothing over it. */
+  showOutlines(show: boolean): void {
+    for (const line of this.#lines) line.visible = show;
   }
 
   /** Metres, for framing the camera. */

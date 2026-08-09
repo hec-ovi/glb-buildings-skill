@@ -16,7 +16,7 @@ import { Fly } from '../viewer/Fly.ts';
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 6 });
 const scene = assemble(doc);
 
-const bar = () => new Bar(document.body, { onMode: () => {}, onModel: () => {} });
+const bar = () => new Bar(document.body, { onMode: () => {}, onView: () => {} });
 
 beforeEach(() => {
   document.body.replaceChildren();
@@ -33,7 +33,7 @@ describe('the building bar', () => {
 
   it('switches between pick and zone, and shows which one is on', async () => {
     const onMode = vi.fn();
-    new Bar(document.body, { onMode, onModel: () => {} });
+    new Bar(document.body, { onMode, onView: () => {} });
     const pick = screen.getByTestId('mode-pick');
     const zone = screen.getByTestId('mode-zone');
     expect(pick.getAttribute('aria-pressed')).toBe('true');
@@ -47,13 +47,19 @@ describe('the building bar', () => {
     expect(onMode).toHaveBeenLastCalledWith('pick');
   });
 
-  it('turns the built model on and off', async () => {
-    const onModel = vi.fn();
-    new Bar(document.body, { onMode: () => {}, onModel });
-    await userEvent.click(screen.getByTestId('model'));
-    expect(onModel).toHaveBeenCalledWith(true);
-    await userEvent.click(screen.getByTestId('model'));
-    expect(onModel).toHaveBeenLastCalledWith(false);
+  it('offers three ways to look at it, and starts on the drawing', async () => {
+    const onView = vi.fn();
+    new Bar(document.body, { onMode: () => {}, onView });
+    expect(screen.getByTestId('view-blueprint').getAttribute('aria-pressed')).toBe('true');
+
+    await userEvent.click(screen.getByTestId('view-model'));
+    expect(onView).toHaveBeenCalledWith('model');
+    expect(screen.getByTestId('view-model').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('view-blueprint').getAttribute('aria-pressed')).toBe('false');
+
+    // `final` is the building on its own, which is the one to look at when it is done.
+    await userEvent.click(screen.getByTestId('view-final'));
+    expect(onView).toHaveBeenLastCalledWith('final');
   });
 
   it('offers the file only once a build exists, named after the building', () => {
@@ -94,7 +100,7 @@ describe('boot', () => {
     await ready;
 
     expect(screen.getByTestId('mode-pick')).toBeTruthy();
-    expect(screen.getByTestId('model')).toBeTruthy();
+    expect(screen.getByTestId('view-final')).toBeTruthy();
     expect(side.textContent).toContain('Models');
     expect(screen.getByTestId('selection').textContent).toContain('no WebGL context');
   });
@@ -307,5 +313,18 @@ describe('blueprint against the model', () => {
 
     blueprint.showPanels(true);
     expect(blueprint.meshes.every((mesh) => mesh.visible)).toBe(true);
+  });
+
+  it('takes the section outlines away too, so the finished building is seen on its own', () => {
+    const blueprint = new Blueprint(scene);
+    const lines = () => blueprint.root.children.flatMap((group) => group.children.filter((child) => child.type === 'LineSegments'));
+    expect(lines().length).toBeGreaterThan(0);
+    expect(lines().every((line) => line.visible)).toBe(true);
+
+    blueprint.showOutlines(false);
+    expect(lines().every((line) => line.visible)).toBe(false);
+
+    blueprint.showOutlines(true);
+    expect(lines().every((line) => line.visible)).toBe(true);
   });
 });

@@ -5,9 +5,16 @@ import { BAND_COLOUR } from './Blueprint.ts';
 import { element } from './dom.ts';
 import type { PickerMode } from './Picker.ts';
 
+/**
+ * What is on screen: the drawing, the drawing over the built file, or the building on its own
+ * with nothing drawn over it. `final` is the one to look at when you want to see the product.
+ */
+export const VIEWS = ['blueprint', 'model', 'final'] as const;
+export type View = (typeof VIEWS)[number];
+
 export type BarHandlers = {
   onMode: (mode: PickerMode) => void;
-  onModel: (show: boolean) => void;
+  onView: (view: View) => void;
 };
 
 const m = (mm: number) => (mm / 1000).toFixed(2).replace(/\.?0+$/, '');
@@ -21,9 +28,8 @@ export class Bar {
   readonly #ids = element('div', 'ids');
   readonly #hint = element('div', 'hint', 'click a bay, or drag a rectangle in zone mode');
   readonly #modes: Record<PickerMode, HTMLButtonElement>;
-  readonly #model: HTMLButtonElement;
+  readonly #views: Record<View, HTMLButtonElement>;
   readonly #export = element('a', 'action');
-  #showing = false;
 
   constructor(root: HTMLElement, handlers: BarHandlers) {
     root.replaceChildren();
@@ -35,16 +41,13 @@ export class Bar {
     };
     this.#setMode('pick', handlers, false);
 
-    this.#model = element('button', 'action');
-    this.#model.dataset.testid = 'model';
-    this.#model.setAttribute('aria-pressed', 'false');
-    this.#model.append(element('span', undefined, 'built model'), element('span', 'state', 'off'));
-    this.#model.addEventListener('click', () => {
-      this.#showing = !this.#showing;
-      this.#model.setAttribute('aria-pressed', String(this.#showing));
-      this.#model.querySelector('.state')!.textContent = this.#showing ? 'on' : 'off';
-      handlers.onModel(this.#showing);
-    });
+    const views = element('div', 'segmented');
+    this.#views = {
+      blueprint: this.#view('blueprint', views, handlers),
+      model: this.#view('model', views, handlers),
+      final: this.#view('final', views, handlers),
+    };
+    this.#setView('blueprint', handlers, false);
 
     this.#export.dataset.testid = 'export';
     this.#export.append(element('span', undefined, 'export'), element('span', 'state', '.glb'));
@@ -59,7 +62,7 @@ export class Bar {
     sections.append(element('h2', undefined, 'Sections'), this.#sections);
 
     const tools = element('div', 'bar-block');
-    tools.append(element('h2', undefined, 'Tools'), modes, this.#model);
+    tools.append(element('h2', undefined, 'Tools'), modes, element('h2', undefined, 'View'), views);
 
     const out = element('div', 'bar-block');
     out.append(element('h2', undefined, 'Selection'), this.#selection, this.#ids, this.#hint, this.#export);
@@ -74,6 +77,22 @@ export class Bar {
     button.addEventListener('click', () => this.#setMode(mode, handlers, true));
     parent.appendChild(button);
     return button;
+  }
+
+  #view(view: View, parent: HTMLElement, handlers: BarHandlers): HTMLButtonElement {
+    const button = element('button', undefined, view);
+    button.dataset.testid = `view-${view}`;
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => this.#setView(view, handlers, true));
+    parent.appendChild(button);
+    return button;
+  }
+
+  #setView(view: View, handlers: BarHandlers, tell: boolean): void {
+    for (const [name, button] of Object.entries(this.#views)) {
+      button.setAttribute('aria-pressed', String(name === view));
+    }
+    if (tell) handlers.onView(view);
   }
 
   #setMode(mode: PickerMode, handlers: BarHandlers, tell: boolean): void {
