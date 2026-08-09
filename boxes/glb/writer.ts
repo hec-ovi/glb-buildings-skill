@@ -10,7 +10,7 @@
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
-import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, sunkProblems, template, triangleCount, type MeshData, type SectionShape } from '#kit';
+import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, sunkProblems, template, triangleCount, windingProblems, type MeshData, type SectionShape } from '#kit';
 import { facadeTexture } from '#materials';
 import { BuildingError, type BuildingDocument } from '#spec';
 
@@ -61,10 +61,10 @@ function checkEnds(placed: PlacedScene): void {
   const last = placed.bands.at(-1)!;
 
   if (first.kind !== 'main') {
-    throw new BuildingError('E_SEAM_MISMATCH', `the bottom section ${first.id} is ${first.kind}; a building needs a main section at the bottom to carry its underside`, ['bands', first.id]);
+    throw new BuildingError('E_STACK_ENDS', `the bottom section ${first.id} is ${first.kind}; a building needs a main section at the bottom to carry its underside`, ['bands', first.id]);
   }
   if (last.kind !== 'roof') {
-    throw new BuildingError('E_SEAM_MISMATCH', `the top section ${last.id} is ${last.kind}; a building needs a roof section on top to carry its deck`, ['bands', last.id]);
+    throw new BuildingError('E_STACK_ENDS', `the top section ${last.id} is ${last.kind}; a building needs a roof section on top to carry its deck`, ['bands', last.id]);
   }
 }
 
@@ -145,7 +145,6 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
 
   const materials = palette(document, seedOf(doc.name));
   const scene = document.createScene(doc.name);
-  const shell: MeshData[] = [];
 
   let triangles = 0;
   let nodes = 0;
@@ -166,6 +165,15 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
       seed: seedOf(`${doc.name}/${band.id}`),
     });
     parts.push(...worn);
+
+    // A stored normal that disagrees with its triangle lights the surface the wrong way round,
+    // and no validator reads normals, so every part is measured against its own winding here.
+    for (const part of parts) {
+      const facing = windingProblems(part);
+      if (facing.length > 0) {
+        throw new BuildingError('E_GLB_INVALID', `section ${band.id}: ${facing[0]!.detail}, at ${facing[0]!.at}`, ['bands', band.id]);
+      }
+    }
 
     // Every section is closed on its own. Proving them one at a time is what keeps a stack of
     // stepped, slid and turned masses honest, without welding them into one surface.
@@ -214,8 +222,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     const mesh = meshOf(document, band.id, parts, materials);
     scene.addChild(document.createNode(band.id).setTranslation([0, y, 0]).setMesh(mesh));
     nodes += 1;
-    triangles += parts.reduce((sum, part) => sum + triangleCount(part), 0);
-    shell.push(...parts);
+    triangles += total;
   });
 
   const glb = await new NodeIO().writeBinary(document);

@@ -8,7 +8,7 @@
  * N and S sides, along increasing Z on the E and W sides.
  */
 import { BuildingError, bandFloorHeight, bayCount, partition, type Band, type BuildingDocument, type Mm, type Side } from '#spec';
-import type { Box, Corner, PlacedBand, PlacedBay, PlacedFloor, PlacedScene, Seam } from './scene.ts';
+import type { Box, Corner, PlacedBand, PlacedBay, PlacedFloor, PlacedScene } from './scene.ts';
 
 /** Facade panel depth used for blueprint volumes until the kit places real walls. */
 export const PANEL_THICKNESS: Mm = 200;
@@ -230,14 +230,6 @@ function placeFloor(band: Band, index: number, rect: Rect, y0: Mm, y1: Mm, targe
   return { id, bandId: band.id, index, y0, y1, bays };
 }
 
-function seamOf(rect: Rect, targetBay: Mm): Seam {
-  const width = rect.x1 - rect.x0;
-  const depth = rect.z1 - rect.z0;
-  const along = bayCount(width, targetBay);
-  const across = bayCount(depth, targetBay);
-  return { width, depth, bays: { N: along, S: along, E: across, W: across } };
-}
-
 /** Lay the document out. Pure: same document in, same scene out, every value an integer. */
 export function assemble(doc: BuildingDocument): PlacedScene {
   const bands: PlacedBand[] = [];
@@ -289,7 +281,6 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       y0,
       y1: y,
       floors,
-      seam: seamOf(rect, doc.grid.bay),
     });
   }
 

@@ -10,10 +10,10 @@ whether a stack of sections is a building: does each section land on the one bel
 | `supports(scene)` | `PlacedScene` | one `Support` per junction, with the share resting and a line to read |
 | `checkSupport(scene)` | `PlacedScene` | the same, or throws on the first section that floats |
 | `checkDocument(doc)` | `BuildingDocument` | assembles, then `checkSupport` |
-| `overlap(a, b)` / `area` / `centroid` / `inside` | plan polygons | the geometry the answer is made of |
+| `overlap(a, b)` / `area` / `centroid` / `inside` / `toPoints` | plan polygons | the geometry the answer is made of |
 
 ```
-Support { band, on, share, offCentre, reads }
+Support { band, on, share, offCentre, widerThanBelow, reads }
 ```
 
 `share` is how much of a section's underside lands on the section below, 0 to 1.
@@ -27,7 +27,8 @@ Support { band, on, share, offCentre, reads }
 | under 0.2 | floating: refused, with the section named and what to change |
 
 A section whose middle hangs past the edge of the one below is refused too, unless it is resting on at least
-half of it. Thresholds are `FLOATING` and `CANTILEVER`.
+half of it. Thresholds are `FLOATING` and `CANTILEVER`. `widerThanBelow` says a section is bigger in plan
+than the one carrying it: fine for a platform, worth saying out loud on a tower.
 
 ## Errors
 
@@ -35,8 +36,9 @@ half of it. Thresholds are `FLOATING` and `CANTILEVER`.
 
 ## Not here yet
 
-Overlap between parts, envelope limits, the human size table, triangle budgets. Those arrive with the parts
-kit.
+Envelope limits and the human size table. The other proofs live where the geometry is: a buried or adrift
+part and the triangle budget are measured in `#glb` as each section is built, and two roof parts in one cell
+are refused in `#kit`.
 
 ## Depends on
 

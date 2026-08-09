@@ -2,16 +2,13 @@
 export const ERRORS = {
   E_DOC_INVALID: 'the document does not match the schema',
   E_DOC_VERSION: 'the document was written by a different schema version',
-  E_BAND_ID_DUPLICATE: 'two bands share an id',
-  E_BAND_EMPTY: 'a band has no floors',
-  E_FLOATING_PART: 'a part is not bound to a socket on a host part',
-  E_OVERLAP: 'two parts interpenetrate',
-  E_ENVELOPE: 'a part reaches past the floor envelope',
-  E_PROPORTION: 'a dimension is outside the human size table',
-  E_SEAM_MISMATCH: 'two stacked bands do not share a seam',
-  E_BUDGET: 'a band is over its triangle budget',
-  E_UNKNOWN_TEMPLATE: 'a band names a floor template the kit does not have',
-  E_GLB_INVALID: 'the written file failed the Khronos glTF validator',
+  E_BAND_ID_DUPLICATE: 'two sections share an id',
+  E_FLOATING_PART: 'a section does not land on the one below, or a part has drifted off its section',
+  E_OVERLAP: 'a part is buried in the section it stands on, or two parts claim one deck cell',
+  E_STACK_ENDS: 'the stack does not start with a main section and end with a roof',
+  E_BUDGET: 'a section is over the triangle budget its tier allows',
+  E_UNKNOWN_TEMPLATE: 'a section names a template the kit does not have',
+  E_GLB_INVALID: 'the geometry is open or lit the wrong way round, or the Khronos validator refused the file',
 } as const;
 
 export type ErrorCode = keyof typeof ERRORS;

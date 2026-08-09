@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildingError, newDocument, parseDocument, type BuildingDocument } from '#spec';
-import { assemble, findBay, floors, seamsMatch } from '#assemble';
+import { assemble, findBay, floors } from '#assemble';
 
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 14 });
 
@@ -51,19 +51,6 @@ describe('assemble', () => {
     const scene = assemble(doc);
     expect(findBay(scene, 'body.f3.S1')?.side).toBe('S');
     expect(findBay(scene, 'body.f3.S99')).toBeUndefined();
-  });
-
-  it('matches the seams of two bands on the same footprint, and not of an inset one', () => {
-    const scene = assemble(
-      withBands([
-        { id: 'a', kind: 'bulk', tier: 'flat', floors: 2, template: 'bulk-flat' },
-        { id: 'b', kind: 'bulk', tier: 'flat', floors: 2, template: 'bulk-flat' },
-        { id: 'c', kind: 'bulk', tier: 'flat', floors: 2, template: 'bulk-flat', inset: 1500 },
-      ] as BuildingDocument['bands']),
-    );
-    const [a, b, c] = scene.bands;
-    expect(seamsMatch(a!.seam, b!.seam)).toBe(true);
-    expect(seamsMatch(b!.seam, c!.seam)).toBe(false);
   });
 
   it('slices a round section, and keeps every slice convex', () => {

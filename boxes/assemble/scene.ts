@@ -25,13 +25,6 @@ export type PlacedFloor = {
   bays: PlacedBay[];
 };
 
-/** The footprint a band shows to its neighbour, and how many bays each side carries. */
-export type Seam = {
-  width: Mm;
-  depth: Mm;
-  bays: Record<Side, number>;
-};
-
 export type Rect = { x0: Mm; x1: Mm; z0: Mm; z1: Mm };
 
 /** A footprint corner in world millimetres, on the ground plane. */
@@ -67,7 +60,6 @@ export type PlacedBand = {
   y0: Mm;
   y1: Mm;
   floors: PlacedFloor[];
-  seam: Seam;
 };
 
 export type PlacedScene = {
@@ -75,21 +67,6 @@ export type PlacedScene = {
   size: { width: Mm; depth: Mm; height: Mm };
   bands: PlacedBand[];
 };
-
-export function seamsMatch(a: Seam, b: Seam): boolean {
-  return (
-    a.width === b.width &&
-    a.depth === b.depth &&
-    a.bays.N === b.bays.N &&
-    a.bays.E === b.bays.E &&
-    a.bays.S === b.bays.S &&
-    a.bays.W === b.bays.W
-  );
-}
-
-export function describeSeam(seam: Seam): string {
-  return `${seam.width}x${seam.depth} bays N${seam.bays.N} E${seam.bays.E} S${seam.bays.S} W${seam.bays.W}`;
-}
 
 export function boxCentre(box: Box): Vec3 {
   return [

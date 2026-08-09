@@ -46,6 +46,22 @@ describe('projects', () => {
     expect(body.restsOn).toContain('rests on 100% of ground');
     expect(shown.bands[0]!.restsOn).toBe('the ground');
   });
+
+  it('reads back the plan and the dressing, so nothing an agent sets is write only', async () => {
+    await call('new', 'tower-a');
+    await call('set-band', 'body', '--shape', 'round', '--arc', '240', '--greebles', '0.4', '--windows', '--balconies', 'S', '--columns', 'ribs');
+    const shown = (await call('show')) as unknown as { bands: { id: string; plan: string; wears: string[] }[] };
+
+    const body = shown.bands.find((band) => band.id === 'body')!;
+    expect(body.plan).toContain('round');
+    expect(body.plan).toContain('240');
+    expect(body.wears).toEqual([
+      'windows cut into every bay',
+      'greebles 0.4',
+      'balconies on S',
+      'columns ribs',
+    ]);
+  });
 });
 
 describe('a sandboxed agent', () => {
@@ -130,7 +146,7 @@ describe('build', () => {
   it('says which band is missing when the stack has no roof on top', async () => {
     await call('new', 'tower-a');
     await call('remove-band', 'crown');
-    expect(await call('build')).toMatchObject({ ok: false, code: 'E_SEAM_MISMATCH' });
+    expect(await call('build')).toMatchObject({ ok: false, code: 'E_STACK_ENDS' });
   });
 
   it('builds every building in one pass', async () => {

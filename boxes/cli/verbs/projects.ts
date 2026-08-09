@@ -2,7 +2,7 @@
 import { assemble } from '#assemble';
 import { supports } from '#check';
 import { templates } from '#kit';
-import { bandFloorHeight, newDocument, toMetres } from '#spec';
+import { bandFloorHeight, newDocument, toMetres, type Band } from '#spec';
 import { join } from 'node:path';
 import { LOCAL, Projects } from '../projects.ts';
 import type { Verb } from './verb.ts';
@@ -62,6 +62,29 @@ export const useProject: Verb = {
   },
 };
 
+/** The plan a section is drawn on, in one line: shape first, then whatever rounds it. */
+function planOf(band: Band): string {
+  const parts = [band.shape === 'round' ? `round in ${band.segments} segments` : 'box'];
+  if (band.arc !== 360) parts.push(`${band.arc}° of it`);
+  if (band.bow !== '') parts.push(`${band.bow} bowed`);
+  if (band.corner > 0) parts.push(`corners filleted ${toMetres(band.corner)} m`);
+  if (band.chamfer > 0) parts.push(`edges chamfered ${toMetres(band.chamfer)} m`);
+  return parts.join(', ');
+}
+
+/** What a section wears, so every flag that can be set can be read back. */
+function wornBy(band: Band): string[] {
+  const worn: string[] = [];
+  if (band.windows) worn.push('windows cut into every bay');
+  if (band.greebles > 0) worn.push(`greebles ${band.greebles}`);
+  if (band.balconies !== 'none') worn.push(`balconies on ${band.balconies}`);
+  if (band.columns !== 'none') worn.push(`columns ${band.columns}`);
+  if (band.wires !== 'none') worn.push(`wires up ${band.wires}`);
+  if (band.clutter > 0) worn.push(`deck clutter ${band.clutter}`);
+  if (band.deck.length > 0) worn.push(`${band.deck.length} parts placed on the deck`);
+  return worn;
+}
+
 export const show: Verb = {
   name: 'show',
   summary: 'what the current building is, band by band',
@@ -94,6 +117,8 @@ export const show: Verb = {
         twist: written.twist,
         taper: toMetres(written.taper),
         wires: written.wires,
+        plan: planOf(written),
+        wears: wornBy(written),
         restsOn: support?.reads ?? 'the ground',
       };
     });

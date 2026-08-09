@@ -53,6 +53,12 @@ describe('geometry', () => {
     const flipped = { ...box, indices: box.indices.slice().reverse() };
     expect(shellProblems([flipped]).some((p) => p.detail.includes('inside out'))).toBe(true);
   });
+
+  it('catches a stored normal pointing away from its triangle', () => {
+    const box = new Surface('facade').box([-1, 0, -1], [1, 2, 1]).data();
+    const turned = { ...box, normals: box.normals.map((n) => -n) };
+    expect(windingProblems(turned).some((p) => p.detail.includes('faces away'))).toBe(true);
+  });
 });
 
 describe('sections', () => {
