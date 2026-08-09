@@ -57,6 +57,16 @@ is exactly the space a door onto it needs, so the two compose:
 A door has to reach a floor it opens onto: the building's own, or the slab of a balcony under it
 on the same face. A window over the rail is still refused, because the rail holds those cells.
 
+## What the section already wears
+
+A section's uprights (`--columns`) and cable runs (`--wires`) are built by `#kit`, not composed
+on the grid. `FacePlan.wears` hands them over and the sheet **holds** their cells before any
+element claims one, so a window cannot be placed through a rib. Where they stand comes from
+`uprightsOn` and `WIRE_RUNS` in `#kit`, the same source the builder uses, so the two cannot drift.
+
+Held cells are clipped to the face rather than refused: the dressing is already built, and the
+grid's job is to keep composition off it.
+
 ## Errors
 
 `E_OVERLAP` (a cell is taken, or the rectangle runs into the border), `E_DOC_INVALID` (a door
@@ -64,7 +74,8 @@ floating in the middle of a wall, a balcony deeper than the kit allows, a rectan
 
 ## Invariants
 
-- Two elements never share a cell, and nothing is ever placed by coordinate.
+- Two elements never share a cell, nothing is ever placed by coordinate, and nothing is composed
+  over what the section already wears.
 - A cell is asked for by column and row and comes back on the real face, so a section that
   twists, tapers or curves needs no special case anywhere.
 - Everything bites into the wall behind it and stands proud in front, so nothing shares a plane

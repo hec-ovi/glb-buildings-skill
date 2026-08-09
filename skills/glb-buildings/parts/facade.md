@@ -103,6 +103,10 @@ A run inside the building is refused, and the message says exactly where that se
 
 - **Two things cannot share a cell.** A clash is refused and names both, so you never have to
   check for one yourself.
+- **What the section already wears holds its cells.** `--columns` and `--wires` are built by the
+  kit, not composed here, and the grid keeps their cells: `put` refuses a rectangle that lands on
+  a rib or a cable run. Read the face with `--draw` first and compose in the bays between them.
+  A rib stands every 3.5 m, so a rhythm on the face's own bay pitch never meets one.
 - **Nothing reaches the border.** One clear cell all round.
 - **Composing turns greebles off.** A section that carries anything on a face stops wearing scattered
   panel noise, since the two only fight. Keep greebles for the plain sections.
