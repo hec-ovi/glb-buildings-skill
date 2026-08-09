@@ -39,34 +39,42 @@ screens on the street, a lattice mast and two dishes on the crown.
 21.4 m, 3 sections, balconies down the south face, plant on the roof, 2,232 triangles. Read the
 skill, ran 21 commands, one failed, recovered, done in about two and a half minutes.
 
-### A local model, on one machine
+### A local model, on one workstation
 
 > *"A tall, thin office tower with a tapering top and some balconies"*
 
 ![the local model building its tower](docs/showcase/local-spire.gif)
 
-106 m, 5 sections, 14 composed elements, 4,340 triangles, validator clean. Served locally on `llama.cpp`
-and driven by [noob-cli](https://github.com/hec-ovi/noob-cli), with the skill installed at
-`.noob/skills/`. Worth noting: it was handed a brief, wrote its own, and built that instead.
+Served on `llama.cpp` over Vulkan and driven by [noob-cli](https://github.com/hec-ovi/noob-cli), with
+the skill installed at `.noob/skills/`. Handed a brief, it wrote its own and built that: 106 m,
+5 sections, validator clean.
+
+This clip is an earlier 26B run. The benchmark below is a rerun on Qwen3.6-35B-A3B, which produced the
+densest facade of any driver in the set.
 
 ## Benchmark
 
 Two briefs, three drivers, isolated stores so nothing raced. Every file validator clean.
 
-| driver | building | height | sections | elements | triangles | commands | failed | wall clock |
+| driver | building | height | sections | elements | triangles | calls | failed | wall clock |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Opus 5 | spire-me | 111.1 m | 5 | 34 | 5,512 | ~30 | 1 | minutes |
 | Opus 5 | market-me | 17.7 m | 3 | 18 | 2,856 | ~20 | 1 | minutes |
 | Haiku 4.5 | spire-haiku | 82.6 m | 5 | 21 | 2,804 | 40 | 8 | 3m 28s |
 | Haiku 4.5 | market-haiku | 21.4 m | 3 | 6 | 2,232 | 21 | 1 | 2m 28s |
-| gemma-4-26b | spire-local | 105.9 m | 5 | 14 | 4,340 | — | — | ~35 min |
-| gemma-4-26b | market-local | 18.2 m | 3 | 1 | 72 | — | — | ~35 min |
+| Qwen3.6-35B-A3B (local) | spire-qwen | 112.6 m | 4 | **57** | **10,576** | 127 | 11 | 6m 15s |
+| Qwen3.6-35B-A3B (local) | market-qwen | 20.7 m | 3 | 19 | 3,236 | 223 | 13 | 9m 15s |
 
-**Reading the table.** The toolkit and skill run end to end on a locally served model through
-[noob-cli](https://github.com/hec-ovi/noob-cli), with no cloud dependency: environment check,
-five-section stack with a twist, facade composition, roof layout, validated glTF out. The cost is
-throughput and detail density, not correctness — every output in this table passed the same proofs
-and the same Khronos validation as the hosted models.
+Local model: Qwen3.6-35B-A3B (MoE, 3B active) at Q8_0 on a single Strix Halo workstation, served by
+`llama.cpp` over Vulkan, driven by [noob-cli](https://github.com/hec-ovi/noob-cli). Wall clock is the
+full session: reading the skill, every verb, every retry, and the final build.
+
+**Reading the table.** The result worth noting is the local row: a 35B MoE on one workstation, no
+cloud in the loop, produced the densest facade in the set — 57 composed elements and 10,576
+triangles against 34 and 5,512 from the hosted frontier model on the same brief. It costs more
+calls and more wall clock to get there, and its failure count is higher, but every output in this
+table cleared the same proofs and the same Khronos validation. Detail density is not where the
+hosted models win; wall clock and first-try accuracy are.
 
 The failure column is the useful one. This benchmark is what surfaced three defects worth fixing:
 two sessions sharing a store could edit each other's buildings (now scoped by `--project`); a mast
