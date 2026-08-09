@@ -3,7 +3,8 @@
  * cells, and the tool builds the geometry. Nothing here takes a size or a position in metres.
  */
 import { assemble } from '#assemble';
-import { CELL, MARGIN, KIND_NOTES, KINDS, MATERIAL_NOTES, MATERIALS, readFace, type Element } from '#facade';
+import { CELL, MARGIN, KIND_NOTES, KINDS, MATERIAL_NOTES, MATERIALS, dressFaces, readFace, type Element } from '#facade';
+import { BUDGET, ROOF_BUDGET } from '#glb';
 import { Surface, segment } from '#kit';
 import { BuildingError, SIDES, toMetres, toMm, type Band, type BandFace, type BuildingDocument, type FaceElement, type Side } from '#spec';
 import type { Verb } from './verb.ts';
@@ -80,8 +81,8 @@ export const face: Verb = {
       side,
       grid: { cols: grid.cols, rows: grid.rows, cell: CELL, margin: MARGIN },
       size: { width: Number(grid.width.toFixed(2)), height: Number(grid.height.toFixed(2)) },
-      floors: grid.floors,
-      place: `cells run [0,0] at the bottom left to [${grid.cols - 1},${grid.rows - 1}] at the top right; keep ${MARGIN} clear all round`,
+      repeats: `one floor of ${band.id}; whatever you compose here is built on each of its ${grid.floors} floors`,
+      place: `cells run [0,0] at the bottom left to [${grid.cols - 1},${grid.rows - 1}] at the top right, both ends of a rectangle included; keep ${MARGIN} clear all round`,
       elements: facesOf(band, side).elements.map((element, index) => ({
         n: index + 1,
         kind: element.kind,
@@ -151,6 +152,12 @@ export const put: Verb = {
     readFace(shape, { side, elements: [...existing.elements, ...made].map(elementOf) });
 
     await project.writeDocument(next);
+
+    // What the section's faces cost now, against what its tier promises. Said here rather than
+    // at the build, so nobody composes a whole facade a tier cannot carry.
+    const spend = costOf(shape, faces, grid.floors);
+    const allowed = band.kind === 'roof' ? ROOF_BUDGET : (BUDGET[band.tier] ?? BUDGET.full!);
+
     return {
       project: name,
       section: band.id,
@@ -159,10 +166,23 @@ export const put: Verb = {
       kind,
       material,
       on: made.map((element) => [element.col, element.row]),
-      note: `${grid.floors} floors carry it, so the section costs it once`,
+      costs: { faces: spend, allowed, tier: band.tier },
+      note:
+        spend > allowed
+          ? `these faces cost ${spend} triangles a floor and a ${band.tier} section may spend ${allowed} on everything. Move it to a richer tier or take some off, or the build will refuse it`
+          : `${grid.floors} floors carry it, so the section builds it once`,
     };
   },
 };
+
+/** Triangles a floor the composed faces of a section cost, counted from what they build. */
+function costOf(shape: Parameters<typeof dressFaces>[0], faces: BandFace[], floors: number): number {
+  const meshes = dressFaces(
+    shape,
+    faces.map((face) => ({ side: face.side, elements: face.elements.map(elementOf) })),
+  );
+  return Math.round(meshes.reduce((sum, mesh) => sum + mesh.indices.length / 3, 0) / Math.max(1, floors));
+}
 
 export const clear: Verb = {
   name: 'clear',

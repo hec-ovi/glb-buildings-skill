@@ -79,6 +79,23 @@ describe('a sandboxed agent', () => {
     }
   });
 
+  it('refuses --here when BUILDINGS_HOME is set, rather than stranding the project', async () => {
+    const work = await mkdtemp(join(tmpdir(), 'work-'));
+    const previous = process.cwd();
+    process.chdir(work);
+    process.env.BUILDINGS_HOME = join(work, 'elsewhere');
+    try {
+      const answer = (await run(['new', 'tower-a', '--here'])) as unknown as { ok: boolean; message: string };
+      expect(answer.ok).toBe(false);
+      expect(answer.message).toContain('BUILDINGS_HOME');
+      // And nothing was written where no later verb would look for it.
+      expect(existsSync(join(work, '.buildings'))).toBe(false);
+    } finally {
+      delete process.env.BUILDINGS_HOME;
+      process.chdir(previous);
+    }
+  });
+
   it('says what to do when the home cannot be written', async () => {
     const locked = await mkdtemp(join(tmpdir(), 'locked-'));
     await mkdir(join(locked, 'projects'));
@@ -122,6 +139,53 @@ describe('bands', () => {
     const answer = (await call('add-band', 'x', '--template', 'glass-tower')) as unknown as { ok: boolean; code: string; message: string };
     expect(answer).toMatchObject({ ok: false, code: 'E_UNKNOWN_TEMPLATE' });
     expect(answer.message).toContain('bulk-flat');
+  });
+});
+
+describe('faces', () => {
+  it('reads a grid, places on it in cells, and refuses a second thing on the same cell', async () => {
+    await call('new', 'tower-a', '--width', '12', '--depth', '9');
+    const grid = (await call('face', 'body')) as unknown as {
+      grid: { cols: number; rows: number; cell: number; margin: number };
+      repeats: string;
+    };
+    expect(grid.grid).toMatchObject({ cols: 120, rows: 32, cell: 0.1, margin: 1 });
+    expect(grid.repeats).toContain('built on each of its');
+
+    const put = (await call('put', 'window', '12,9', '19,23', '--section', 'body')) as unknown as { put: number };
+    expect(put.put).toBe(1);
+
+    const clash = (await call('put', 'panel', '15,12', '25,20', '--section', 'body')) as unknown as { ok: boolean; code: string; message: string };
+    expect(clash).toMatchObject({ ok: false, code: 'E_OVERLAP' });
+    expect(clash.message).toContain('window 1 on S');
+  });
+
+  it('repeats an element across the face on a pitch, so a rhythm needs no counting', async () => {
+    await call('new', 'tower-a', '--width', '12', '--depth', '9');
+    const put = (await call('put', 'window', '2,9', '9,23', '--section', 'body', '--every', '3')) as unknown as { put: number; on: number[][] };
+    expect(put.put).toBe(4);
+    expect(put.on.map((cell) => cell[0])).toEqual([2, 32, 62, 92]);
+  });
+
+  it('says what a face costs against its tier, before the build has to refuse it', async () => {
+    await call('new', 'tower-a', '--width', '24', '--depth', '12');
+    const put = (await call('put', 'balcony', '4,2', '30,15', '--section', 'body', '--every', '3')) as unknown as {
+      costs: { faces: number; allowed: number; tier: string };
+      note: string;
+    };
+    expect(put.costs.tier).toBe('flat');
+    expect(put.costs.faces).toBeGreaterThan(put.costs.allowed);
+    expect(put.note).toContain('richer tier');
+    // And the build agrees with the warning.
+    expect(await call('build')).toMatchObject({ ok: false, code: 'E_BUDGET' });
+  });
+
+  it('lays a run along a path, and refuses one that folds back on itself', async () => {
+    await call('new', 'tower-a');
+    expect(await call('run', '5,20,4.5', '5,6,4.5', '3,6,4.5', '--section', 'body')).toMatchObject({ ok: true, points: 3 });
+    const fold = (await call('run', '0,10,4.5', '0,20,4.5', '0,10.5,4.5', '--section', 'body')) as unknown as { ok: boolean; message: string };
+    expect(fold.ok).toBe(false);
+    expect(fold.message).toContain('turns back on itself');
   });
 });
 

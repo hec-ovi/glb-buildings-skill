@@ -2,7 +2,7 @@
 import { assemble } from '#assemble';
 import { supports } from '#check';
 import { templates } from '#kit';
-import { bandFloorHeight, newDocument, toMetres, type Band } from '#spec';
+import { BuildingError, bandFloorHeight, newDocument, toMetres, type Band } from '#spec';
 import { join } from 'node:path';
 import { LOCAL, Projects } from '../projects.ts';
 import type { Verb } from './verb.ts';
@@ -20,7 +20,17 @@ export const newProject: Verb = {
       here: { type: 'boolean' },
     });
     const name = need(positionals, 0, 'project name');
+
     // --here keeps projects beside the work, which is the answer when the home is not writable.
+    // With BUILDINGS_HOME set, the two disagree about where to look, and the project would be
+    // written somewhere no later verb reads. Say so instead of stranding it.
+    if (values.here === true && process.env.BUILDINGS_HOME) {
+      throw new BuildingError(
+        'E_DOC_INVALID',
+        `BUILDINGS_HOME is set to ${process.env.BUILDINGS_HOME}, so every verb looks there, and --here would put this project in ${join(process.cwd(), LOCAL)} where none of them would find it. Drop --here, or unset BUILDINGS_HOME`,
+        ['here'],
+      );
+    }
     const projects = values.here === true ? new Projects(join(process.cwd(), LOCAL)) : ctx.projects;
     const project = await projects.create(name);
     const width = text(values.width);

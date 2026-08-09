@@ -37,7 +37,7 @@ a session names the building once and every later verb knows what it means.
 
 | Verb | Does |
 | --- | --- |
-| `new <name> [--width] [--depth] [--floors] [--here]` | start a building, in metres, and make it current |
+| `new <name> [--width] [--depth] [--floors] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
 | `list` | every building, whether it is built, and which is current |
 | `use <name>` | switch the current building |
 | `show [name]` | the stack section by section: sizes, plan, what each wears, what it rests on |
