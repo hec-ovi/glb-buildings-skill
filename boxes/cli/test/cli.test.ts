@@ -55,9 +55,10 @@ describe('projects', () => {
     const body = shown.bands.find((band) => band.id === 'body')!;
     expect(body.plan).toContain('round');
     expect(body.plan).toContain('240');
+    // Greebles are only built where a section carries nothing else, and show says which it is.
     expect(body.wears).toEqual([
       'windows cut into every bay',
-      'greebles 0.4',
+      'greebles 0.4, off: this section has detail of its own',
       'columns ribs',
     ]);
   });
@@ -180,12 +181,21 @@ describe('faces', () => {
     expect(await call('build')).toMatchObject({ ok: false, code: 'E_BUDGET' });
   });
 
-  it('lays a run along a path, and refuses one that folds back on itself', async () => {
-    await call('new', 'tower-a');
-    expect(await call('run', '5,20,4.5', '5,6,4.5', '3,6,4.5', '--section', 'body')).toMatchObject({ ok: true, points: 3 });
-    const fold = (await call('run', '0,10,4.5', '0,20,4.5', '0,10.5,4.5', '--section', 'body')) as unknown as { ok: boolean; message: string };
+  it('lays a run down the outside of a section, and refuses one that folds back on itself', async () => {
+    await call('new', 'tower-a', '--width', '18', '--depth', '14');
+    // The south face of an 18 by 14 building stands at z = 7, so the run clears it.
+    expect(await call('run', '5,20,7.3', '5,6,7.3', '3,6,7.3', '--section', 'body')).toMatchObject({ ok: true, points: 3 });
+
+    const fold = (await call('run', '0,10,7.3', '0,20,7.3', '0,10.5,7.3', '--section', 'body')) as unknown as { ok: boolean; message: string };
     expect(fold.ok).toBe(false);
     expect(fold.message).toContain('turns back on itself');
+  });
+
+  it('refuses a run buried in the building, and says where the section actually stands', async () => {
+    await call('new', 'tower-a', '--width', '18', '--depth', '14');
+    const inside = (await call('run', '0,20,0', '0,6,0', '--section', 'body')) as unknown as { ok: boolean; code: string; message: string };
+    expect(inside).toMatchObject({ ok: false, code: 'E_OVERLAP' });
+    expect(inside.message).toContain('spans x -9 to 9 and z -7 to 7');
   });
 });
 

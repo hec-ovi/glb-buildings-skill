@@ -75,9 +75,9 @@ So a wide base with a narrower tower on it works; a tower sliding off its base d
 The three parts of a building do different jobs, and mixing them up is what makes a tower look wrong.
 
 - **The base** carries weight: taller floors, often wider, `--columns corners`.
-- **The bulk** is repetitive on purpose. It is meant to be similar and fake: `--greebles 0.3` to `0.5` so it
-  is not a bare box, `--columns ribs` or `partial`, `--balconies S`, and a step or two between runs. Do not
-  make every bulk section different; two or three variations, repeated, is what reads as a building.
+- **The bulk** is repetitive on purpose. It is meant to be similar and fake: `--greebles 0.3` to `0.5` so a
+  plain section is not a bare box, `--columns ribs` or `partial`, and a step or two between runs. Do not make
+  every bulk section different; two or three variations, repeated, is what reads as a building.
 - **The top** is where the silhouette is made, and no two roofs should look the same. `--clutter` decides how
   much stands there: a railing and units from 0.2, a water tank from 0.25, a pole with its cable harness from
   0.35, solar panels and a small tower from 0.5. Each roof is seeded from its own section name, so two
@@ -90,7 +90,7 @@ A tier is a promise about cost, and `build` holds you to it.
 | tier | what it carries | budget |
 | --- | --- | --- |
 | `flat` | walls, nothing else. Windows live in the texture | 120 triangles a floor |
-| `light` | greebles, columns, cables, balconies, windows as panes | 1,200 a floor |
+| `light` | columns, cables, windows as panes, and whatever a face is composed with | 1,200 a floor |
 | `full` | the same, laid on thick, for a section that is seen close | 4,000 a floor |
 | a roof section | everything on the deck | 4,500 for the whole section |
 
@@ -104,7 +104,6 @@ Most of a tower is `flat`. Spend `light` on the two or three sections at eye lev
 | `--windows` | a dark pane set into every bay of every floor, about 12 triangles each |
 | `--greebles 0.0 to 1.0` | panel noise: the face is split into panels and each one either stands out or stays flat |
 | `--columns corners\|ribs\|partial` | uprights: at the corners, every few metres, or only in gaps |
-| `--balconies N\|E\|S\|W` | a slab with a rounded front, one per floor of the section |
 | `--wires N\|E\|S\|W` | cables climbing one face, tying the section together |
 | `--clutter 0.0 to 1.0` | on a roof section: edge railing, mast with harness rings and spikes, water tank on legs, AC units, solar panels, a utility pole with drooping cables, a small tower |
 | `--shape round --segments 20` | the whole section becomes a cylinder |
@@ -117,10 +116,12 @@ All of them are seeded from the section's name, so a rebuild keeps the same arra
 never reshuffles it.
 
 **Noise.** `--greebles` splits each face into panels, again and again, until the pieces are about a metre
-across, then stands some of them out by a quantised depth. Big slabs, medium blocks and small chips come from
-the same pass, and the panels left flat read as the cuts between them. `0` is a clean flat section, which is
-right for most bulk; `0.3` is a worked facade; `0.6` and up is the heavy industrial noise of a kitbashed
-tower. Use it on one or two sections, not on all of them: flat next to noisy is what makes either one read.
+across, then stands some of them out by a quantised depth. `0` is a clean flat section, `0.3` is a worked
+facade, `0.6` and up is the heavy industrial noise of a kitbashed tower.
+
+Greebles are what a section wears **when it wears nothing else**. A section that carries windows, composed
+faces or runs turns them off, because scattered noise behind real detail only fights it. `show` says so when
+that happens. So use greebles on the plain bulk sections, and compose the ones that are seen.
 
 `--corner` and `--chamfer` together are what stop a section reading as a raw box: a small fillet on the
 uprights and a 0.2 to 0.3 m bevel top and bottom cost a handful of triangles and change the whole silhouette.

@@ -85,8 +85,15 @@ function planOf(band: Band): string {
 /** What a section wears, so every flag that can be set can be read back. */
 function wornBy(band: Band): string[] {
   const worn: string[] = [];
+  const detail = band.windows || band.faces.some((face) => face.elements.length > 0) || band.runs.length > 0;
+
   if (band.windows) worn.push('windows cut into every bay');
-  if (band.greebles > 0) worn.push(`greebles ${band.greebles}`);
+  for (const face of band.faces) {
+    if (face.elements.length > 0) worn.push(`${face.elements.length} on the ${face.side} face`);
+  }
+  if (band.runs.length > 0) worn.push(`${band.runs.length} runs`);
+  // Greebles are only built on a section that carries nothing else, so say which it is.
+  if (band.greebles > 0) worn.push(detail ? `greebles ${band.greebles}, off: this section has detail of its own` : `greebles ${band.greebles}`);
   if (band.columns !== 'none') worn.push(`columns ${band.columns}`);
   if (band.wires !== 'none') worn.push(`wires up ${band.wires}`);
   if (band.clutter > 0) worn.push(`deck clutter ${band.clutter}`);

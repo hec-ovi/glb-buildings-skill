@@ -108,16 +108,18 @@ export function build(surface: Surface, face: Face, element: Element): void {
 }
 
 /**
- * A slab standing out of the face with a rail round three sides, and the way onto it left open.
- * The claimed cells are its footprint on the wall: the slab sits at the bottom of them and the
- * rail rises to the top of what a hand rests on.
+ * A slab standing out of the face, with a solid balustrade round its three open sides and the
+ * top left open. The claimed cells are what it fills: the slab sits on the bottom of them and
+ * the balustrade rises to the top of them, so what is claimed is what is built.
+ *
+ * The front is a panel, not a bar on posts. A rail with an open gap under it reads as a hollow
+ * box from any distance, which is not what a balcony looks like.
  */
 function balcony(surface: Surface, face: Face, floor: number, element: Element): void {
   const depth = element.depth ?? 1.5;
   const rect = element.rect;
   const slab = 0.15;
   const rail = 0.08;
-  const guard = 1.05;
 
   const out = face.outward(floor, rect.col, rect.row);
   const step = (point: Vec, by: number): Vec => [point[0] + out[0] * by, point[1] + out[1] * by, point[2] + out[2] * by];
@@ -144,11 +146,12 @@ function balcony(surface: Surface, face: Face, floor: number, element: Element):
   const base = rect.row;
   const cell = face.height / face.rows;
   const up = (metres: number) => base + metres / cell;
+  const top = rect.row + rect.rows;
 
   solid(left, right, base, up(slab), -BITE, depth);
-  solid(left, right, up(guard - rail), up(guard), depth - rail, depth);
-  solid(left, left + 1, up(slab), up(guard), -BITE, depth);
-  solid(right - 1, right, up(slab), up(guard), -BITE, depth);
+  solid(left, right, up(slab), top, depth - rail, depth);
+  solid(left, left + RAIL_CELLS, up(slab), top, -BITE, depth);
+  solid(right - RAIL_CELLS, right, up(slab), top, -BITE, depth);
 }
 
 /** The row a balcony's slab reaches, which is the floor anything on it stands on. */

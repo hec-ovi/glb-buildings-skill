@@ -98,7 +98,14 @@ export const place: Verb = {
       }
       const clash = block.find((candidate) => held.has(candidate.name));
       if (clash) {
-        throw new BuildingError('E_DOC_INVALID', `${clash.name} already holds a ${held.get(clash.name)}; clear it first with unplace`, ['cell', clash.name]);
+        // A big part takes a block, so the cell in the way is often not the one that was asked
+        // for. Say which cells it needs, or the message reads as a non sequitur.
+        const takes = size > 1 ? `a ${part} takes the ${size}x${size} block ${block.map((one) => one.name).join(', ')}, and ` : '';
+        throw new BuildingError(
+          'E_DOC_INVALID',
+          `${takes}${clash.name} already holds a ${held.get(clash.name)}; clear it first with unplace`,
+          ['cell', clash.name],
+        );
       }
       for (const candidate of block) held.set(candidate.name, part);
     }

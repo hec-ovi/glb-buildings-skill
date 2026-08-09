@@ -85,6 +85,11 @@ function runsOf(runs: BandRun[], y: number): MeshData[] {
   return [...surfaces.values()].filter((surface) => !surface.empty).map((surface) => surface.data());
 }
 
+/** Whether a section carries real detail: anything composed, cut or run on it. */
+export function detailed(band: Pick<PlacedBand, 'windows' | 'faces' | 'runs'>): boolean {
+  return band.windows || band.faces.some((face) => face.elements.length > 0) || band.runs.length > 0;
+}
+
 /** The stack rules that have nothing to do with geometry. */
 function checkEnds(placed: PlacedScene): void {
   const first = placed.bands[0]!;
@@ -230,7 +235,10 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     const worn = dress(shape, {
       wires: band.wires,
       columns: band.columns,
-      greebles: band.greebles,
+      // Greebles are what a section wears when it wears nothing else: scattered panel noise
+      // that stops a bare box reading as a box. On a section that carries real detail they
+      // only fight it, so a face with anything composed on it, a window or a run turns them off.
+      greebles: detailed(band) ? 0 : band.greebles,
       clutter: band.clutter,
       deck: band.deck,
       covered: above ? metres(above.bottom) : undefined,

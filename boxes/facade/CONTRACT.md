@@ -43,7 +43,9 @@ video walls) and `metal` (shutters, louvres, plant).
 
 ## Balconies and the door onto them
 
-A balcony claims its **slab and its two side rails**, and leaves the middle open. That open middle
+A balcony fills the cells it claims: the slab sits on the bottom of them and the balustrade rises to the top
+of them, so what is claimed is what is built. It claims its **slab and its two side rails** only, and leaves
+the middle open. That open middle
 is exactly the space a door onto it needs, so the two compose:
 
 ```

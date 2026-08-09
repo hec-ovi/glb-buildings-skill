@@ -2,10 +2,10 @@
  * Composing a face. The grid is the whole interface: read it, put something in a rectangle of
  * cells, and the tool builds the geometry. Nothing here takes a size or a position in metres.
  */
-import { assemble } from '#assemble';
+import { assemble, type PlacedBand } from '#assemble';
 import { CELL, MARGIN, KIND_NOTES, KINDS, MATERIAL_NOTES, MATERIALS, dressFaces, readFace, type Element } from '#facade';
 import { BUDGET, ROOF_BUDGET } from '#glb';
-import { Surface, segment } from '#kit';
+import { Surface, segment, sunkProblems } from '#kit';
 import { BuildingError, SIDES, toMetres, toMm, type Band, type BandFace, type BuildingDocument, type FaceElement, type Side } from '#spec';
 import type { Verb } from './verb.ts';
 import { need, parse, size, text } from './args.ts';
@@ -36,6 +36,14 @@ function readCell(value: string, what: string): [number, number] {
     throw new BuildingError('E_DOC_INVALID', `${what} is a cell like 12,8: a column and a row, both whole numbers`, [what]);
   }
   return [parts[0]!, parts[1]!];
+}
+
+/** Where a section actually stands, so a composer can put a run outside it rather than in it. */
+function outsideOf(placed: PlacedBand): string {
+  const xs = placed.bottom.concat(placed.top).map(([x]) => toMetres(x));
+  const zs = placed.bottom.concat(placed.top).map(([, z]) => toMetres(z));
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return `${placed.id} spans x ${round(Math.min(...xs))} to ${round(Math.max(...xs))} and z ${round(Math.min(...zs))} to ${round(Math.max(...zs))}, from y ${round(toMetres(placed.y0))} to ${round(toMetres(placed.y1))}.`;
 }
 
 /** The section named, or the one the human last picked in the preview. */
@@ -241,13 +249,28 @@ export const run: Verb = {
       material: oneOf(text(values.material), MATERIALS, 'material', 'metal'),
     };
 
-    // Draw it now and throw it away: a path that cannot be mitred is refused here, rather than
-    // sitting in the document until the next build.
+    // Draw it now and throw it away: a path that cannot be mitred, or one that runs inside the
+    // building where nobody would see it, is refused here rather than at the next build.
+    const drawn = new Surface(made.material);
+    const scene = assemble(doc);
+    const placed = scene.bands.find((one) => one.id === band.id)!;
+    const shape = sectionShape(placed);
+    const base = toMetres(placed.y0);
+
     segment(
-      new Surface(made.material),
-      points.map(([x, y, z]) => [toMetres(x), toMetres(y), toMetres(z)] as [number, number, number]),
+      drawn,
+      points.map(([x, y, z]) => [toMetres(x), toMetres(y) - base, toMetres(z)] as [number, number, number]),
       { profile: made.profile, thickness: toMetres(made.thickness) },
     );
+
+    const buried = sunkProblems([drawn.data()], shape);
+    if (buried.length > 0) {
+      throw new BuildingError(
+        'E_OVERLAP',
+        `this run is inside ${band.id}, where nothing would see it. ${outsideOf(placed)} A run has to stand out of the section it hangs on`,
+        ['run'],
+      );
+    }
 
     await project.writeDocument({
       ...doc,
