@@ -10,7 +10,6 @@ lofted between, and each floor's facade splits into bays. Pure arithmetic, no ge
 | `assemble(document)` | `BuildingDocument` from `#spec` | `PlacedScene` |
 | `floors(scene)` | placed scene | every floor, bottom to top |
 | `findBay(scene, id)` | placed scene, bay id | that bay, or nothing |
-| `boxCentre(box)` | a box | its middle |
 
 Types live in [`scene.ts`](scene.ts).
 

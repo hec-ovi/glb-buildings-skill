@@ -178,7 +178,3 @@ export function tubeRing(shape: SectionShape, t: number, edge: number, along: nu
   return [at(-half, stand), at(half, stand), at(half, -BITE), at(-half, -BITE)];
 }
 
-/** Two footprints are the same when every corner matches, so no junction is needed. */
-export function sameRing(a: Corner[], b: Corner[]): boolean {
-  return a.length === b.length && a.every((corner, i) => corner[0] === b[i]![0] && corner[1] === b[i]![1]);
-}

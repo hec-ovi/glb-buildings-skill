@@ -70,10 +70,3 @@ export type PlacedScene = {
   bands: PlacedBand[];
 };
 
-export function boxCentre(box: Box): Vec3 {
-  return [
-    Math.round((box.min[0] + box.max[0]) / 2),
-    Math.round((box.min[1] + box.max[1]) / 2),
-    Math.round((box.min[2] + box.max[2]) / 2),
-  ];
-}

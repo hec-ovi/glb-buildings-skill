@@ -26,7 +26,7 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
 | `dress(shape, options)` | shape, what it wears | cables, columns, greebles, deck parts, as one mesh |
 | `segment(surface, points, style)` | a path in metres, a profile and a thickness | one closed run of tube, mitred at every corner |
-| `walls` / `cap` / `capRing` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
+| `walls` / `cap` / `capRing` / `ringAt` | shape or rings | the pieces templates are made of |
 | `outwardAt(ring, edge)` | footprint, edge | the way out at that edge |
 | `outsideBy(ring, point)` | footprint, point | metres past the footprint, negative inside |
 | `facePoint(shape, t, edge, along, out)` | a face, how far up and across it | that point in the building |
