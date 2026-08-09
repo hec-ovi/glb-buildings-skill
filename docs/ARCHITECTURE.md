@@ -20,21 +20,49 @@ A section is the design unit: a run of identical floors that owns its shape. Its
 the footprint it starts on and the one it ends on, closed at both ends, so a step, a slide, a turn, a twist
 and a taper are all the same operation. One section is one mesh and one node, however many floors it stacks.
 
+## The grid on a face
+
+Every face of a section is a rectangle, one floor tall, and it divides into **10 cm cells**. A window, a
+door, a balcony, a panel or a lit screen is a rectangle of cells, claimed by the element that stands on it,
+so two of them cannot overlap and nothing is ever placed by coordinate. A border of one cell is kept clear,
+so nothing lands on a corner or a floor line.
+
+A cell is asked for by column and row and comes back on the real face, which is what makes a twist, a taper
+or a curve need no special case: the composer works in a flat grid and the geometry lands where the section
+actually is.
+
+A balcony holds its slab and its two side rails and leaves the middle open, which is exactly the space a door
+onto it needs, so the two compose instead of fighting for cells.
+
+The design belongs to the face, not to a floor: a section of eighteen floors builds it eighteen times and
+still costs one mesh.
+
+## Runs
+
+A duct, a pipe and a cable are one thing: a path of points carrying a ring along it. `profile` is how many
+corners the ring has, `thickness` is how far across the run is, and that is the whole difference between an
+air duct, a pipeline and a wire.
+
+The ring is mitred at every point onto the plane bisecting the two runs meeting there, so a corner is the
+same ring rather than two parts overlapping, and the cross section holds the whole way. Points that carry
+straight on are dropped. A turn too sharp to mitre is a fold, not a bend, and is refused with the point
+named. Nobody composing a building ever works out a joint.
+
 ## Why nothing floats or gets buried
 
 Free placement is the bug. Nothing in the pipeline gives a part an x, y, z and hopes.
 
-- **Parts anchor to the plan.** A column takes a footprint corner or a face, a balcony takes a wall and a
-  floor line, a deck part takes a cell of the roof grid. Which way is out comes from the footprint at the
-  part's own height, so a taper or a twist never sends a part into a wall.
+- **Parts anchor to the plan or the grid.** A column takes a footprint corner or a face, a deck part takes a
+  cell of the roof grid, a window takes a rectangle of cells on a face. Which way is out comes from the
+  footprint at the part's own height, so a taper or a twist never sends a part into a wall.
 - **Everything bites in.** A part sinks a centimetre into what it stands on and a section sinks a centimetre
   into the one below, so no two surfaces share a plane and nothing flickers.
 - **Nothing may be buried.** Every part a section wears has to reach at least 5 cm out of it, measured against
   the footprint at its own height. A part hidden inside a wall is a mistake nobody can see, so it fails.
 - **Nothing may drift.** A part more than 3 m past the footprint, or 12 m above the top, is not on the
   building any more, and fails with the section named.
-- **A cell holds one part.** The roof is a two metre grid with named cells (`A1`, `B3`); a part claims the
-  cells it covers and a second part in them is refused.
+- **A cell holds one part.** The roof is a two metre grid with named cells (`A1`, `B3`) and a face is a 10 cm
+  one; a part claims the cells it covers and a second part in them is refused.
 - **A section has to land.** The share of a section's underside that lands on the one below is measured: half
   or more is ordinary, a fifth to a half is a cantilever worth reporting, under a fifth is refused.
 
@@ -85,7 +113,17 @@ turned toward the camera are caught, so the far side is never selected by accide
 ## The agent's surface
 
 The agent never edits the document by hand and never touches the repo. It calls verbs. The skill is a resolver
-that routes an intent to one fat sub-skill (auto build, the stack, editing what was clicked, breaking up a run
-of floors, the roof deck, dimensions), and the sub-skill runs the verbs. Auto build walks base, bulk, custom
-sections, bulk, roof in order, building at every step, so a one shot description like "high tech cyberpunk
-mega building" produces a file that already passed every proof.
+that routes an intent to one fat sub-skill (auto build, the stack, a face, editing what was clicked, breaking
+up a run of floors, the roof deck, dimensions), and the sub-skill runs the verbs.
+
+Building from one description is **two passes**, and they are separate on purpose:
+
+- **The architect** reads the description, settles the footprint, the floor count and how the mass splits
+  into sections, and builds to prove the massing stands. It works in metres and never looks at a window.
+- **A facade job per section design** takes one section, reads its grid, and composes cells. It never looks
+  at the rest of the building. A forty floor tower is four to six of these, not forty, because a section
+  repeats one floor design.
+
+Neither pass has to hold the other in its head, and the document is the only seam between them. That is what
+makes the work fit a small local model: every context is a bounded, integer, occupancy-checked space that
+refuses invalid input, so no pass has to review the pass before it.

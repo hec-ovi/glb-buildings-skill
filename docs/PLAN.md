@@ -26,15 +26,19 @@ named cell with `deck`, `place` and `unplace`.
 **7. Facade textures.** Written from code and seeded from the building's name: a window grid in colour and
 emissive, tiled one row per floor and one bay per 3 m, carried by both the facade and the glass material.
 
+**8. Faces as grids.** Every face divides into 10 cm cells. A window, a door, a balcony or a screen is a
+rectangle of them, claimed so two elements can never overlap, with a clear border all round. A balcony holds
+its slab and rails and leaves the middle open for the door onto it.
+
+**9. Runs.** A duct, a pipe and a cable are one thing: a path of points carrying a ring, mitred at every
+corner. The composer gives points and a profile and never works out a joint.
+
 ## Next
 
-**8. Bay level editing.** A zone from the preview becomes a target for "put a window there": verbs that act on
-bay ids, not just whole sections.
+**10. The preview composes.** A zone dragged on a face becomes a cell rectangle, so "put a window there"
+resolves without anyone typing numbers.
 
-**9. Doors and the ground floor.** A real entrance: door, frame, awning, landing, the parts that make the
-bottom two floors read as a place people walk into.
-
-**10. Export profiles and LODs.** `general`, `unreal`, `unity`, `threejs`. LOD chains ship as separate files
+**11. Export profiles and LODs.** `general`, `unreal`, `unity`, `threejs`. LOD chains ship as separate files
 with a manifest, because `MSFT_lod` is unsupported in all three engines.
 
 ## Later

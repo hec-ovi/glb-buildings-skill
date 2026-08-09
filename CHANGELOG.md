@@ -2,6 +2,21 @@
 
 Present-state entries: each version says what the project is at that point.
 
+## 0.3.0
+
+A face is a grid of 10 cm cells. `face` prints it, `put` places a window, door, panel or balcony on a
+rectangle of cells, and two elements can never claim the same cell, so an overlap is refused before any
+geometry exists. A balcony keeps its slab and its two side rails and leaves the middle open, which is the
+space the door onto it needs. Materials arrive with the elements: crystal, concrete, metal and lit screens,
+made only where something is actually made of them.
+
+A duct, a pipe and a cable are one builder: a path of points carrying a ring, mitred onto the plane bisecting
+the two runs at every corner, so a run holds its cross section the whole way and a turn too sharp to mitre is
+refused with the point named. `run` lays one along any path.
+
+The skill splits into two passes: an architect that settles the massing and proves it stands, then one facade
+job per section that sees only its own grid.
+
 ## 0.2.0
 
 A building is a stack of sections, each one the loft between the footprint it starts on and the one it ends

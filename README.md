@@ -22,11 +22,17 @@ npm link
 
 ```bash
 buildings new tower-a --width 18 --depth 14 --floors 24
-buildings set-band ground --height 4.5 --columns corners      # taller lobby
-buildings set-band body --floors 22 --height 3.0 --greebles 0.35 --balconies S
-buildings set-band crown --clutter 0.5                        # tanks, masts, units on the roof
+buildings set-band ground --height 4.5 --tier light --columns corners   # taller lobby
+buildings set-band body --floors 22 --height 3.0 --greebles 0.35
+buildings set-band crown --clutter 0.5                                  # tanks, masts, units on the roof
+
+buildings face body --side S                     # the face as a grid of 10 cm cells
+buildings put window 12,9 25,24 --every 3        # a rhythm of glazing across it
+buildings put balcony 30,2 55,15 --section ground --depth 1.4
+buildings put door 38,4 47,20 --section ground   # out onto the balcony
+
 buildings build
-buildings preview                                             # blueprint editor at 127.0.0.1:4321
+buildings preview                                # blueprint editor at 127.0.0.1:4321
 ```
 
 `buildings show` prints the stack section by section, and every flag you can set comes back in it. Projects
@@ -43,6 +49,26 @@ geometry where it is seen.
 
 The facade texture is written from code and seeded from the building's name, so every building gets its own
 window grid, dark with a few lit rooms, and the geometry cuts its panes where the picture draws them.
+
+## Faces are grids
+
+Every face of a section divides into 10 cm cells. A window, a door, a balcony, a panel or a lit screen is a
+rectangle of them, and an element claims the cells it stands on, so two of them can never overlap and nothing
+is ever placed by coordinate. A cell is asked for by column and row and comes back on the real face, so a
+section that twists, tapers or curves needs no special case.
+
+A balcony keeps its slab and its two side rails and leaves the middle open, which is exactly the space the
+door onto it needs:
+
+```
+. o x x x o .
+. o x x x o .
+. o o o o o .   the slab, which is the floor the door stands on
+```
+
+Ducts, pipes and cables are one builder: a path of points carrying a ring, mitred onto the plane bisecting
+the two runs at every corner. The cross section holds the whole way, and a turn too sharp to mitre is refused
+with the point named.
 
 ## Nothing is written until it is proved
 
@@ -61,20 +87,28 @@ Picks land in the project's `selection.json`, which the agent reads to know what
 
 ## How it is built
 
-Nine boxes, each a folder with a `CONTRACT.md` that is enough to use it without reading its code. Start at
+Ten boxes, each a folder with a `CONTRACT.md` that is enough to use it without reading its code. Start at
 [docs/INDEX.md](docs/INDEX.md).
 
 `spec` holds the document and the closed error set, in whole millimetres so every comparison is exact.
-`assemble` lays it out. `kit` builds the geometry. `materials` writes the textures. `check` proves the stack.
-`glb` writes and proves the file. `preview` is the editor. `cli` is the agent's surface.
+`assemble` lays it out. `kit` builds the geometry and the runs. `facade` is the cell grid on every face.
+`materials` writes the textures. `check` proves the stack. `glb` writes and proves the file. `preview` is the
+editor. `cli` is the agent's surface.
 
 Run everything with `npm test`.
+
+## Driven by an agent
+
+The skill is a resolver over fat parts, and the work splits into two passes that never need each other in
+context: an architect settles the massing in metres and sections and proves it stands, then one facade job
+per section works in cells on its own grid. The document is the only thing between them.
 
 ## Status
 
 Working today: the document model, sections with their shapes (step, slide, turn, twist, taper, round plans,
-arcs, bowed faces), the parts (windows, greebles, columns, balconies, cables, roof deck), generated facade
-textures, the proofs, the GLB writer, the preview editor, named projects, and the skill. Next up, in
-[docs/PLAN.md](docs/PLAN.md): bay level editing, doors and the ground floor, export profiles and LODs.
+arcs, bowed faces), faces as cell grids with windows, doors, balconies, panels and screens, runs of duct,
+pipe and cable, greebles, columns, the roof deck, generated facade textures, the proofs, the GLB writer, the
+preview editor, named projects, and the skill. Next up, in [docs/PLAN.md](docs/PLAN.md): composing from the
+preview, export profiles and LODs.
 
 MIT licensed.
