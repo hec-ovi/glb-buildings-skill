@@ -71,9 +71,15 @@ What stands on a face is composed cell by cell with `face` and `put`, not with a
 
 Lengths on the command line are metres; the document stores millimetres. Angles are degrees.
 
+`--project <name>` works on every verb and pins that line to one building whatever is current. Without it a
+verb follows the current project, which is right for a person and wrong for anything running beside something
+else: two sessions sharing a store would otherwise edit each other's work, and the preview page changes the
+current project when somebody clicks a row.
+
 ## Invariants
 
 - Every verb answers with exactly one JSON object, and a failure carries a code from the closed set.
+- `--project` pins a line to one building and never changes which one is current.
 - Every write goes through `parseDocument`, so a verb cannot leave an invalid document on disk.
 - Every flag `add-band` and `set-band` accept, `show` reads back, so nothing an agent sets is write only.
 - No path from a home directory is baked in: the root comes from `BUILDINGS_HOME`, `.buildings` or the OS home.

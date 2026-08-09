@@ -71,6 +71,10 @@ Run `buildings help` for the current list. Today:
 
 Lengths on the command line are **metres**. Rotation is degrees.
 
+**`--project <name>` works on any verb** and pins that one line to that building, whatever is current. Use it
+whenever anything else might be running: a person clicking in the preview, or another session, moves the
+current project under you, and every verb without a name follows it.
+
 ## What a building is
 
 A stack of **sections**, bottom to top: a base, some floors, a roof. A section is the design unit. It repeats

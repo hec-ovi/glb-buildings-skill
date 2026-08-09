@@ -82,6 +82,14 @@ export class Projects {
     return new Project(this.path(name));
   }
 
+  /**
+   * A store pinned to one building, so a session that says which one it means is never moved by
+   * anything else changing the current one. This is what `--project` gives every verb.
+   */
+  pinnedTo(name: string): Projects {
+    return new Pinned(this.root, name);
+  }
+
   /** The named project, or the current one. Fails when neither is set. */
   async open(name?: string): Promise<{ name: string; project: Project }> {
     const chosen = name ?? (await this.current());
@@ -92,5 +100,19 @@ export class Projects {
       throw new BuildingError('E_DOC_INVALID', `no project named ${chosen}`, ['project', chosen]);
     }
     return { name: chosen, project: new Project(this.path(chosen)) };
+  }
+}
+
+/** Answers with one building whatever is current, unless a verb names another outright. */
+class Pinned extends Projects {
+  readonly #name: string;
+
+  constructor(root: string, name: string) {
+    super(root);
+    this.#name = name;
+  }
+
+  override async open(name?: string): Promise<{ name: string; project: Project }> {
+    return super.open(name ?? this.#name);
   }
 }

@@ -22,8 +22,35 @@ function help(): Answer {
   };
 }
 
-export async function run(argv: string[], projects = new Projects()): Promise<Answer> {
-  const [name, ...args] = argv;
+/**
+ * `--project <name>` anywhere in the line pins every verb in it to that building. Without it a
+ * verb works on whichever is current, which is fine for a person and a trap for anything running
+ * beside something else: two sessions sharing a store would otherwise edit each other's work.
+ */
+function pinnedProject(argv: string[]): { argv: string[]; project?: string } {
+  const kept: string[] = [];
+  let project: string | undefined;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!;
+    if (arg === '--project') {
+      project = argv[i + 1];
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith('--project=')) {
+      project = arg.slice('--project='.length);
+      continue;
+    }
+    kept.push(arg);
+  }
+  return { argv: kept, project };
+}
+
+export async function run(argv: string[], store = new Projects()): Promise<Answer> {
+  const { argv: line, project: pinned } = pinnedProject(argv);
+  const projects = pinned ? store.pinnedTo(pinned) : store;
+  const [name, ...args] = line;
   if (!name || name === 'help' || name === '--help' || name === '-h') return help();
 
   const verb = VERBS.find((v) => v.name === name);

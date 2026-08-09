@@ -143,6 +143,34 @@ describe('bands', () => {
   });
 });
 
+describe('two sessions in one store', () => {
+  it('pins every verb to one building with --project, whatever is current', async () => {
+    await call('new', 'tower-a');
+    await call('new', 'tower-b');
+    expect(await call('list')).toMatchObject({ current: 'tower-b' });
+
+    // The other session names its building outright, and never touches the current one.
+    await call('--project', 'tower-a', 'set-band', 'body', '--floors', '9');
+    expect(await call('list')).toMatchObject({ current: 'tower-b' });
+
+    const a = (await call('show', 'tower-a')) as unknown as { bands: { id: string; floors: number }[] };
+    const b = (await call('show', 'tower-b')) as unknown as { bands: { id: string; floors: number }[] };
+    expect(a.bands.find((one) => one.id === 'body')!.floors).toBe(9);
+    expect(b.bands.find((one) => one.id === 'body')!.floors).not.toBe(9);
+  });
+
+  it('pins the face verbs too, which have no name of their own', async () => {
+    await call('new', 'tower-a', '--width', '12', '--depth', '9');
+    await call('new', 'tower-b', '--width', '12', '--depth', '9');
+
+    await call('--project', 'tower-a', 'put', 'window', '12,9', '19,23', '--section', 'body');
+    const a = (await call('--project', 'tower-a', 'face', 'body')) as unknown as { elements: unknown[] };
+    const b = (await call('--project', 'tower-b', 'face', 'body')) as unknown as { elements: unknown[] };
+    expect(a.elements).toHaveLength(1);
+    expect(b.elements).toHaveLength(0);
+  });
+});
+
 describe('faces', () => {
   it('reads a grid, places on it in cells, and refuses a second thing on the same cell', async () => {
     await call('new', 'tower-a', '--width', '12', '--depth', '9');
