@@ -39,9 +39,9 @@ buildings new tower-a --brief "a glassy corner block with flats above a shop"
 buildings set-band ground --height 4.5 --tier light --columns corners
 buildings set-band body --floors 22 --height 3.0
 
-buildings face body --side S            # the face as a grid of 10 cm cells
-buildings put window 12,9 25,24 --every 3
-buildings put balcony 30,2 55,15 --section ground --depth 1.4
+buildings face body --side S                          # the face as a grid of 10 cm cells
+buildings put window --row 9 --wide 1.4 --tall 1.5 --every 3   # it works out the columns
+buildings put balcony 30,2 55,15 --section ground --depth 1.4  # or name the cells outright
 buildings put door 38,4 47,20 --section ground
 
 buildings place solar B2 --section crown

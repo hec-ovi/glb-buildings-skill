@@ -196,6 +196,33 @@ describe('faces', () => {
     expect(put.on.map((cell) => cell[0])).toEqual([2, 32, 62, 92]);
   });
 
+  it('places a rhythm from a shape, working out the columns and stepping over what is taken', async () => {
+    await call('new', 'tower-a', '--width', '30', '--depth', '20');
+    await call('set-band', 'ground', '--tier', 'light', '--columns', 'ribs');
+
+    // No column is named: a row to stand on, a size in metres, and a pitch.
+    const put = (await call('put', 'window', '--row', '9', '--wide', '1.4', '--tall', '1.5', '--every', '3', '--section', 'ground')) as unknown as {
+      put: number;
+      skipped: number;
+      on: number[][];
+    };
+    expect(put.put).toBeGreaterThan(0);
+    // The section wears ribs, so some places were taken and were stepped over rather than failing.
+    expect(put.skipped).toBeGreaterThan(0);
+    expect(await call('build', 'tower-a')).toMatchObject({ ok: true });
+  });
+
+  it('says where to look when a shape fits nowhere on the face', async () => {
+    await call('new', 'tower-a', '--width', '12', '--depth', '9');
+    const tooBig = (await call('put', 'window', '--row', '9', '--wide', '40', '--tall', '1.5', '--section', 'body')) as unknown as {
+      ok: boolean;
+      code: string;
+      message: string;
+    };
+    expect(tooBig).toMatchObject({ ok: false, code: 'E_OVERLAP' });
+    expect(tooBig.message).toContain('--draw');
+  });
+
   it('says what a face costs against its tier, before the build has to refuse it', async () => {
     await call('new', 'tower-a', '--width', '24', '--depth', '12');
     const put = (await call('put', 'balcony', '4,2', '30,15', '--section', 'body', '--every', '3')) as unknown as {

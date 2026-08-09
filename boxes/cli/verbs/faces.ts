@@ -113,7 +113,9 @@ export const face: Verb = {
 export const put: Verb = {
   name: 'put',
   summary: 'put a window, door, panel or balcony on a face, in cells',
-  usage: 'put <window|door|panel|balcony> <from cell> <to cell> [--section id] [--side S] [--material crystal] [--depth 1.5] [--every 3]',
+  usage:
+    'put <window|door|panel|balcony> <from cell> <to cell> [--section id] [--side S] [--material crystal] [--depth 1.5] [--every 3]\n' +
+    '  or: put <kind> --row 9 --wide 1.4 --tall 1.5 --every 3   (the face works out the columns and skips what is taken)',
   async run(args, { projects }) {
     const { positionals, values } = parse(args, {
       section: { type: 'string' },
@@ -121,14 +123,21 @@ export const put: Verb = {
       material: { type: 'string' },
       depth: { type: 'string' },
       every: { type: 'string' },
+      row: { type: 'string' },
+      wide: { type: 'string' },
+      tall: { type: 'string' },
     });
 
     const kind = oneOf(need(positionals, 0, 'a kind'), KINDS, 'kind');
-    const from = readCell(need(positionals, 1, 'a cell to start at'), 'from');
-    const to = readCell(need(positionals, 2, 'a cell to finish at'), 'to');
     const material = oneOf(text(values.material), MATERIALS, 'material', DEFAULT_MATERIAL[kind]);
     const depth = size(values.depth, 'depth');
     const step = text(values.every) ? Number(text(values.every)) : undefined;
+
+    // Two ways in. Name both cells, or say what it should be and let the face place it: a row to
+    // stand on, how wide and how tall in metres, and a pitch. Nobody counts columns that way.
+    const byShape = text(values.row) !== undefined;
+    const from = byShape ? [0, 0] as [number, number] : readCell(need(positionals, 1, 'a cell to start at'), 'from');
+    const to = byShape ? [0, 0] as [number, number] : readCell(need(positionals, 2, 'a cell to finish at'), 'to');
 
     const { name, project } = await projects.open();
     const doc = await project.readDocument();
@@ -140,21 +149,56 @@ export const put: Verb = {
     const shape = sectionShape(placed);
     const { face: grid } = readFace(shape, { side, elements: [], wears: wornOn(band) });
 
-    const col = Math.min(from[0], to[0]);
-    const row = Math.min(from[1], to[1]);
-    const cols = Math.abs(to[0] - from[0]) + 1;
-    const rows = Math.abs(to[1] - from[1]) + 1;
+    const inCells = (metres: string | undefined, what: string, fallback: number) => {
+      if (metres === undefined) return fallback;
+      const value = Number(metres);
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new BuildingError('E_DOC_INVALID', `${what} is a size in metres, like 1.4`, [what]);
+      }
+      return Math.max(1, Math.round(value / CELL));
+    };
+
+    const col = byShape ? MARGIN : Math.min(from[0], to[0]);
+    const row = byShape ? Number(text(values.row)) : Math.min(from[1], to[1]);
+    const cols = byShape ? inCells(text(values.wide), 'wide', 14) : Math.abs(to[0] - from[0]) + 1;
+    const rows = byShape ? inCells(text(values.tall), 'tall', 15) : Math.abs(to[1] - from[1]) + 1;
+
+    if (byShape && (!Number.isInteger(row) || row < 0)) {
+      throw new BuildingError('E_DOC_INVALID', '--row is the row to stand on, a whole number of cells up from the floor', ['row']);
+    }
 
     // `--every` repeats the same element across the face on a pitch, which is what a rhythm of
     // windows is, without the composer counting cells.
     const pitch = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
+    const existing = facesOf(band, side);
+
+    // Given a shape rather than two cells, walk the face and take what is free. What a section
+    // already wears is on the grid, so a rhythm steps over its own ribs instead of failing on one.
     const made: FaceElement[] = [];
-    for (let at = col; at + cols - 1 <= grid.cols - 1 - MARGIN; at += pitch ?? Infinity) {
-      made.push({ kind, col: at, row, cols, rows, material, ...(depth === undefined ? {} : { depth }) });
-      if (pitch === undefined) break;
+    const skipped: number[] = [];
+    const walk = byShape ? (pitch ?? cols + Math.round(1 / CELL)) : (pitch ?? Infinity);
+
+    for (let at = col; at + cols - 1 <= grid.cols - 1 - MARGIN; at += walk) {
+      const candidate: FaceElement = { kind, col: at, row, cols, rows, material, ...(depth === undefined ? {} : { depth }) };
+      if (byShape) {
+        try {
+          readFace(shape, { side, elements: [...existing.elements, ...made, candidate].map(elementOf), wears: wornOn(band) });
+        } catch {
+          skipped.push(at);
+          continue;
+        }
+      }
+      made.push(candidate);
+      if (!byShape && pitch === undefined) break;
     }
 
-    const existing = facesOf(band, side);
+    if (made.length === 0) {
+      throw new BuildingError(
+        'E_OVERLAP',
+        `nowhere on the ${side} face of ${band.id} is free for a ${kind} ${cols} by ${rows} cells at row ${row}. Read it with \`buildings face ${band.id} --side ${side} --draw\` and pick another row`,
+        ['face', kind],
+      );
+    }
     const faces = [
       ...band.faces.filter((one) => one.side !== side),
       { side, elements: [...existing.elements, ...made] },
@@ -180,6 +224,7 @@ export const put: Verb = {
       material,
       on: made.map((element) => [element.col, element.row]),
       costs: { faces: spend, allowed, tier: band.tier },
+      ...(skipped.length > 0 ? { skipped: skipped.length, note2: `${skipped.length} places were already taken and were stepped over` } : {}),
       note:
         spend > allowed
           ? `these faces cost ${spend} triangles a floor and a ${band.tier} section may spend ${allowed} on everything. Move it to a richer tier or take some off, or the build will refuse it`

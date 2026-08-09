@@ -51,6 +51,7 @@ a session names the building once and every later verb knows what it means.
 | `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | split a run of identical floors so one of them has a shape of its own. With no floor named it uses the last pick |
 | `face <section> [--side S] [--draw]` | the face as a grid of 10 cm cells, and what stands on it |
 | `put <kind> <from> <to> [--section] [--side] [--material] [--depth] [--every 3]` | put a window, door, panel or balcony on a face, in cells |
+| `put <kind> --row 9 --wide 1.4 --tall 1.5 [--every 3]` | the same from a shape: the face works out the columns, steps across on the pitch, and skips what is taken |
 | `clear [n ...] [--section] [--side] [--all]` | take elements off a face |
 | `run <x,y,z> <x,y,z> [more ...] [--section] [--profile] [--thickness] [--material]` | a duct, pipe or cable along a path, mitred at every corner |
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts available |

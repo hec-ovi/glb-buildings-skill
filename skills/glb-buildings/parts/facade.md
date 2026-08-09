@@ -34,9 +34,25 @@ buildings put panel 60,12 80,20 --section body --side S --material screen
 buildings clear 3 --section body --side S
 ```
 
-`put <kind> <from cell> <to cell>`. **Both ends are included**, so `12,9` to `19,23` is 8 cells wide
-and 15 tall, which is 0.8 by 1.5 m. `--every 3` repeats it across the face on a 3 m pitch, which is
-how you get a rhythm of windows without counting.
+**Two ways to place.** Prefer the first: say what the thing should be and let the face work out
+where it goes.
+
+```bash
+buildings put window --row 9 --wide 1.4 --tall 1.5 --every 3 --section body --side S
+```
+
+`--row` is the row it stands on, `--wide` and `--tall` are metres, `--every` is the pitch in
+metres. The face starts after the margin, steps across on that pitch, and **skips anything already
+taken** rather than failing, so a rhythm steps over the section's own ribs on its own. The answer
+says how many it placed and how many places it stepped over. You never count a column.
+
+The second way names both cells outright, for one deliberate thing in one place:
+
+```bash
+buildings put door 28,4 37,20 --section ground --side S
+```
+
+**Both ends are included**, so `12,9` to `19,23` is 8 cells wide and 15 tall, which is 0.8 by 1.5 m.
 
 `put` answers with what the section's faces cost a floor and what its tier allows, so you know
 before the build whether the tier can carry what you are composing.
