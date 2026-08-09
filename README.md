@@ -14,6 +14,89 @@ It is three things that fit together, and you can use any one of them on its own
 | **the service** | a local preview server, started by `buildings preview`. A three.js page on 127.0.0.1 |
 | **the skill** | markdown an agent reads to drive the toolkit. No MCP, no plugin runtime: it shells out |
 
+## Three drivers, two prompts
+
+The same brief, handed to three different models, each driving the same CLI through the same
+skill. Nothing was hand-modelled and no JSON was hand-edited: every one of these is verbs.
+
+### Opus 5
+
+> *"a tall futuristic tower that twists as it rises, lit screens at street level, a mast and dishes
+> on the roof"*
+
+![Opus 5 building the twisting tower](docs/showcase/opus5-spire.gif)
+
+111 m, 5 sections, 34 composed elements, 5,512 triangles. A twisted run over a ribbed body, lit
+screens on the street, a lattice mast and two dishes on the crown.
+
+### Claude Haiku 4.5
+
+> *"a six floor corner building with a glassy shop at street level, flats with balconies you can
+> walk out onto above it, and plant on the roof"*
+
+![Haiku building the corner block](docs/showcase/haiku-market.gif)
+
+21.4 m, 3 sections, balconies down the south face, plant on the roof, 2,232 triangles. Read the
+skill, ran 21 commands, one failed, recovered, done in about two and a half minutes.
+
+### A local model, on one machine
+
+> *"A tall, thin office tower with a tapering top and some balconies"*
+
+![the local model building its tower](docs/showcase/local-spire.gif)
+
+106 m, 5 sections, 14 composed elements, 4,340 triangles, validator clean. Built by
+**gemma-4-26b-a4b-qat-q4** served locally on `llama.cpp`, driven by
+[noob-cli](https://github.com/hec-ovi/noob-cli) with the skill dropped into `.noob/skills/`.
+Note the brief: it was handed one and wrote its own, then built it.
+
+## Benchmark
+
+Two briefs, three drivers, isolated stores so nothing raced. Every file validator clean.
+
+| driver | building | height | sections | elements | triangles | commands | failed | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Opus 5 | spire-me | 111.1 m | 5 | 34 | 5,512 | ~30 | 1 | minutes |
+| Opus 5 | market-me | 17.7 m | 3 | 18 | 2,856 | ~20 | 1 | minutes |
+| Haiku 4.5 | spire-haiku | 82.6 m | 5 | 21 | 2,804 | 40 | 8 | 3m 28s |
+| Haiku 4.5 | market-haiku | 21.4 m | 3 | 6 | 2,232 | 21 | 1 | 2m 28s |
+| gemma-4-26b | spire-local | 105.9 m | 5 | 14 | 4,340 | — | — | ~35 min |
+| gemma-4-26b | market-local | 18.2 m | 3 | 1 | 72 | — | — | ~35 min |
+
+**What that says.** The toolkit and the skill run end to end on a local 26B model through
+[noob-cli](https://github.com/hec-ovi/noob-cli), on one machine, with no cloud in the loop: it ran
+`doctor`, read the answers, shaped a five section tower with a twist, composed a facade, laid out a
+roof and produced a validated glTF file. It is slower and it gives up on detail sooner. Its weak
+run stalled on cell arithmetic and shipped massing only, and said so plainly rather than pretending
+it had not.
+
+Every failure in that table taught the tool something. The benchmark is what found three real
+defects: two sessions sharing one store could edit each other's buildings (now `--project`), a mast
+could draw itself taller than the proof that keeps parts on a building (now capped), and placing
+anything meant doing arithmetic against a grid you cannot see (now `put --row --wide --tall
+--every`, where the face works out the columns and steps over what is taken). That last one is
+aimed squarely at the small model.
+
+## The agentic workflow
+
+A building is not one prompt. It is two passes that never need each other in context:
+
+**The architect** reads the description and settles the massing: the footprint, how many floors,
+how the mass splits into sections, which one is the base and which the crown. It works in metres
+and sections, and it builds once to prove the thing stands up before anyone draws a window. It
+never looks at a facade.
+
+**A facade job per section design** takes one section, reads its grid, and composes cells. It sees
+its own 10 cm grid and nothing else. A forty floor tower is four to six of these jobs, not forty,
+because a section repeats one floor design.
+
+Then the roof, laid out as a floor plan of named cells, and the runs, which are paths of points.
+
+Neither pass has to hold the other in its head, and the document on disk is the only seam between
+them. That is what makes the work fit a small model: every context is a bounded, integer,
+occupancy-checked space that refuses invalid input, so no pass has to review the pass before it.
+The tool says no; the model does not have to be careful.
+
 ## Requirements
 
 - **Node.js 24 or newer.** The CLI runs TypeScript directly, with no build step, which is a Node 24 feature.
