@@ -14,6 +14,15 @@ A duct, a pipe and a cable are one builder: a path of points carrying a ring, mi
 the two runs at every corner, so a run holds its cross section the whole way and a turn too sharp to mitre is
 refused with the point named. `run` lays one along any path.
 
+A roof carries things worth looking at: a lattice mast drawing in to a spire and guyed down to the deck, a
+dish on its mount, a sector array, a cluster of whips, rows of tilted solar panels on a frame, and a water
+tank on legs with a cap, a ladder and its outlet. All of them are segments, so every leg, brace, guy and rung
+is a mitred solid.
+
+Greebles are what a section wears when it wears nothing else: one carrying windows, composed faces or runs
+turns them off, and `show` says so. A balcony fills the cells it claims, with a solid balustrade rather than a
+bar with a gap under it.
+
 The skill splits into two passes: an architect that settles the massing and proves it stands, then one facade
 job per section that sees only its own grid.
 
