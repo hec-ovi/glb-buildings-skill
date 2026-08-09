@@ -95,19 +95,6 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     // Hold left to slide the building around, hold right to swing around it.
     controls.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
 
-    // Panning moves what the camera orbits, so after a pan the building swings around a point
-    // out in the air. The middle of the building is put back the moment a turn begins.
-    const middle = new Vector3();
-    let turning = false;
-    renderer.domElement.addEventListener('pointerdown', (event: PointerEvent) => {
-      turning = event.pointerType === 'mouse' ? event.button === 2 : true;
-    });
-    controls.addEventListener('start', () => {
-      if (!turning) return;
-      controls.target.copy(middle);
-      controls.update();
-    });
-
     const fly = new Fly(camera, controls.target, () => controls.update());
     fly.listen(window);
 
@@ -148,7 +135,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     const frame = (size: Vector3) => {
       const reach = Math.max(size.x, size.z, size.y) * 1.6 + 10;
       camera.position.set(size.x * 0.9 + reach * 0.4, size.y * 0.75 + reach * 0.25, size.z * 0.9 + reach * 0.6);
-      controls.target.copy(middle);
+      controls.target.set(0, size.y / 2, 0);
       controls.update();
       ground.scale.setScalar(Math.max(1, reach / 100));
     };
@@ -187,7 +174,6 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       bar.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
       void listBuildings();
-      middle.set(0, blueprint.sizeMetres.y / 2, 0);
       if (!keepCamera || reframe) frame(blueprint.sizeMetres);
       reframe = false;
 
