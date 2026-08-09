@@ -25,6 +25,7 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `templates()` | | every template with its tier and one-line purpose |
 | `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
 | `dress(shape, options)` | shape, what it wears | cables, columns, balconies, greebles, deck parts, as one mesh |
+| `segment(surface, points, style)` | a path in metres, a profile and a thickness | one closed run of tube, mitred at every corner |
 | `walls` / `cap` / `capRing` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
 | `outwardAt(ring, edge)` | footprint, edge | the way out at that edge |
 | `outsideBy(ring, point)` | footprint, point | metres past the footprint, negative inside |
@@ -46,6 +47,19 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `roof-parapet` | light | the crown: a parapet and the roof deck |
 
 Materials are named, not built here: `facade`, `glass` and `roof`.
+
+## Runs
+
+A duct, a pipe and a cable are one thing: a **segment**, a path of points carrying a ring along
+it. `profile` is how many corners that ring has (`square`, or `round` with `sides`), `thickness`
+is how far across the run is, and the material is whatever surface it is drawn into. A square
+duct, a round pipe and a thin wire differ in those two numbers and nothing else.
+
+The ring is mitred at every point onto the plane bisecting the two runs meeting there, so a
+corner is the same ring rather than two parts overlapping, and the cross section never changes
+along the way. Points that carry straight on are dropped, so a cable up twenty identical floors
+is one length rather than twenty. A turn sharper than `MAX_MITRE` allows is a fold, not a bend,
+and is refused with the point named.
 
 ## Invariants
 

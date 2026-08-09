@@ -9,6 +9,7 @@ import { FACADE_STYLE } from '#materials';
 import { Surface, type Vec } from './geometry.ts';
 import { insetRing, lerp, outwardAt, type Corner } from './plan.ts';
 import { windowRow, WINDOW, type WindowStyle } from './openings.ts';
+import { segment } from './segment.ts';
 
 export type { Corner };
 export { insetRing, insideRing, middleOf, outwardAt } from './plan.ts';
@@ -119,32 +120,37 @@ export function edgeFacing(ring: Corner[], side: 'N' | 'E' | 'S' | 'W'): number 
   return best;
 }
 
-/** Cables climbing one face: thin tubes standing proud of the wall, following its twist. */
+/**
+ * Cables climbing one face: thin runs standing proud of the wall, following its twist.
+ *
+ * One point per floor, handed to a segment. A straight face drops the points in between and
+ * comes out as one length of cable; a twisting one keeps them and bends at each floor.
+ */
 export function wires(surface: Surface, shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): void {
   const edge = edgeFacing(shape.bottom, side);
   const runs = 4;
   const thickness = 0.12;
-  const stand = 0.1;
+  const stand = 0.05;
   const rows = Math.max(1, shape.floors);
 
   for (let run = 0; run < runs; run++) {
     const along = 0.3 + run * 0.11;
-    let previous = tubeRing(shape, 0, edge, along, thickness, stand);
-    cap(surface, previous, 0, false);
-
-    for (let row = 0; row < rows; row++) {
-      const t = (row + 1) / rows;
-      const ring = tubeRing(shape, t, edge, along, thickness, stand);
-      const y0 = (shape.height * row) / rows;
-      const y1 = shape.height * t;
-      for (let i = 0; i < 4; i++) {
-        const j = (i + 1) % 4;
-        surface.quad(point(previous[i]!, y0), point(previous[j]!, y0), point(ring[j]!, y1), point(ring[i]!, y1));
-      }
-      previous = ring;
-    }
-    cap(surface, previous, shape.height, true);
+    const points = Array.from({ length: rows + 1 }, (_, row) => facePoint(shape, row / rows, edge, along, stand));
+    segment(surface, points, { profile: 'square', thickness });
   }
+}
+
+/** A point on a face at height t: `along` across the edge, `stand` metres out of the wall. */
+export function facePoint(shape: SectionShape, t: number, edge: number, along: number, stand: number): Vec {
+  const ring = ringAt(shape, t);
+  const a = ring[edge]!;
+  const b = ring[(edge + 1) % ring.length]!;
+  const outward = outwardAt(ring, edge);
+  return [
+    a[0] + (b[0] - a[0]) * along + outward[0] * stand,
+    shape.height * t,
+    a[1] + (b[1] - a[1]) * along + outward[1] * stand,
+  ];
 }
 
 /** How far a part sunk into a wall reaches, so its back face never shares the wall's plane. */

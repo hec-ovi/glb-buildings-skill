@@ -7,6 +7,7 @@
  */
 import { Surface, type Vec } from './geometry.ts';
 import { insideRing, nearestOn, outwardAt, type Corner } from './plan.ts';
+import { segment } from './segment.ts';
 
 export const CELL = 2;
 
@@ -140,14 +141,13 @@ export function nearestEdge(ring: Corner[], from: Corner): { at: Corner; away: C
  * of the building. The run finds the edge itself, so a pipe placed in the middle of a deck still
  * comes down where a pipe should rather than through the wall.
  *
- * The elbow is a short straight rather than a real sweep: at this size nobody can tell.
+ * Four points and one call: the elbows are the segment's, mitred, so the pipe is round the whole
+ * way instead of changing into a box at the corner.
  */
 export function pipe(surface: Surface, centre: Corner, ring: Corner[], y: number, random: () => number): void {
   const radius = 0.24 + random() * 0.18;
   const rise = 1.4 + random() * 1.8;
   const drop = 3 + random() * 5;
-
-  cylinder(surface, centre, radius, y, rise, 8);
 
   const edge = nearestEdge(ring, centre);
   const out: Corner = [
@@ -155,8 +155,14 @@ export function pipe(surface: Surface, centre: Corner, ring: Corner[], y: number
     edge.at[1] + edge.away[1] * (radius + 0.12),
   ];
 
-  const run = Math.hypot(out[0] - centre[0], out[1] - centre[1]);
-  const turn = Math.atan2(out[1] - centre[1], out[0] - centre[0]);
-  block(surface, [(centre[0] + out[0]) / 2, (centre[1] + out[1]) / 2], run, radius * 2, y + rise, radius * 2, -turn);
-  cylinder(surface, out, radius, y + rise - drop, drop, 8);
+  segment(
+    surface,
+    [
+      [centre[0], y, centre[1]],
+      [centre[0], y + rise, centre[1]],
+      [out[0], y + rise, out[1]],
+      [out[0], y + rise - drop, out[1]],
+    ],
+    { profile: 'round', thickness: radius * 2, sides: 8 },
+  );
 }

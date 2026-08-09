@@ -15,6 +15,7 @@ export {
   type Template,
   WALL_PATCH,
 } from './templates.ts';
+export { segment, MAX_MITRE, type Profile, type SegmentStyle } from './segment.ts';
 export { greebles, seedOf, type GreebleOptions } from './greebles.ts';
 export { balconies, balconyPlan, prism, BALCONY, type BalconyOptions } from './balcony.ts';
 export { columns, type ColumnStyle } from './columns.ts';
