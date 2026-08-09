@@ -14,10 +14,11 @@ It is three things that fit together, and you can use any one of them on its own
 | **the service** | a local preview server, started by `buildings preview`. A three.js page on 127.0.0.1 |
 | **the skill** | the markdown an agent reads to drive the toolkit. Transport is a shell call, not MCP |
 
-## Three drivers, two prompts
+## Four drivers, two prompts
 
-One brief, three models, the same CLI and the same skill behind each. No geometry was hand-modelled
-and no document was hand-edited: every result below is verb calls.
+Two briefs, four models, the same CLI and the same skill behind each. Two run in a datacentre and two
+on one workstation. No geometry was hand-modelled and no document was hand-edited: every result below
+is verb calls.
 
 ### Opus 5
 
@@ -39,18 +40,32 @@ screens on the street, a lattice mast and two dishes on the crown.
 21.4 m, 3 sections, balconies down the south face, plant on the roof, 2,232 triangles. Read the
 skill, ran 21 commands, one failed, recovered, done in about two and a half minutes.
 
-### A local model, on one workstation
+### Qwen3.6-35B-A3B, local
+
+> *"a tall futuristic tower that twists as it rises, lit screens at street level, a mast and dishes
+> on the roof"*
+
+![Qwen building the twisting tower](docs/showcase/qwen-spire.gif)
+
+112.6 m, 4 sections, **57 composed elements**, 10,576 triangles, validator clean, in **6m 15s**. The
+densest facade any driver in this set produced, on the same brief the hosted model answered with 34
+elements. Q8_0 on one Strix Halo workstation, served by `llama.cpp` over Vulkan, driven by
+[noob-cli](https://github.com/hec-ovi/noob-cli) with the skill installed at `.noob/skills/`.
+
+### Gemma 4 26B-A4B, local
 
 > *"A tall, thin office tower with a tapering top and some balconies"*
 
-![the local model building its tower](docs/showcase/local-spire.gif)
+![Gemma building its tower](docs/showcase/gemma-spire.gif)
 
-Served on `llama.cpp` over Vulkan and driven by [noob-cli](https://github.com/hec-ovi/noob-cli), with
-the skill installed at `.noob/skills/`. Handed a brief, it wrote its own and built that: 106 m,
-5 sections, validator clean.
+106 m, 5 sections, 14 elements, 4,340 triangles, validator clean. Handed a brief, it wrote its own and
+built that instead. Same machine, same stack, same skill.
 
-This clip is an earlier 26B run. The benchmark below is a rerun on Qwen3.6-35B-A3B, which produced the
-densest facade of any driver in the set.
+Its sessions ran longer than Qwen's, and **throughput is not the reason**: measured on this box, Gemma
+4 26B-A4B decodes at 61 / 50 / 45 t/s at no-context / 16k / 32k against Qwen3.6-35B-A3B's 55 / 49 / 45,
+so at the context an agent session actually runs at they are within a percent. The difference was turn
+count. Gemma spent its turns retrying cell coordinates; that friction is what produced
+`put --row --wide --tall --every`, which resolves columns for the caller.
 
 ## Benchmark
 
@@ -66,8 +81,10 @@ Two briefs, three drivers, isolated stores so nothing raced. Every file validato
 | Qwen3.6-35B-A3B (local) | market-qwen | 20.7 m | 3 | 19 | 3,236 | 223 | 13 | 9m 15s |
 
 Local model: Qwen3.6-35B-A3B (MoE, 3B active) at Q8_0 on a single Strix Halo workstation, served by
-`llama.cpp` over Vulkan, driven by [noob-cli](https://github.com/hec-ovi/noob-cli). Wall clock is the
-full session: reading the skill, every verb, every retry, and the final build.
+`llama.cpp` over Vulkan through [llama-vulkan-strix](https://github.com/hec-ovi/llama-vulkan-strix),
+driven by [noob-cli](https://github.com/hec-ovi/noob-cli). Wall clock is the whole session: reading
+the skill, every verb, every retry, and the final build. Decode on this box measures 55 / 49 / 45 t/s
+at no-context / 16k / 32k, so wall clock here is turn count, not tokens per second.
 
 **Reading the table.** The result worth noting is the local row: a 35B MoE on one workstation, no
 cloud in the loop, produced the densest facade in the set — 57 composed elements and 10,576
