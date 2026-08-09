@@ -291,7 +291,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
         throw new BuildingError(
           'E_BUDGET',
           `section ${band.id} costs ${Math.round(perFloor)} triangles a floor, and a ${band.tier} section may spend ${allowed}. ` +
-            'Drop the greebles, the windows or the columns, or move it to a richer tier',
+            'Take elements off its faces, drop the windows, the columns or the greebles, use fewer segments on a round plan, or move it to a richer tier',
           ['bands', band.id, 'tier'],
         );
       }
