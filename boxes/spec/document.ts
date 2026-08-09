@@ -38,7 +38,7 @@ const gridSchema = z.object({
 });
 
 /** The parts a deck cell can hold. Two metres square each, except the ones marked 2x2. */
-export const DECK_PARTS = ['unit', 'turbine', 'pipe', 'panel', 'mast', 'tank', 'tower', 'vent'] as const;
+export const DECK_PARTS = ['unit', 'turbine', 'pipe', 'vent', 'tower', 'solar', 'tank', 'mast', 'dish', 'array', 'whip'] as const;
 export type DeckPart = (typeof DECK_PARTS)[number];
 
 const deckPartSchema = z.object({

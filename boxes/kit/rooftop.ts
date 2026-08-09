@@ -6,18 +6,34 @@
 import { Surface } from './geometry.ts';
 import { ringAt, type Corner, type SectionShape } from './section.ts';
 import { block, cells, cylinder, pipe, rng, turbine, type Cell } from './deck.ts';
+import { dish, mast, sector, whips } from './antenna.ts';
+import { solar, tank } from './plant.ts';
 
-export type DeckPart = 'unit' | 'turbine' | 'pipe' | 'panel' | 'mast' | 'tank' | 'tower' | 'vent';
+export type DeckPart =
+  | 'unit'
+  | 'turbine'
+  | 'pipe'
+  | 'vent'
+  | 'tower'
+  | 'solar'
+  | 'tank'
+  | 'mast'
+  | 'dish'
+  | 'array'
+  | 'whip';
 
 export const DECK_PART_NOTES: Record<DeckPart, string> = {
   unit: 'an air conditioning box, low and wide',
   turbine: 'a flat round turbine with a hub and blades',
   pipe: 'a pipe that bends over and drops to the level below',
-  panel: 'a solar panel on short legs',
-  mast: 'a mast with harness rings and spikes',
-  tank: 'a water tank on four legs, takes the space of four cells',
-  tower: 'a small tower, takes the space of four cells',
   vent: 'a round vent stack',
+  tower: 'a small tower, takes the space of four cells',
+  solar: 'rows of tilted solar panels on a frame, takes four cells. --turn aims them',
+  tank: 'a water tank on a leg frame, with a cap, a ladder and its outlet. Takes four cells',
+  mast: 'a lattice mast drawing in to a spire, guyed down to the deck. The tall one',
+  dish: 'a dish on its mount, tilted at the sky. --turn aims it',
+  array: 'a sector array: a pole with three panels facing out, like every cell site',
+  whip: 'a cluster of thin whip aerials at different heights',
 };
 
 export type Placement = { cell: string; part: DeckPart; turn?: number };
@@ -27,9 +43,12 @@ export const PART_SIZE: Record<DeckPart, number> = {
   unit: 1,
   turbine: 1,
   pipe: 1,
-  panel: 1,
-  mast: 1,
   vent: 1,
+  dish: 1,
+  array: 1,
+  whip: 1,
+  mast: 2,
+  solar: 2,
   tank: 2,
   tower: 2,
 };
@@ -80,44 +99,20 @@ function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: numb
     case 'pipe':
       // The pipe finds the edge for itself: dropped anywhere else it would run inside the wall.
       return pipe(surface, at, ring, y, random);
-    case 'panel': {
-      block(surface, at, 0.12, 0.12, y, 0.5);
-      block(surface, [at[0] + 0.5, at[1]], 0.12, 0.12, y, 0.9);
-      return block(surface, at, 1.8, 1.2, y + 0.75, 0.1, turn);
-    }
     case 'vent':
       return cylinder(surface, at, 0.35 + random() * 0.25, y, 1 + random() * 1.4, 8);
-    case 'mast': {
-      const height = 3.5 + random() * 3.5;
-      const shaft = 0.35;
-      block(surface, at, shaft, shaft, y, height);
-      const rings = 1 + Math.round(random());
-      for (let i = 1; i <= rings; i++) {
-        const level = y + (height * i) / (rings + 1);
-        block(surface, at, 0.9, 0.18, level, 0.16);
-        block(surface, at, 0.18, 0.9, level, 0.16);
-      }
-      // Spikes stand on the shaft, inside its width, and reach down into it so they are part
-      // of the same solid rather than two bars floating beside it.
-      for (const dx of [-shaft / 4, shaft / 4]) {
-        block(surface, [at[0] + dx, at[1]], 0.07, 0.07, y + height - 0.2, 1 + random() * 1.2);
-      }
-      return;
-    }
-    case 'tank': {
-      const legs = 3.5 + random() * 2.5;
-      const radius = 1.1 + random() * 0.5;
-      for (const [dx, dz] of [
-        [-radius * 0.75, -radius * 0.75],
-        [radius * 0.75, -radius * 0.75],
-        [radius * 0.75, radius * 0.75],
-        [-radius * 0.75, radius * 0.75],
-      ] as const) {
-        block(surface, [at[0] + dx, at[1] + dz], 0.22, 0.22, y, legs);
-      }
-      cylinder(surface, at, radius, y + legs, 1.8 + random() * 1.2, 10);
-      return block(surface, at, 0.3, 0.3, y + legs + 3.2, 0.9);
-    }
+    case 'solar':
+      return solar(surface, at, y, turn, random);
+    case 'tank':
+      return tank(surface, at, y, random);
+    case 'mast':
+      return mast(surface, at, y, random);
+    case 'dish':
+      return dish(surface, at, y, turn, random);
+    case 'array':
+      return sector(surface, at, y, turn, random);
+    case 'whip':
+      return whips(surface, at, y, random);
     case 'tower':
       return block(surface, at, 2.4 + random() * 1.2, 2.4 + random() * 1.2, y, 4 + random() * 5, turn);
   }
@@ -143,7 +138,7 @@ function railing(surface: Surface, ring: Corner[], y: number, height: number): v
 }
 
 /** The parts a quick fill reaches for, and how often. */
-const FILL: DeckPart[] = ['unit', 'unit', 'vent', 'turbine', 'pipe', 'panel', 'unit', 'turbine'];
+const FILL: DeckPart[] = ['unit', 'unit', 'vent', 'turbine', 'pipe', 'whip', 'unit', 'dish', 'turbine', 'array'];
 
 export function deckCells(shape: SectionShape, covered?: Corner[]): Cell[] {
   return cells(ringAt(shape, 1), 0.6, covered);

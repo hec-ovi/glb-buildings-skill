@@ -17,22 +17,32 @@ what a stepped building wants.
 
 ## The parts
 
-| part | what it is | how much room |
+**Plant**
+
+| part | what it is | room |
 | --- | --- | --- |
 | `unit` | an air conditioning box, low and wide | one cell |
 | `vent` | a round vent stack | one cell |
 | `turbine` | a flat round turbine with a hub and blades | one cell |
-| `pipe` | a pipe that bends over and drops to the level below | one cell, and it reaches past the edge |
-| `panel` | a solar panel on short legs | one cell |
-| `mast` | a mast with harness rings and spikes | one cell, 9 to 21 m tall |
-| `tank` | a water tank on four legs | **one cell**, with its neighbours left empty |
-| `tower` | a small tower, the skyscraper on the skyscraper | **one cell**, with its neighbours left empty |
+| `pipe` | a pipe that bends over and drops to the level below | one cell, reaches past the edge |
+| `solar` | rows of tilted panels on a frame, all facing one way | 2x2 block, `--turn` aims them |
+| `tank` | a drum on a leg frame, with a cap, a ladder and its outlet | 2x2 block |
+| `tower` | a small tower, the skyscraper on the skyscraper | 2x2 block |
 
-A tank or a tower stands on a 2x2 block: name its bottom left cell and the CLI claims the other three. It
-refuses a cell that is already held and a block that runs off the deck, so parts cannot end up inside each
-other and `deck` always shows the truth.
+**Antennas** — pick one kind per roof, or the building reads as a radio farm.
 
-`--turn` is degrees, for the parts that point somewhere: a pipe, a panel, a unit, a tower.
+| part | what it is | room |
+| --- | --- | --- |
+| `mast` | a lattice mast drawing in to a spire, guyed down to the deck. 7 to 12 m, the tall one | 2x2 block |
+| `array` | a sector array: a pole with three panels facing out, like every cell site | one cell |
+| `dish` | a dish on its mount, tilted at the sky | one cell, `--turn` aims it |
+| `whip` | a cluster of thin aerials at different heights | one cell |
+
+A 2x2 part stands on a block: name its bottom left cell and the CLI claims the other three. It refuses a cell
+that is already held and a block that runs off the deck, so parts cannot end up inside each other and `deck`
+always shows the truth.
+
+`--turn` is degrees, for the parts that point somewhere: a dish, a solar array, a pipe, a unit, a tower.
 
 ## Composing one
 
@@ -40,6 +50,10 @@ Think in rows and clusters, not in scatter.
 
 - **One tall thing.** A mast or a tower, not both, unless the building is enormous. Put it off centre.
 - **A row of the same part** reads as plant: `place turbine C2 C3 C4` beats three turbines in three corners.
+- **Solar goes in a run, all one way.** `place solar B2 --turn 180` faces the array south; two blocks side by
+  side read as an installation, one alone reads as a table.
+- **Antennas cluster.** A `mast` with a couple of `whip` beside it, or three `dish` in a row along one edge,
+  is what a real roof looks like. One of each scattered about is not.
 - **Pipes go near an edge**, because they drop past it. `place pipe A2 A3` on the north edge looks like the
   building is plumbed; a pipe in the middle of the deck looks lost.
 - **A tank wants space.** Give it a corner and leave its neighbours empty.
