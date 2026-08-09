@@ -42,7 +42,7 @@ selection.json     what the human last picked
 | `GET /api/model.glb` | the built file, or 404 before the first build |
 | `GET /api/selection` | the current selection |
 | `POST /api/selection` | stores it, stamps `at`, gives it back |
-| `GET /api/projects` | `{ projects, current }`, one `ProjectCard` per building, empty unless the server was given a store |
+| `GET /api/projects` | `{ projects, current }`, one `ProjectCard` per building (name, brief, floors, sections, height, what it reads as, whether it is built) |
 | `POST /api/projects` | `{ name }` makes that building current |
 | `GET /api/events` | server sent events, `changed` when the document or the build file changes |
 
@@ -53,12 +53,15 @@ Failures answer 400 with the `BuildingError` shape: `{ code, message, at }`.
 Two panels around the stage. `Models` down the side is the navigator, `Bar` along the bottom is the building
 that is open.
 
-**Models.** One row per building: its name, whether it is built, its floors, sections and height, and the
-line `describeBuilding` reads off its document. The open one carries the accent. Clicking a row makes that
-building current, for the page and for the CLI alike. The foot counts what the store holds.
+**Models.** One row per building: its name, whether it is built, its floors, sections and height, the brief
+it was asked for in the words it was asked in, and the line `describeBuilding` reads off its document. The
+open one carries the accent. Clicking a row makes that building current, for the page and for the CLI alike.
+The foot counts what the store holds.
 
-**Bar.** The open building's name and size, a strip of its sections coloured by kind, the tools, the view, and
-the file out. `mode: pick` selects the bay under the cursor; `mode: zone` drags a rectangle and selects every
+**Bar.** The open building's name and size, **one** of its sections at a time with arrows to step through
+them, the tools, the view, and the file out. The section on screen is brought forward in the drawing and the
+rest fade, so the name in the bar and the part of the building it means are obviously the same thing. That
+marking is off in `final`, which draws nothing over the building. `mode: pick` selects the bay under the cursor; `mode: zone` drags a rectangle and selects every
 bay whose centre is inside it and whose face turns toward the camera, so the far side is never caught.
 `export` hands over the built file as `<name>.glb`, and is offered only once a build exists.
 

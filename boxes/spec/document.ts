@@ -175,6 +175,8 @@ const bandShape = bandSchema.superRefine((band, ctx) => {
 export const documentSchema = z.object({
   version: z.literal(SCHEMA_VERSION),
   name: z.string().min(1),
+  /** What this building was asked for, in the words it was asked in. */
+  brief: z.string().default(''),
   footprint: footprintSchema,
   grid: gridSchema.default({ bay: 3000, floorHeight: 3200 }),
   bands: z.array(bandShape).min(1),
@@ -213,7 +215,7 @@ export function parseDocument(value: unknown): BuildingDocument {
 }
 
 /** A plain tower, the starting point every walk edits. Sizes are in metres here for the caller's sake. */
-export function newDocument(name: string, options: { width?: number; depth?: number; floors?: number } = {}): BuildingDocument {
+export function newDocument(name: string, options: { width?: number; depth?: number; floors?: number; brief?: string } = {}): BuildingDocument {
   const width = Math.round((options.width ?? 18) * METRE);
   const depth = Math.round((options.depth ?? 14) * METRE);
   const bulkFloors = Math.max(1, (options.floors ?? 12) - 2);
@@ -221,6 +223,7 @@ export function newDocument(name: string, options: { width?: number; depth?: num
   return parseDocument({
     version: SCHEMA_VERSION,
     name,
+    brief: options.brief ?? '',
     footprint: { kind: 'rect', width, depth },
     grid: { bay: 3000, floorHeight: 3200 },
     bands: [

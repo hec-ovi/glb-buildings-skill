@@ -96,6 +96,7 @@ export class Blueprint {
   readonly root = new Group();
   readonly meshes: InstancedMesh[] = [];
   readonly #lines: LineSegments[] = [];
+  readonly #ofBand = new Map<string, { mesh: InstancedMesh; line: LineSegments }>();
   readonly handles: BayHandle[] = [];
   readonly #byMesh = new Map<InstancedMesh, BayHandle[]>();
   readonly scene: PlacedScene;
@@ -157,6 +158,7 @@ export class Blueprint {
     );
     group.add(lines);
     this.#lines.push(lines);
+    this.#ofBand.set(band.id, { mesh, line: lines });
   }
 
   handleAt(mesh: InstancedMesh, instance: number): BayHandle | undefined {
@@ -185,6 +187,24 @@ export class Blueprint {
    */
   showPanels(show: boolean): void {
     for (const mesh of this.meshes) mesh.visible = show;
+  }
+
+  /**
+   * Bring one section forward and push the rest back, so the name in the bar and the part of the
+   * building it means are obviously the same thing. No id brings everything back to level.
+   */
+  focus(bandId: string | undefined): void {
+    for (const [id, { mesh, line }] of this.#ofBand) {
+      const lit = bandId === undefined || id === bandId;
+      const faded = bandId !== undefined && id !== bandId;
+      (mesh.material as MeshBasicMaterial).opacity = faded ? 0.04 : lit && bandId ? 0.34 : 0.14;
+      (line.material as LineBasicMaterial).opacity = faded ? 0.16 : 0.9;
+      (line.material as LineBasicMaterial).color.set(bandId === id ? SELECTED : BAND_COLOUR[this.#kindOf(id)] ?? 0x8899bb);
+    }
+  }
+
+  #kindOf(bandId: string): string {
+    return this.scene.bands.find((band) => band.id === bandId)?.kind ?? 'bulk';
   }
 
   /** The section outlines. Off is how the finished building is looked at, with nothing over it. */

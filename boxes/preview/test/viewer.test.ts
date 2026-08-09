@@ -23,12 +23,31 @@ beforeEach(() => {
 });
 
 describe('the building bar', () => {
-  it('names the building and lists every section with its tier and floor count', () => {
+  it('names the building and shows one section at a time, with a place in the run', () => {
     bar().describe(doc, scene, false);
     expect(screen.getByText('tower-a')).toBeTruthy();
     expect(document.querySelector('.bar-size')!.textContent).toContain('6 floors');
-    expect(document.querySelectorAll('.chip')).toHaveLength(3);
-    expect(document.body.textContent).toContain('bulk');
+    // One section on screen, not a strip of them, and it says which one of how many.
+    expect(screen.getByTestId('section').textContent).toContain('ground');
+    expect(document.querySelector('.of')!.textContent).toBe('1 of 3');
+  });
+
+  it('walks the sections with the arrows and says which one the drawing should bring forward', async () => {
+    const onSection = vi.fn();
+    const panel = new Bar(document.body, { onMode: () => {}, onView: () => {}, onSection });
+    panel.describe(doc, scene, false);
+    expect(onSection).toHaveBeenLastCalledWith('ground');
+
+    await userEvent.click(screen.getByTestId('section-on'));
+    expect(screen.getByTestId('section').textContent).toContain('body');
+    expect(document.querySelector('.of')!.textContent).toBe('2 of 3');
+    expect(onSection).toHaveBeenLastCalledWith('body');
+
+    // It wraps, so stepping back from the first lands on the last.
+    await userEvent.click(screen.getByTestId('section-back'));
+    await userEvent.click(screen.getByTestId('section-back'));
+    expect(screen.getByTestId('section').textContent).toContain('crown');
+    expect(panel.section).toBe('crown');
   });
 
   it('switches between pick and zone, and shows which one is on', async () => {
@@ -269,6 +288,7 @@ describe('view controls', () => {
 describe('the navigator', () => {
   const card = (name: string, over: Partial<ProjectCard> = {}): ProjectCard => ({
     name,
+    brief: '',
     floors: 6,
     sections: 3,
     height: 20_600,

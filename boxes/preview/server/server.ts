@@ -33,6 +33,8 @@ export type PreviewOptions = {
 /** One row of the navigator: what a building is, without opening it. */
 export type ProjectCard = {
   name: string;
+  /** What it was asked for, in the words it was asked in. */
+  brief: string;
   floors: number;
   sections: number;
   height: number;
@@ -161,6 +163,7 @@ export class PreviewServer {
       const scene = assemble(document);
       return {
         name,
+        brief: document.brief,
         floors: scene.bands.reduce((n, band) => n + band.floors.length, 0),
         sections: scene.bands.length,
         height: scene.size.height,
@@ -169,7 +172,7 @@ export class PreviewServer {
       };
     } catch (error) {
       const detail = error instanceof BuildingError ? error.message : String(error);
-      return { name, floors: 0, sections: 0, height: 0, reads: detail, built: project.hasModel() };
+      return { name, brief: '', floors: 0, sections: 0, height: 0, reads: detail, built: project.hasModel() };
     }
   }
 

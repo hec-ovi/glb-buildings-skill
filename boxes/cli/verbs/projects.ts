@@ -11,12 +11,13 @@ import { count, need, parse, text } from './args.ts';
 export const newProject: Verb = {
   name: 'new',
   summary: 'start a building and make it the current one',
-  usage: 'new <name> [--width 18] [--depth 14] [--floors 14] [--here]',
+  usage: 'new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14] [--here]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, {
       width: { type: 'string' },
       depth: { type: 'string' },
       floors: { type: 'string' },
+      brief: { type: 'string' },
       here: { type: 'boolean' },
     });
     const name = need(positionals, 0, 'project name');
@@ -39,10 +40,11 @@ export const newProject: Verb = {
       width: width ? Number(width) : undefined,
       depth: depth ? Number(depth) : undefined,
       floors: count(values.floors, 'floors'),
+      brief: text(values.brief),
     });
     await project.writeDocument(doc);
     await projects.use(name);
-    return { project: name, path: project.dir, home: projects.root, bands: doc.bands.map((b) => b.id) };
+    return { project: name, path: project.dir, home: projects.root, brief: doc.brief, bands: doc.bands.map((b) => b.id) };
   },
 };
 
@@ -142,6 +144,7 @@ export const show: Verb = {
     return {
       project: name,
       home: projects.root,
+      brief: doc.brief,
       size: {
         width: toMetres(placed.size.width),
         depth: toMetres(placed.size.depth),
@@ -155,6 +158,22 @@ export const show: Verb = {
   },
 };
 
+export const setBrief: Verb = {
+  name: 'brief',
+  summary: 'what this building was asked for, in the words it was asked in',
+  usage: 'brief ["what it should be"]',
+  async run(args, { projects }) {
+    const { positionals } = parse(args, {});
+    const { name, project } = await projects.open();
+    const doc = await project.readDocument();
+    if (positionals.length === 0) return { project: name, brief: doc.brief };
+
+    const brief = positionals.join(' ');
+    await project.writeDocument({ ...doc, brief });
+    return { project: name, brief };
+  },
+};
+
 export const listTemplates: Verb = {
   name: 'templates',
   summary: 'the floor templates the kit can build',
@@ -164,4 +183,4 @@ export const listTemplates: Verb = {
   },
 };
 
-export const projectVerbs = [newProject, listProjects, useProject, show, listTemplates];
+export const projectVerbs = [newProject, listProjects, useProject, show, setBrief, listTemplates];

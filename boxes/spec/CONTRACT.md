@@ -39,6 +39,7 @@ type is `Band`, and the verbs are `add-band`, `set-band`, `remove-band`. Same th
 {
   "version": 1,
   "name": "tower-a",
+  "brief": "a corner cafe with flats above it",
   "footprint": { "kind": "rect", "width": 18000, "depth": 14000 },
   "grid": { "bay": 3000, "floorHeight": 3200 },
   "bands": [

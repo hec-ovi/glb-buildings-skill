@@ -95,6 +95,16 @@
       }
       .tag.built { color: var(--figure); border-color: #23412f; }
       .row-figures { margin-top: 5px; color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+      .row-brief {
+        margin-top: 7px;
+        padding-left: 8px;
+        border-left: 2px solid var(--line);
+        color: var(--ink);
+        font-size: 11.5px;
+        font-style: italic;
+        line-height: 1.45;
+      }
+      .row[aria-pressed='true'] .row-brief { border-left-color: var(--accent); }
       .row-reads { margin-top: 6px; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
 
       /* the stage */
@@ -123,18 +133,36 @@
       .bar-name { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
       .bar-size { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
 
-      .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-      .chip {
+      .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+      .of { color: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+
+      .walk { display: flex; align-items: stretch; gap: 0; }
+      .arrow {
+        flex: none;
+        width: 30px;
+        font: inherit;
+        font-size: 15px;
+        color: var(--muted);
+        background: var(--raised);
+        border: 1px solid var(--line);
+        cursor: pointer;
+      }
+      .arrow:hover { color: var(--accent); border-color: var(--accent); }
+
+      .one-section {
         display: grid;
         grid-template-columns: 8px 1fr;
         gap: 8px;
         align-items: start;
-        flex: none;
+        flex: 1;
+        min-width: 0;
         padding: 7px 10px;
         background: var(--raised);
         border: 1px solid var(--line);
+        border-left: 0;
+        border-right: 0;
       }
-      .chip .dot { width: 8px; height: 8px; margin-top: 5px; }
+      .one-section .dot { width: 8px; height: 8px; margin-top: 5px; }
       .chip-id { font-weight: 600; font-size: 12px; }
       .chip-meta { color: var(--muted); font-family: var(--mono); font-size: 10.5px; white-space: nowrap; }
 

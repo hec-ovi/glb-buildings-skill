@@ -41,7 +41,8 @@ Run `buildings help` for the current list. Today:
 
 | Verb | What it does |
 | --- | --- |
-| `new <name> [--width 18] [--depth 14] [--floors 14]` | start a building, in metres, and make it current |
+| `new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14]` | start a building, in metres, and make it current |
+| `brief ["what it should be"]` | what this building was asked for, kept with it and shown in the preview |
 | `list` | every building, and which is current |
 | `use <name>` | switch the current building |
 | `show [name]` | the stack band by band |

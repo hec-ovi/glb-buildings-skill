@@ -15,6 +15,8 @@ export type View = (typeof VIEWS)[number];
 export type BarHandlers = {
   onMode: (mode: PickerMode) => void;
   onView: (view: View) => void;
+  /** Which section the bar is showing, so the drawing can bring it forward. */
+  onSection?: (bandId: string | undefined) => void;
 };
 
 const m = (mm: number) => (mm / 1000).toFixed(2).replace(/\.?0+$/, '');
@@ -23,7 +25,11 @@ const hex = (colour: number) => `#${colour.toString(16).padStart(6, '0')}`;
 export class Bar {
   readonly #name = element('div', 'bar-name', 'no building yet');
   readonly #size = element('div', 'bar-size', 'starting the viewer');
-  readonly #sections = element('div', 'strip');
+  readonly #section = element('div', 'one-section');
+  readonly #count = element('div', 'of');
+  #sections: { id: string; kind: string; tier: string; floors: number; height: string }[] = [];
+  #at = 0;
+  #onSection: BarHandlers['onSection'];
   readonly #selection = element('div', 'read', 'nothing selected');
   readonly #ids = element('div', 'ids');
   readonly #hint = element('div', 'hint', 'click a bay, or drag a rectangle in zone mode');
@@ -58,8 +64,28 @@ export class Bar {
     const identity = element('div', 'bar-block identity');
     identity.append(this.#name, this.#size);
 
+    this.#onSection = handlers.onSection;
+    const step = (by: number) => {
+      if (this.#sections.length === 0) return;
+      this.#at = (this.#at + by + this.#sections.length) % this.#sections.length;
+      this.#drawSection();
+    };
+
+    const back = element('button', 'arrow', '\u2039');
+    back.dataset.testid = 'section-back';
+    back.addEventListener('click', () => step(-1));
+    const on = element('button', 'arrow', '\u203a');
+    on.dataset.testid = 'section-on';
+    on.addEventListener('click', () => step(1));
+
+    const head = element('div', 'section-head');
+    head.append(element('h2', undefined, 'Section'), this.#count);
+
+    const walk = element('div', 'walk');
+    walk.append(back, this.#section, on);
+
     const sections = element('div', 'bar-block grow');
-    sections.append(element('h2', undefined, 'Sections'), this.#sections);
+    sections.append(head, walk);
 
     const tools = element('div', 'bar-block');
     tools.append(element('h2', undefined, 'Tools'), modes, element('h2', undefined, 'View'), views);
@@ -123,23 +149,46 @@ export class Bar {
     this.#name.textContent = doc.name;
     this.#size.textContent = `${m(scene.size.width)} x ${m(scene.size.depth)} x ${m(scene.size.height)} m · ${floors} floors · bay ${m(doc.grid.bay)} m`;
 
-    this.#sections.replaceChildren(
-      ...scene.bands.map((band) => {
-        const chip = element('div', 'chip');
-        const dot = element('span', 'dot');
-        dot.style.background = hex(BAND_COLOUR[band.kind] ?? 0x8899bb);
-        const height = band.floors.length ? band.floors[0]!.y1 - band.floors[0]!.y0 : 0;
-        const body = element('div');
-        body.append(
-          element('div', 'chip-id', band.id),
-          element('div', 'chip-meta', `${band.kind} · ${band.tier} · ${band.floors.length} x ${m(height)} m`),
-        );
-        chip.append(dot, body);
-        return chip;
-      }),
-    );
+    this.#sections = scene.bands.map((band) => ({
+      id: band.id,
+      kind: band.kind,
+      tier: band.tier,
+      floors: band.floors.length,
+      height: m(band.floors.length ? band.floors[0]!.y1 - band.floors[0]!.y0 : 0),
+    }));
+    // Stay on the same section across a rebuild, so an edit does not move the bar under you.
+    this.#at = Math.min(this.#at, Math.max(0, this.#sections.length - 1));
+    this.#drawSection();
 
     this.#offerExport(doc.name, hasModel);
+  }
+
+  /** One section on screen, and the drawing told which one it is. */
+  #drawSection(): void {
+    const section = this.#sections[this.#at];
+    if (!section) {
+      this.#section.replaceChildren(element('div', 'chip-meta', 'no sections'));
+      this.#count.textContent = '';
+      this.#onSection?.(undefined);
+      return;
+    }
+
+    const dot = element('span', 'dot');
+    dot.style.background = hex(BAND_COLOUR[section.kind] ?? 0x8899bb);
+    const body = element('div');
+    body.append(
+      element('div', 'chip-id', section.id),
+      element('div', 'chip-meta', `${section.kind} · ${section.tier} · ${section.floors} x ${section.height} m`),
+    );
+    this.#section.replaceChildren(dot, body);
+    this.#section.dataset.testid = 'section';
+    this.#count.textContent = `${this.#at + 1} of ${this.#sections.length}`;
+    this.#onSection?.(section.id);
+  }
+
+  /** Which section the bar is on, for whoever draws it. */
+  get section(): string | undefined {
+    return this.#sections[this.#at]?.id;
   }
 
   showSelection(bayIds: string[], bandIds: string[], floorIds: string[] = []): void {

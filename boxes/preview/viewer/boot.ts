@@ -41,9 +41,11 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
   let picker: Picker | undefined;
   let showView: ((view: View) => void) | undefined;
 
+  let focusSection: ((bandId: string | undefined) => void) | undefined;
   const bar = new Bar(options.bar, {
     onMode: (mode) => picker?.setMode(mode),
     onView: (view) => showView?.(view),
+    onSection: (bandId) => focusSection?.(bandId),
   });
 
   // Opening another building shows it whole, rather than through the camera the last one left.
@@ -129,11 +131,16 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     // Three ways to look at it: the drawing, the drawing over the built file, and the building
     // on its own with nothing drawn over it.
     let view: View = 'blueprint';
+    // The section the bar is on is brought forward, but only where the drawing is on screen:
+    // `final` is the building on its own and nothing marks it up.
+    focusSection = (bandId) => blueprint?.focus(view === 'final' ? undefined : bandId);
+
     showView = (next) => {
       view = next;
       modelRoot.visible = view !== 'blueprint';
       blueprint?.showPanels(view === 'blueprint');
       blueprint?.showOutlines(view !== 'final');
+      focusSection?.(bar.section);
       if (modelRoot.visible && modelRoot.children.length === 0) void loadModel();
     };
 
@@ -177,6 +184,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       blueprint.select(picked.bayIds);
       blueprint.showPanels(view === 'blueprint');
       blueprint.showOutlines(view !== 'final');
+      focusSection?.(bar.section);
       bar.showSelection(picked.bayIds, picked.bandIds, picked.floorIds);
 
       void listBuildings();

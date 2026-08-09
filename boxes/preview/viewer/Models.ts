@@ -67,7 +67,10 @@ export class Models {
       element('span', undefined, ' m'),
     );
 
-    row.append(top, figures, element('div', 'row-reads', card.reads));
+    row.append(top, figures);
+    // What it was asked for, then what it actually came out as.
+    if (card.brief) row.append(element('div', 'row-brief', `“${card.brief}”`));
+    row.append(element('div', 'row-reads', card.reads));
     row.addEventListener('click', () => this.#onProject(card.name));
     return row;
   }
