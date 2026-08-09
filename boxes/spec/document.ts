@@ -142,7 +142,6 @@ const bandSchema = z.object({
   /** Real openings in every bay: a hole, a reveal and a pane. Costs about 18 triangles each. */
   windows: z.boolean().default(false),
   /** Balconies with a rounded front, on one face, one per floor. */
-  balconies: z.enum(['none', 'N', 'E', 'S', 'W']).default('none'),
   /** Uprights: at the footprint corners, or as ribs along every face. */
   columns: z.enum(['none', 'corners', 'ribs', 'partial']).default('none'),
   /** A quick pass that fills free cells of the deck, 0 to 1. Anything placed by hand wins. */

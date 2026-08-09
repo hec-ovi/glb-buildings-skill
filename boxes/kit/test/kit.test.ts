@@ -136,14 +136,6 @@ describe('fake parts', () => {
     expect(triangleCount(heavy[0]!)).toBeGreaterThan(triangleCount(light[0]!));
   });
 
-  it('builds balconies with a rounded front, closed, one per floor', () => {
-    const parts = dress(bulk, { balconies: 'S' });
-    expect(windingProblems(parts[0]!)).toEqual([]);
-    expect(shellProblems(parts)).toEqual([]);
-    // A rounded front means more than the four sides of a box.
-    expect(triangleCount(parts[0]!)).toBeGreaterThan(4 * 12);
-  });
-
   it('stands columns at the corners, along the faces, or only in gaps', () => {
     for (const style of ['corners', 'ribs', 'partial'] as const) {
       const parts = dress(bulk, { columns: style, seed: 5 });
@@ -222,7 +214,6 @@ describe('everything a section wears is on the outside of it', () => {
     ribs: { columns: 'ribs' },
     'columns in the gaps': { columns: 'partial', seed: 5 },
     greebles: { greebles: 0.6, seed: 3 },
-    balconies: { balconies: 'S' },
     cables: { wires: 'E' },
     'a deck': { clutter: 0.8, seed: 9 },
   } as const;
@@ -232,14 +223,6 @@ describe('everything a section wears is on the outside of it', () => {
       expect(sunkProblems(dress(bulk, options), bulk)).toEqual([]);
     });
   }
-
-  it('hangs a balcony on the face that was asked for', () => {
-    const parts = dress(bulk, { balconies: 'S' });
-    const zs = parts[0]!.positions.filter((_, i) => i % 3 === 2);
-    // S is +Z, and the section ends at 7: the slab reaches past it and never crosses the middle.
-    expect(Math.max(...zs)).toBeGreaterThan(7);
-    expect(Math.min(...zs)).toBeGreaterThan(0);
-  });
 
   it('catches a part built the wrong way round, buried in the wall', () => {
     const inside = new Surface('facade').box([-1, 1, -1], [1, 2, 1]).data();

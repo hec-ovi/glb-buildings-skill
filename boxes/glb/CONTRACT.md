@@ -21,9 +21,12 @@ is a separate call: `buildGlb` builds and proves the bytes, the caller decides w
 - A section sinks 1 cm into the one below, so no two faces share a plane and nothing flickers along a junction.
 - Nodes only translate up. Nothing is scaled, nothing is mirrored, so every transform keeps a positive
   determinant and no importer has to guess about winding.
-- Three materials: `facade` and `glass` share the generated facade texture (colour and emissive) from
-  `#materials`, so a drawn window and a cut one are the same window; `roof` is a plain grey. The texture is
-  seeded from the building's name, so every building gets its own and the same name rebuilds the same one.
+- Materials are made on demand, so a file carries only what its parts are actually made of: a plain tower
+  is two, a composed facade is as many as it asked for. `facade`, `glass` and `crystal` share the generated
+  facade texture (colour and emissive) from `#materials`, so a drawn window and a cut one are the same
+  window; `roof`, `concrete` and `metal` are plain; `screen` is lit. The texture is seeded from the
+  building's name, so every building gets its own and the same name rebuilds the same one.
+- A section's composed faces and its runs are built alongside what it wears, and held to the same proofs.
 - `extensionsRequired` is empty. A file that requires an extension Unreal lacks does not load at all.
 
 ## Proofs before the write
@@ -58,4 +61,4 @@ Export profiles per engine, LOD chains, instancing. One plain file, one detail l
 
 ## Depends on
 
-`#spec`, `#assemble`, `#kit`, `#check`, `#materials`.
+`#spec`, `#assemble`, `#kit`, `#check`, `#facade`, `#materials`.

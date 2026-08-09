@@ -77,7 +77,6 @@ function wornBy(band: Band): string[] {
   const worn: string[] = [];
   if (band.windows) worn.push('windows cut into every bay');
   if (band.greebles > 0) worn.push(`greebles ${band.greebles}`);
-  if (band.balconies !== 'none') worn.push(`balconies on ${band.balconies}`);
   if (band.columns !== 'none') worn.push(`columns ${band.columns}`);
   if (band.wires !== 'none') worn.push(`wires up ${band.wires}`);
   if (band.clutter > 0) worn.push(`deck clutter ${band.clutter}`);

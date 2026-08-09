@@ -25,16 +25,32 @@ function moveOf(band: Band): string | undefined {
   return undefined;
 }
 
+/** What a composed face carries, in the words a reader uses for it. */
+const COMPOSED: Record<string, string> = {
+  window: 'windows',
+  door: 'doors',
+  balcony: 'balconies',
+  panel: 'panels',
+};
+
 /** What the building wears, named once each however many sections carry it. */
 function dressing(doc: BuildingDocument): string[] {
   const worn: string[] = [];
   const any = (test: (band: Band) => boolean) => doc.bands.some(test);
 
   if (any((b) => b.windows)) worn.push('cut windows');
-  if (any((b) => b.balconies !== 'none')) worn.push('balconies');
+
+  // Composed faces, named by what is actually on them, in a steady order.
+  const kinds = new Set(doc.bands.flatMap((band) => band.faces.flatMap((face) => face.elements.map((one) => one.kind))));
+  const screens = doc.bands.some((band) => band.faces.some((face) => face.elements.some((one) => one.material === 'screen')));
+  for (const kind of ['window', 'door', 'balcony', 'panel']) {
+    if (kinds.has(kind as never)) worn.push(COMPOSED[kind]!);
+  }
+  if (screens) worn.push('lit screens');
+
   if (any((b) => b.columns !== 'none')) worn.push('columns');
   if (any((b) => b.greebles > 0)) worn.push('worked facades');
-  if (any((b) => b.wires !== 'none')) worn.push('cables');
+  if (any((b) => b.wires !== 'none' || b.runs.length > 0)) worn.push('pipes and cables');
   if (any((b) => b.clutter > 0 || b.deck.length > 0)) worn.push('a busy roof');
   return worn;
 }

@@ -19,7 +19,7 @@ Types live in [`scene.ts`](scene.ts).
 ```
 PlacedScene { name, size {width, depth, height}, bands[] }
   PlacedBand { id, kind, tier, template, rotation, inset, rect, bottom[], top[], chamfer,
-               wires, windows, greebles, balconies, columns, clutter, deck[], y0, y1, floors[] }
+               wires, windows, greebles, columns, clutter, deck[], faces[], runs[], y0, y1, floors[] }
     PlacedFloor { id: "body.f3", bandId, index, y0, y1, bays[] }
       PlacedBay { id: "body.f3.S2", side, index, width, box }
 ```

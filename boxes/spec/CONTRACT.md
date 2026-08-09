@@ -43,7 +43,8 @@ type is `Band`, and the verbs are `add-band`, `set-band`, `remove-band`. Same th
   "grid": { "bay": 3000, "floorHeight": 3200 },
   "bands": [
     { "id": "ground", "kind": "main", "tier": "full",  "floors": 1,  "floorHeight": 4500, "template": "main-plain",   "windows": true },
-    { "id": "body",   "kind": "bulk", "tier": "flat",  "floors": 12,                      "template": "bulk-flat",    "greebles": 0.4, "balconies": "S" },
+    { "id": "body",   "kind": "bulk", "tier": "light", "floors": 12,                      "template": "bulk-flat",    "greebles": 0.4,
+      "faces": [{ "side": "S", "elements": [{ "kind": "window", "col": 12, "row": 9, "cols": 8, "rows": 14, "material": "crystal" }] }] },
     { "id": "crown",  "kind": "roof", "tier": "light", "floors": 1,  "floorHeight": 900,  "template": "roof-parapet", "deck": [{ "cell": "B3", "part": "tank", "turn": 0 }] }
   ]
 }
@@ -59,7 +60,9 @@ shallow relief, `full` carries real openings and parts). A building may be `flat
 | `width`, `depth` | the section's own footprint, falling back to the building's |
 | `shape`, `segments`, `arc`, `bow`, `corner`, `chamfer` | the plan it is drawn on |
 | `inset`, `shiftX`, `shiftZ`, `rotation`, `twist`, `taper` | where it sits and how it moves as it rises |
-| `windows`, `greebles`, `balconies`, `columns`, `wires` | what it wears |
+| `windows`, `greebles`, `columns`, `wires` | what it wears in bulk |
+| `faces` | what is composed on each face, cell by cell (see the `facade` box) |
+| `runs` | ducts, pipes and cables standing off it, each a path of points |
 | `clutter`, `deck` | what stands on it, when it is the roof |
 
 A section's plan is `shape` (`box` or `round`) plus one way of rounding it: `corner` fillets a box's uprights,

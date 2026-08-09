@@ -46,6 +46,10 @@ a session names the building once and every later verb knows what it means.
 | `set-band <id> [flags]` | change a section; omitted flags keep what was there |
 | `remove-band <id>` | take a section out |
 | `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | split a run of identical floors so one of them has a shape of its own. With no floor named it uses the last pick |
+| `face <section> [--side S] [--draw]` | the face as a grid of 10 cm cells, and what stands on it |
+| `put <kind> <from> <to> [--section] [--side] [--material] [--depth] [--every 3]` | put a window, door, panel or balcony on a face, in cells |
+| `clear [n ...] [--section] [--side] [--all]` | take elements off a face |
+| `run <x,y,z> <x,y,z> [more ...] [--section] [--profile] [--thickness] [--material]` | a duct, pipe or cable along a path, mitred at every corner |
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts available |
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more deck cells |
 | `unplace <cell ...> [--section id]` | clear deck cells |
@@ -57,8 +61,10 @@ a session names the building once and every later verb knows what it means.
 Section flags: `--kind main|bulk|custom|roof`, `--tier flat|light|full`, `--template <id>`, `--floors <n>`,
 `--height <m>`, `--width <m>`, `--depth <m>`, `--inset <m>`, `--shift-x <m>`, `--shift-z <m>`,
 `--rotation <deg>`, `--twist <deg>`, `--taper <m>`, `--shape box|round`, `--segments <n>`, `--arc <deg>`,
-`--bow NS`, `--corner <m>`, `--chamfer <m>`, `--greebles 0..1`, `--windows`, `--balconies N|E|S|W`,
+`--bow NS`, `--corner <m>`, `--chamfer <m>`, `--greebles 0..1`, `--windows`,
 `--columns corners|ribs|partial`, `--wires N|E|S|W`, `--clutter 0..1`.
+
+What stands on a face is composed cell by cell with `face` and `put`, not with a section flag.
 
 Lengths on the command line are metres; the document stores millimetres. Angles are degrees.
 
@@ -76,4 +82,4 @@ Lengths on the command line are metres; the document stores millimetres. Angles 
 
 ## Depends on
 
-`#spec`, `#assemble`, `#kit`, `#glb`, `#preview`, `#check`.
+`#spec`, `#assemble`, `#kit`, `#glb`, `#preview`, `#check`, `#facade`.

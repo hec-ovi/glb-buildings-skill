@@ -87,16 +87,20 @@ describe('describeBuilding', () => {
   });
 
   it('names the move and what it wears, once each however many sections carry it', () => {
+    const balcony = { kind: 'balcony', col: 10, row: 2, cols: 20, rows: 12, material: 'concrete' };
     const worn = parseDocument({
       ...plain,
       bands: plain.bands.map((band) =>
-        band.kind === 'bulk' ? { ...band, twist: 20, windows: true, balconies: 'S' } : { ...band, windows: true },
+        band.kind === 'bulk'
+          ? { ...band, twist: 20, windows: true, faces: [{ side: 'S', elements: [balcony] }] }
+          : { ...band, windows: true, faces: [{ side: 'S', elements: [balcony] }] },
       ),
     });
     const line = describeBuilding(worn);
     expect(line).toContain('A twisted run');
+    // Two sections carry each of them, and the line says each once.
     expect(line.match(/cut windows/g)).toHaveLength(1);
-    expect(line).toContain('balconies');
+    expect(line.match(/balconies/g)).toHaveLength(1);
   });
 
   it('gives the same document the same line, so a rebuild never rewrites the list', () => {

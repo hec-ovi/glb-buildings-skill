@@ -18,10 +18,11 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | [`spec`](../boxes/spec/CONTRACT.md) | The building document: sections, floors, bays, the selection, integer millimetres, the closed error set | none |
 | [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: footprints, transforms, bays | `spec` |
 | [`kit`](../boxes/kit/CONTRACT.md) | The parts. Section templates build geometry in metres, with the winding and normals engines expect | `spec`, `materials` |
-| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the geometry proofs, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `materials` |
+| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the geometry proofs, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `facade`, `materials` |
 | [`preview`](../boxes/preview/CONTRACT.md) | three.js blueprint, click picking, drag zones, and the server that carries a selection back | `spec`, `assemble` |
 | [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |
 | [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and six fat parts. `SKILL.md` is its contract | `cli` |
+| [`facade`](../boxes/facade/CONTRACT.md) | Faces as grids of 10 cm cells: what stands where on a wall, and the geometry it becomes | `spec`, `kit` |
 | [`materials`](../boxes/materials/CONTRACT.md) | Textures written from code: the window grid a facade carries, colour and emissive | none |
 | [`check`](../boxes/check/CONTRACT.md) | The proofs on the document: what rests on what, and by how much | `spec`, `assemble` |
 

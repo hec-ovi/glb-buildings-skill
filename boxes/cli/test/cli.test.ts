@@ -49,7 +49,7 @@ describe('projects', () => {
 
   it('reads back the plan and the dressing, so nothing an agent sets is write only', async () => {
     await call('new', 'tower-a');
-    await call('set-band', 'body', '--shape', 'round', '--arc', '240', '--greebles', '0.4', '--windows', '--balconies', 'S', '--columns', 'ribs');
+    await call('set-band', 'body', '--shape', 'round', '--arc', '240', '--greebles', '0.4', '--windows', '--columns', 'ribs');
     const shown = (await call('show')) as unknown as { bands: { id: string; plan: string; wears: string[] }[] };
 
     const body = shown.bands.find((band) => band.id === 'body')!;
@@ -58,7 +58,6 @@ describe('projects', () => {
     expect(body.wears).toEqual([
       'windows cut into every bay',
       'greebles 0.4',
-      'balconies on S',
       'columns ribs',
     ]);
   });
@@ -105,6 +104,17 @@ describe('bands', () => {
     const sky = shown.bands.find((b) => b.id === 'sky')!;
     expect(sky).toMatchObject({ floors: 4, floorHeight: 4 });
     expect(await call('remove-band', 'sky')).toMatchObject({ bands: ['ground', 'body', 'crown'] });
+  });
+
+  it('turns windows off again, so a switch is not one way', async () => {
+    await call('new', 'tower-a');
+    await call('set-band', 'body', '--windows');
+    const on = (await call('show')) as unknown as { bands: { id: string; wears: string[] }[] };
+    expect(on.bands.find((b) => b.id === 'body')!.wears).toContain('windows cut into every bay');
+
+    await call('set-band', 'body', '--no-windows');
+    const off = (await call('show')) as unknown as { bands: { id: string; wears: string[] }[] };
+    expect(off.bands.find((b) => b.id === 'body')!.wears).toEqual([]);
   });
 
   it('refuses a template the kit does not have, and names the ones it does', async () => {

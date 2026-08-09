@@ -225,7 +225,6 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     const parts = template(band.template).build(shape);
     const worn = dress(shape, {
       wires: band.wires,
-      balconies: band.balconies,
       columns: band.columns,
       greebles: band.greebles,
       clutter: band.clutter,

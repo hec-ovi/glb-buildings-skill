@@ -269,7 +269,6 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       shape: band.shape,
       greebles: band.greebles,
       windows: band.windows,
-      balconies: band.balconies,
       columns: band.columns,
       clutter: band.clutter,
       deck: band.deck,

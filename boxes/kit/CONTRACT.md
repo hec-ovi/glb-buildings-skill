@@ -24,11 +24,12 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `template(id)` | template id | the `Template`, or `E_UNKNOWN_TEMPLATE` |
 | `templates()` | | every template with its tier and one-line purpose |
 | `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
-| `dress(shape, options)` | shape, what it wears | cables, columns, balconies, greebles, deck parts, as one mesh |
+| `dress(shape, options)` | shape, what it wears | cables, columns, greebles, deck parts, as one mesh |
 | `segment(surface, points, style)` | a path in metres, a profile and a thickness | one closed run of tube, mitred at every corner |
 | `walls` / `cap` / `capRing` / `ringAt` / `sameRing` | shape or rings | the pieces templates are made of |
 | `outwardAt(ring, edge)` | footprint, edge | the way out at that edge |
 | `outsideBy(ring, point)` | footprint, point | metres past the footprint, negative inside |
+| `facePoint(shape, t, edge, along, out)` | a face, how far up and across it | that point in the building |
 | `insideRing` / `nearestOn` / `insetRing` / `middleOf` / `tangentAt` | footprints | the rest of the plan arithmetic |
 | `cells(ring, margin, covered?)` | deck footprint | the two metre grid, named `A1`, `B3` |
 | `windingProblems(mesh)` | one mesh | where a normal disagrees with its triangle, or a triangle has no area |

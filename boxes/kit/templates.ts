@@ -14,7 +14,6 @@ import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData, type Patch } from './geometry.ts';
 import { cap, capRing, edgeFacing, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
-import { balconies, BALCONY } from './balcony.ts';
 import { columns, type ColumnStyle } from './columns.ts';
 import { rooftop } from './rooftop.ts';
 
@@ -97,7 +96,6 @@ export function templates(): Template[] {
 
 export type Dressing = {
   wires?: 'none' | 'N' | 'E' | 'S' | 'W';
-  balconies?: 'none' | 'N' | 'E' | 'S' | 'W';
   columns?: ColumnStyle;
   greebles?: number;
   clutter?: number;
@@ -112,9 +110,6 @@ export function dress(shape: SectionShape, options: Dressing): MeshData[] {
 
   if (options.wires && options.wires !== 'none') wires(surface, shape, options.wires);
   if (options.columns && options.columns !== 'none') columns(surface, shape, options.columns, options.seed ?? 1);
-  if (options.balconies && options.balconies !== 'none') {
-    balconies(surface, shape, { ...BALCONY, edge: edgeFacing(shape.bottom, options.balconies) });
-  }
   if (options.greebles) greebles(surface, shape, { density: options.greebles, seed: options.seed ?? 1 });
   if (options.clutter || options.deck?.length) {
     rooftop(surface, shape, {
