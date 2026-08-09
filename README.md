@@ -47,10 +47,8 @@ skill, ran 21 commands, one failed, recovered, done in about two and a half minu
 
 ![Qwen building the twisting tower](docs/showcase/qwen-spire.gif)
 
-112.6 m, 4 sections, **57 composed elements**, 10,576 triangles, validator clean, in **6m 15s**. The
-densest facade any driver in this set produced, on the same brief the hosted model answered with 34
-elements. Q8_0 on one Strix Halo workstation, served by `llama.cpp` over Vulkan, driven by
-[noob-cli](https://github.com/hec-ovi/noob-cli) with the skill installed at `.noob/skills/`.
+112.6 m, 4 sections, 57 elements, 10,576 triangles, validator clean, in 6m 15s. The densest facade in
+the set. Q8_0 on one workstation, driven by [noob-cli](https://github.com/hec-ovi/noob-cli).
 
 ### Gemma 4 26B-A4B, local
 
@@ -58,75 +56,53 @@ elements. Q8_0 on one Strix Halo workstation, served by `llama.cpp` over Vulkan,
 
 ![Gemma building its tower](docs/showcase/gemma-spire.gif)
 
-106 m, 5 sections, 14 elements, 4,340 triangles, validator clean. Handed a brief, it wrote its own and
-built that instead. Same machine, same stack, same skill.
-
-Its sessions ran longer than Qwen's, and **throughput is not the reason**: measured on this box, Gemma
-4 26B-A4B decodes at 61 / 50 / 45 t/s at no-context / 16k / 32k against Qwen3.6-35B-A3B's 55 / 49 / 45,
-so at the context an agent session actually runs at they are within a percent. The difference was turn
-count. Gemma spent its turns retrying cell coordinates; that friction is what produced
-`put --row --wide --tall --every`, which resolves columns for the caller.
+106 m, 5 sections, 14 elements, 4,340 triangles, validator clean. Same machine, same skill. Handed a
+brief, it wrote its own and built that instead.
 
 ## Benchmark
 
-Two briefs, three drivers, isolated stores so nothing raced. Every file validator clean.
+Two briefs, four drivers, a store each so nothing raced. Every file validator clean.
 
-| driver | building | height | sections | elements | triangles | calls | failed | wall clock |
+| driver | building | height | sections | elements | triangles | calls | failed | time |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Opus 5 | spire-me | 111.1 m | 5 | 34 | 5,512 | ~30 | 1 | minutes |
-| Opus 5 | market-me | 17.7 m | 3 | 18 | 2,856 | ~20 | 1 | minutes |
+| Opus 5 | spire-me | 111.1 m | 5 | 34 | 5,512 | ~30 | 1 | — |
+| Opus 5 | market-me | 17.7 m | 3 | 18 | 2,856 | ~20 | 1 | — |
 | Haiku 4.5 | spire-haiku | 82.6 m | 5 | 21 | 2,804 | 40 | 8 | 3m 28s |
 | Haiku 4.5 | market-haiku | 21.4 m | 3 | 6 | 2,232 | 21 | 1 | 2m 28s |
-| Qwen3.6-35B-A3B (local) | spire-qwen | 112.6 m | 4 | **57** | **10,576** | 127 | 11 | 6m 15s |
-| Qwen3.6-35B-A3B (local) | market-qwen | 20.7 m | 3 | 19 | 3,236 | 223 | 13 | 9m 15s |
+| Qwen3.6-35B (local) | spire-qwen | 112.6 m | 4 | 57 | 10,576 | 127 | 11 | 6m 15s |
+| Qwen3.6-35B (local) | market-qwen | 20.7 m | 3 | 19 | 3,236 | 223 | 13 | 9m 15s |
+| Gemma 4 26B (local) | spire-gemma | 105.9 m | 5 | 14 | 4,340 | — | — | — |
 
-Local model: Qwen3.6-35B-A3B (MoE, 3B active) at Q8_0 on a single Strix Halo workstation, served by
-`llama.cpp` over Vulkan through [llama-vulkan-strix](https://github.com/hec-ovi/llama-vulkan-strix),
-driven by [noob-cli](https://github.com/hec-ovi/noob-cli). Wall clock is the whole session: reading
-the skill, every verb, every retry, and the final build. Decode on this box measures 55 / 49 / 45 t/s
-at no-context / 16k / 32k, so wall clock here is turn count, not tokens per second.
+Local runs: Q8_0 on one Strix Halo box, served through
+[llama-vulkan-strix](https://github.com/hec-ovi/llama-vulkan-strix), driven by
+[noob-cli](https://github.com/hec-ovi/noob-cli). Time is the whole session, skill reading and retries
+included.
 
-**Reading the table.** The result worth noting is the local row: a 35B MoE on one workstation, no
-cloud in the loop, produced the densest facade in the set — 57 composed elements and 10,576
-triangles against 34 and 5,512 from the hosted frontier model on the same brief. It costs more
-calls and more wall clock to get there, and its failure count is higher, but every output in this
-table cleared the same proofs and the same Khronos validation. Detail density is not where the
-hosted models win; wall clock and first-try accuracy are.
+The local model takes more calls to get there and produces more geometry when it does. Everything in
+the table cleared the same proofs and the same validator.
 
-The failure column is the useful one. This benchmark is what surfaced three defects worth fixing:
-two sessions sharing a store could edit each other's buildings (now scoped by `--project`); a mast
-could generate itself taller than the invariant that keeps parts attached, failing a build over a
-value the caller never chose (now bounded at the source); and placement required coordinate
-arithmetic against a grid the caller cannot see (now `put --row --wide --tall --every`, where the
-face resolves columns and steps over occupied cells). The third is the one that moves the floor for
-constrained models.
+The failure column paid for itself. It found three defects: two sessions sharing a store could edit
+each other's buildings (now `--project`), a mast could generate itself taller than the invariant that
+keeps parts attached (now bounded), and placing anything meant coordinate arithmetic against a grid
+you cannot see (now `put --row --wide --tall --every`).
 
 ## The agentic workflow
 
-A building is decomposed into passes that share no context. Each pass has one job, one vocabulary,
-and a bounded space to work in. The document on disk is the only interface between them.
+A building is three passes that share no context. The document on disk is the only thing between them.
 
-**Pass one, massing.** Footprint, floor count, how the mass divides into sections, which section is
-base and which is crown. It works in metres and section ids, and it runs `build` before any facade
-work begins, so the support proof settles the geometry while a change is still cheap. It never
-addresses a window.
+**Massing.** Footprint, floors, how the mass splits into sections. Works in metres and section ids, and
+builds once so the support proof settles the shape while changing it is still cheap. Never touches a
+window.
 
-**Pass two, one job per section design.** A section repeats a single floor design, so a forty floor
-tower is four to six facade jobs, not forty. Each job loads one section's 10 cm grid and composes
-against it. It does not need the massing rationale, the other sections, or the roof.
+**One job per section design.** A section repeats a single floor, so a forty floor tower is four to six
+jobs, not forty. Each one loads a single 10 cm grid and composes against it.
 
-**Pass three, roof and services.** The deck is a named-cell floor plan; ducts, pipes and cables are
-polylines with a profile.
+**Roof and services.** The deck is a floor plan of named cells; ducts, pipes and cables are paths.
 
-The property that makes this work on a constrained model is that **every pass operates in a space
-that rejects invalid input at the point of entry**. Cells are integers and singly-owned. Contact,
-support share and triangle budget are proved before a file is written. An overlap is refused with
-both parties named, not detected downstream. So no pass has to validate the pass before it, and no
-pass has to be careful — correctness is a property of the surface, not of the caller.
-
-Concretely, that is what lets a 35B model on one workstation produce a validated glTF: it is not
-holding a building in its head. It is answering bounded questions against a surface that will not
-let it be wrong.
+What makes it work on a small model is that each pass writes into a space that refuses bad input at the
+door. Cells are integers and owned by one thing. Contact, support and triangle budget are proved before
+a file exists. An overlap comes back naming both parties. So no pass checks the pass before it, and none
+of them has to be careful.
 
 ## Requirements
 
@@ -191,17 +167,14 @@ page to find out.
 The portable unit is [`skills/glb-buildings/`](skills/glb-buildings/): one `SKILL.md` resolver that routes an
 intent to one of seven fat parts. An agent holds the resolver plus one part, never all of it.
 
-Copy the folder wherever your agent loads skills from. The transport is a shell call, so the requirement on
-the host is a subprocess and a JSON parser rather than an MCP client or a plugin runtime. The trade is no
-typed tool schema, which is why the drift test asserts that `SKILL.md` names every verb the CLI actually
-exposes.
+Copy the folder wherever your agent loads skills from. It talks to the CLI by running it, so the host needs
+a subprocess and a JSON parser, not an MCP client. A test keeps `SKILL.md` naming every verb the CLI has.
 
 ## Faces are grids
 
-Every face of a section divides into 10 cm cells. A window, a door, a balcony, a panel or a lit screen is a
-rectangle of them, and an element claims the cells it stands on, so two of them can never overlap and nothing
-is ever placed by coordinate. A cell is asked for by column and row and comes back on the real face, so a
-section that twists, tapers or curves needs no special case.
+Every face divides into 10 cm cells. A window, a door, a balcony, a panel or a lit screen is a rectangle of
+them, and each one claims the cells it stands on, so two can never overlap. A cell is asked for by column and
+row and comes back on the real face, so a twist or a taper needs no special case.
 
 A balcony keeps its slab and its two side rails and leaves the middle open, which is exactly the space the
 door onto it needs:
@@ -212,21 +185,18 @@ door onto it needs:
 . o o o o o .   the slab, which is the floor the door stands on
 ```
 
-What the section already wears holds its cells too: a rib or a cable run is kept clear, so a panel cannot be
-composed straight through an upright.
+Ribs and cable runs hold their cells too, so nothing gets composed through an upright.
 
-Ducts, pipes and cables are one builder: a path of points carrying a ring, mitred onto the plane bisecting the
-two runs at every corner. The cross section holds the whole way, and a turn too sharp to mitre is refused with
-the point named.
+Ducts, pipes and cables are one builder: a path of points carrying a ring, mitred at every corner. The cross
+section holds the whole way, and a turn too sharp to mitre is refused with the point named.
 
 ## Nothing is written until it is proved
 
-Every section is measured before the file exists: it has to land on the one below, close into a solid with
+Every section is measured before the file exists. It has to land on the one below, close into a solid with
 positive volume, agree with its own normals, keep every part it wears reaching out of it and not drifting off
-it, and stay inside the triangle budget its tier promises. Then the Khronos validator runs on the bytes.
+it, and stay inside its tier's triangle budget. Then the Khronos validator runs on the bytes.
 
-That combination is what stops inverted roofs, invisible walls, buried balconies and files an engine silently
-mangles.
+That is what stops inverted roofs, invisible walls, buried balconies and files an engine quietly mangles.
 
 ## How it is built
 
