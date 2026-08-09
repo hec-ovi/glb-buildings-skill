@@ -97,20 +97,6 @@ A tier is a promise about cost, and `build` holds you to it.
 Most of a tower is `flat`. Spend `light` on the two or three sections at eye level and on the crown, and
 `full` only where the camera goes. A section over its budget fails the build and names what to drop.
 
-## What each tier is for
-
-A tier is a promise about cost, and `build` holds you to it.
-
-| tier | what it carries | budget |
-| --- | --- | --- |
-| `flat` | walls, nothing else | 120 triangles a floor |
-| `light` | greebles, columns, cables, balconies, window panes | 1,200 a floor |
-| `full` | the same, laid on thick, for a section seen close | 4,000 a floor |
-| a roof section | everything on the deck | 4,500 for the whole section |
-
-Most of a tower is `flat`. Spend `light` on the sections at eye level and on the crown, `full` only where the
-camera goes. A section over its budget fails the build and names what to drop.
-
 ## Dressing a section
 
 | Flag | What it adds |

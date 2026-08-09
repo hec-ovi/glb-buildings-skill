@@ -15,13 +15,13 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 
 | Box | Purpose | Depends on |
 |---|---|---|
-| [`spec`](../boxes/spec/CONTRACT.md) | The building document: bands, floors, bays, the selection, integer millimetres, the closed error set | none |
-| [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: transforms, bays, seams | `spec` |
-| [`kit`](../boxes/kit/CONTRACT.md) | The parts. Floor templates build geometry in metres, with the winding and normals engines expect | `spec`, `materials` |
-| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the shell proof, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `materials` |
+| [`spec`](../boxes/spec/CONTRACT.md) | The building document: sections, floors, bays, the selection, integer millimetres, the closed error set | none |
+| [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: footprints, transforms, bays | `spec` |
+| [`kit`](../boxes/kit/CONTRACT.md) | The parts. Section templates build geometry in metres, with the winding and normals engines expect | `spec`, `materials` |
+| [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the geometry proofs, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `materials` |
 | [`preview`](../boxes/preview/CONTRACT.md) | three.js blueprint, click picking, drag zones, and the server that carries a selection back | `spec`, `assemble` |
 | [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |
-| [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and four fat parts. `SKILL.md` is its contract | `cli` |
+| [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and six fat parts. `SKILL.md` is its contract | `cli` |
 | [`materials`](../boxes/materials/CONTRACT.md) | Textures written from code: the window grid a facade carries, colour and emissive | none |
 | [`check`](../boxes/check/CONTRACT.md) | The proofs on the document: what rests on what, and by how much | `spec`, `assemble` |
 
@@ -42,6 +42,8 @@ npm link && buildings new tower-a && buildings build && buildings preview
 |---|---|
 | The closed error set | `boxes/spec/errors.ts` |
 | Units, grid and rounding rules | `boxes/spec/units.ts` |
+| Triangle budgets per tier | `boxes/glb/writer.ts` |
+| Where projects live on disk | `boxes/cli/projects.ts` |
 | The CLI entry point | `boxes/cli/bin/buildings.ts` |
 | The preview entry point | `boxes/preview/bin/preview.ts` |
 | Skill copy at the root, and its drift check | `scripts/sync-skill.ts`, `boxes/cli/test/skill.test.ts` |

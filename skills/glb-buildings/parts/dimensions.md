@@ -10,7 +10,7 @@ cheapest legal box, not a building anyone would believe.
 | Residential | 3.5 | 2.8 to 3.0 |
 | Office | 4.5 | 4.0 (3.6 to 4.2) |
 | Retail at the bottom | 4.3 to 4.5 | follows whatever sits above |
-| Warehouse, single volume | 7.5 to 9.5 clear | one band |
+| Warehouse, single volume | 7.5 to 9.5 clear | one section |
 
 Offices are about a metre taller per floor than flats because of the plenum: a raised floor plus ducts under
 the beams adds 1.1 to 1.2 m of floor zone. Flats have no plenum.
@@ -37,7 +37,7 @@ double-loaded plate lands near 14 m deep. Wider than that and the middle is dark
   office floors.
 - Low rise reads as up to 4 floors, mid rise 5 to 10, high rise above that. These are conventions, not rules.
 
-## Parts, when the kit has them
+## Parts
 
 Doors 0.9 x 2.1 clear. Window sill 0.75 to 0.9 above the floor, head 2.1 to 2.4 residential and 2.7 to 2.9
 office. Balcony depth 2.0 minimum to be usable, 1.5 to 2.4 typical, guard rail 1.05 to 1.1 high with gaps under

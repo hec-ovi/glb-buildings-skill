@@ -27,8 +27,9 @@ Match the request to a row, open the file it names (next to this one), then run 
 1. **Know which building you are editing.** `buildings list` shows the projects and the current one.
    `buildings new <name>` starts one and makes it current; `buildings use <name>` switches. Every other verb
    works on the current project, so you say the name once.
-2. **Read before you write.** `buildings show` prints the stack band by band with heights, seams and whether
-   each band stacks on the one below.
+2. **Read before you write.** `buildings show` prints the stack section by section: sizes, the plan each one
+   is drawn on, what it wears, and what it rests on. Every flag you can set comes back, so read it after an
+   edit instead of assuming.
 3. **Build to check your work.** `buildings build` writes the GLB and runs the Khronos validator. A build that
    answers `"ok": false` did not write a file; fix what the message says and build again.
 4. **Report the file path and the numbers** (floors, height, triangles) when you are done.
@@ -44,8 +45,8 @@ Run `buildings help` for the current list. Today:
 | `use <name>` | switch the current building |
 | `show [name]` | the stack band by band |
 | `templates` | the floor templates the kit can build |
-| `add-band <id> --kind --tier --template --floors [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--after id\|--before id]` | put a section into the stack |
-| `set-band <id> [same flags]` | change a section |
+| `add-band <id> --kind --tier --template --floors [shape and dressing flags] [--after id\|--before id]` | put a section into the stack |
+| `set-band <id> [same flags]` | change a section; omitted flags keep what was there |
 | `remove-band <id>` | take a section out |
 | `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | give one floor a shape of its own, so a section stops being uniform. With no floor named it uses what the human picked |
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts you can use |
@@ -62,6 +63,8 @@ Lengths on the command line are **metres**. Rotation is degrees.
 A stack of **sections**, bottom to top: a base, some floors, a roof. A section is the design unit. It repeats
 one floor N times and owns its own footprint, so a 40 floor tower costs one section of geometry per design, and
 anything special (a twist, a cantilever, cables crossing floors) belongs to one section and stops there.
+
+The verbs spell a section `band`: `add-band`, `set-band`, `remove-band`. Same thing.
 
 - `kind` says what the section is for: `main` (the base), `bulk` (the repeated middle), `custom` (a section
   that breaks the rhythm), `roof` (the crown).

@@ -30,10 +30,13 @@ Projects live in `~/.glb-buildings/projects/<name>/`. Point that somewhere else 
 export BUILDINGS_HOME=/data/buildings
 ```
 
+An agent that cannot write outside its workspace runs `buildings new <name> --here` once instead: projects go
+into a `.buildings` folder next to the work, and every later verb finds it with no environment variable.
+
 ## The skill, for any agent CLI
 
 The portable unit is the folder [`skills/glb-buildings/`](../skills/glb-buildings/): one `SKILL.md` resolver
-plus four fat parts it routes to. Copy it into wherever your agent reads skills from.
+plus the fat parts it routes to. Copy it into wherever your agent reads skills from.
 
 ```bash
 # most agent CLIs

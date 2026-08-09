@@ -15,17 +15,19 @@ stack of sections, bottom to top, checking as you go. Never invent a verb; run `
    ```
    That gives you three sections: `ground` (main), `body` (bulk), `crown` (roof).
 
-3. **Give the base weight.** A base is taller and usually wider than what sits on it.
+3. **Give the base weight.** A base is taller and usually wider than what sits on it, and it is seen from the
+   street, so it is the one place to spend a `light` tier at the bottom.
    ```bash
-   buildings set-band ground --height 6 --width 26 --depth 22
+   buildings set-band ground --height 6 --width 26 --depth 22 --tier light --columns corners --chamfer 0.3
    ```
 
 4. **Cut the middle into sections.** This is what makes a building instead of an extrusion. Three to five
-   sections, each with its own footprint and step.
+   sections, each with its own footprint and step. Dress two of them and leave the rest flat: flat next to
+   worked is what makes either one read.
    ```bash
-   buildings set-band body --floors 6 --height 3.2
-   buildings add-band mid   --kind bulk --tier flat --template bulk-flat --floors 5 --inset 0.8 --wires S --after body
-   buildings add-band upper --kind bulk --tier flat --template bulk-flat --floors 6 --inset 1.6 --after mid
+   buildings set-band body --floors 6 --height 3.2 --tier light --greebles 0.35 --columns ribs
+   buildings add-band mid   --kind bulk --tier flat  --template bulk-flat --floors 5 --inset 0.8 --wires S --after body
+   buildings add-band upper --kind bulk --tier light --template bulk-flat --floors 6 --inset 1.6 --balconies S --after mid
    ```
 
 5. **Add the one thing that makes it memorable.** Pick from the description: a twisted run of floors, a
@@ -35,9 +37,10 @@ stack of sections, bottom to top, checking as you go. Never invent a verb; run `
    buildings add-band pad --kind custom --tier light --template bulk-flat --floors 1 --height 1.2 --width 24 --depth 8 --shift-z -3 --after twistrun
    ```
 
-6. **Finish the crown.** A parapet is 1.0 to 1.2 m; a turned or tapered crown reads as a spire.
+6. **Finish the crown.** A parapet is 1.0 to 1.2 m; a turned or tapered crown reads as a spire. The roof is
+   where the silhouette is made, so give it clutter, or lay parts out by cell with `deck` and `place`.
    ```bash
-   buildings set-band crown --height 3 --width 10 --depth 9 --rotation 45
+   buildings set-band crown --height 3 --width 10 --depth 9 --rotation 45 --clutter 0.45
    ```
 
 7. **Build and report.**
@@ -60,7 +63,8 @@ stack of sections, bottom to top, checking as you go. Never invent a verb; run `
 
 ## Stay honest
 
-The kit today has three templates (`buildings templates`) and shapes them with footprint, step, slide, turn,
-twist, taper and cables. Windows, balconies, doors and roof clutter are not geometry yet; they arrive with the
-texture work. Describe what you built, not what the words suggested: say "a 30 floor tower in five sections
-with a twisted upper run and a cantilevered platform", never "with balconies" when no balcony exists.
+The kit today has three templates (`buildings templates`), shapes them with footprint, step, slide, turn,
+twist and taper, and dresses them with windows, greebles, columns, balconies, cables and roof parts. Doors,
+landings and awnings do not exist yet. Describe what you built, not what the words suggested: say "a 30 floor
+tower in five sections with a twisted upper run, balconies on the south face and a cantilevered platform",
+never "with a lobby entrance" when no door exists.

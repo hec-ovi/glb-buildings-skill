@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Procedural building GLB generator for Unreal Engine, Unity and three.js.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "glb-buildings",
       "source": "./",
-      "description": "Build and edit buildings as named projects through one CLI: a JSON document of floor bands becomes a validated, low poly GLB that opens in Unreal Engine, Unity and three.js, with a three.js blueprint preview where a click picks a bay and a dragged rectangle marks a zone.",
-      "version": "0.1.0",
+      "description": "Build and edit buildings as named projects through one CLI: a JSON document of floor sections becomes a validated, low poly GLB that opens in Unreal Engine, Unity and three.js, with a three.js blueprint preview where a click picks a bay and a dragged rectangle marks a zone.",
+      "version": "0.2.0",
       "author": {
         "name": "Hector Oviedo"
       },

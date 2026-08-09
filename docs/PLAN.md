@@ -5,34 +5,39 @@ Build order, box by box. Each milestone ends with a file you can open in an engi
 ## Done
 
 **1. The fake building end to end.** `spec`, `assemble`, `kit`, `glb`, and the `cli` verbs that drive them. An
-all `flat` tower writes one mesh per band, one node per floor, two materials, and passes the Khronos validator.
+all `flat` tower writes one mesh per section, two materials, and passes the Khronos validator.
 
 **2. The editor.** `preview`: three.js blueprint with click picking and dragged zones, selections carried back
 to the CLI through `selection.json`.
 
-**3. The agent surface.** Named projects, `SKILL.md` with four fat parts, plugin manifests, install docs, and a
+**3. The agent surface.** Named projects, `SKILL.md` with its fat parts, plugin manifests, install docs, and a
 drift test that keeps the skill honest about the verbs.
+
+**4. Sections.** A section is the loft between the footprint it starts on and the one it ends on, so a step,
+a slide, a turn, a twist and a taper are one operation and no transition piece is needed. Round plans, arcs,
+bowed faces, filleted corners and chamfered edges, each proved convex.
+
+**5. The proofs.** Support share per section in `check`, and per section as it is built: winding against
+normals, a closed solid with positive volume, nothing buried, nothing adrift, triangle budget per tier.
+
+**6. The parts.** Windows as cut panes, greebles, columns, balconies, cables, and a roof deck laid out by
+named cell with `deck`, `place` and `unplace`.
+
+**7. Facade textures.** Written from code and seeded from the building's name: a window grid in colour and
+emissive, tiled one row per floor and one bay per 3 m, carried by both the facade and the glass material.
 
 ## Next
 
-**4. The proofs (`check`).** Support, overlap, envelope, the human size table, seam match, triangle budget.
-Wired into `build` as a gate. The mesh-level proofs already run (winding, closed shell); this is the document
-level, where a floating balcony or an over-budget band gets caught with a part id.
+**8. Bay level editing.** A zone from the preview becomes a target for "put a window there": verbs that act on
+bay ids, not just whole sections.
 
-**5. Real floors (`kit` grows).** Window, door, frame, sill, balcony slab, railing, landing, awning, AC unit,
-wire, cornice. Sockets and quarter turns, so a part cannot be placed unattached. `light` and `full` tiers stop
-being walls with a different label.
+**9. Doors and the ground floor.** A real entrance: door, frame, awning, landing, the parts that make the
+bottom two floors read as a place people walk into.
 
-**6. Materials.** Hector's images become texture sets, packed into one atlas per building family, with baked UVs
-and real world texel density. Unreal ignores `KHR_texture_transform`, so the UVs are baked, not offset.
-
-**7. Bay level editing.** A zone from the preview becomes a target for "put a window there": the CLI gains
-verbs that act on bay ids, not just bands.
-
-**8. Export profiles and LODs.** `general`, `unreal`, `unity`, `threejs`. LOD chains ship as separate files with
-a manifest, because `MSFT_lod` is unsupported in all three engines.
+**10. Export profiles and LODs.** `general`, `unreal`, `unity`, `threejs`. LOD chains ship as separate files
+with a manifest, because `MSFT_lod` is unsupported in all three engines.
 
 ## Later
 
-Transition bands so setbacks and turned bands stack, Unreal collision meshes, second UV set for lightmaps, city
-scale batch export.
+The human size table as a build gate, envelope limits per section, Unreal collision meshes, a second UV set
+for lightmaps, city scale batch export.

@@ -2,99 +2,90 @@
 
 ## The one idea
 
-A building is a **document**, not a mesh. The document says "band of 6 bulk floors on template B, then a custom
-floor with a landing, then the roof". Meshes are derived from it. Because the mesh is derived, editing the main
-floor and rebuilding leaves every other band byte-identical, and a band can be swapped without touching its
-neighbours.
+A building is a **document**, not a mesh. The document says "a base, then 18 floors on this footprint with
+balconies down the south face, then a roof with a tank on it". Meshes are derived from it. Because the mesh is
+derived, editing the base and rebuilding leaves every other section byte-identical, and a section can be
+swapped without touching its neighbours.
 
 ```
 document.json ──► assemble ──► placed scene ──► check ──► glb ──► building.glb
-   (edits)                     (transforms)   (proofs)   (write)      │
+   (edits)                     (footprints)   (support)  (write)      │
        ▲                                                              ▼
      cli verbs ◄──────────── selection ◄──────────────────────────  preview
 ```
 
-## Why things stop floating and overlapping
+## The section
 
-Free placement is the bug. The document cannot express it.
+A section is the design unit: a run of identical floors that owns its shape. Its skin is the **loft** between
+the footprint it starts on and the one it ends on, closed at both ends, so a step, a slide, a turn, a twist
+and a taper are all the same operation. One section is one mesh and one node, however many floors it stacks.
 
-- **Sockets, not coordinates.** A part is never given an x,y,z. It is bound to a named socket on a host part
-  (a bay's window opening, a balcony's rail line, a wall's top edge). No socket, no placement. A part with a
-  bound socket is by construction attached to something.
-- **Integer millimetres.** Every size, offset and socket lives in whole millimetres. Contact is an exact
-  integer equality, not a float comparison with a tolerance that has to be tuned. Metres appear once, at export.
-- **Quarter turns on the grid.** Parts rotate in 90 degree steps inside the bay frame, so their boxes stay
-  axis aligned and the overlap test is an exact integer AABB test. Free rotation exists at band level only.
-- **Every part carries a box.** Overlap is a sweep over the floor's boxes. Touching faces are contact, not
-  overlap. Interpenetration is an error with both part ids.
-- **Envelope.** Each floor declares how far anything may stick out per side. A balcony deeper than the envelope,
-  or an AC unit hanging over the lot line, is an error before geometry exists.
-- **Human sizes are rules, not habits.** Door 2.10 m, rail 1.05 to 1.20 m, clear walking width 0.90 m, floor
-  2.70 to 4.00 m, step rise 0.15 to 0.19 m, balcony depth 1.20 to 2.00 m. `check` holds the table and every
-  build is measured against it.
+## Why nothing floats or gets buried
 
-## Why blocks stack block by block
+Free placement is the bug. Nothing in the pipeline gives a part an x, y, z and hopes.
 
-Every band exposes a **seam**: the footprint polygon of its top face and the bay count per edge, both in
-millimetres. Two bands stack when the lower band's top seam equals the upper band's bottom seam. That is one
-integer comparison, so "is this block compatible with that one" has an exact answer, and a rotated or narrower
-band either declares a matching seam or gets a transition slab between them.
+- **Parts anchor to the plan.** A column takes a footprint corner or a face, a balcony takes a wall and a
+  floor line, a deck part takes a cell of the roof grid. Which way is out comes from the footprint at the
+  part's own height, so a taper or a twist never sends a part into a wall.
+- **Everything bites in.** A part sinks a centimetre into what it stands on and a section sinks a centimetre
+  into the one below, so no two surfaces share a plane and nothing flickers.
+- **Nothing may be buried.** Every part a section wears has to reach at least 5 cm out of it, measured against
+  the footprint at its own height. A part hidden inside a wall is a mistake nobody can see, so it fails.
+- **Nothing may drift.** A part more than 3 m past the footprint, or 12 m above the top, is not on the
+  building any more, and fails with the section named.
+- **A cell holds one part.** The roof is a two metre grid with named cells (`A1`, `B3`); a part claims the
+  cells it covers and a second part in them is refused.
+- **A section has to land.** The share of a section's underside that lands on the one below is measured: half
+  or more is ordinary, a fifth to a half is a cantilever worth reporting, under a fifth is refused.
+
+Human sizes (floor heights, guards, door clearances, bay widths) are in `skills/glb-buildings/parts/dimensions.md`,
+where the agent choosing them reads.
 
 ## Why thousands of these run in one scene
 
-Detail is a property of the band, not of the building.
+Detail is a property of the section, not of the building.
 
-| Tier | What it is | Rough budget per floor |
+| Tier | What it is | Budget per floor |
 | --- | --- | --- |
-| `flat` | Fake floor. A box with facade texture, windows and balconies live in the image only | under 100 tris |
-| `light` | Bulk floor with shallow relief: recessed windows, a sill, a slab line | 300 to 1200 tris |
-| `full` | Main floor, roof, and custom floors with real balconies, doors, landings, AC units, wires | 3000 to 8000 tris |
+| `flat` | Fake floor. Walls with a facade texture; windows and their glow live in the image only | 120 tris |
+| `light` | Shallow relief: a parapet, a ledge, a rib | 1200 tris |
+| `full` | Cut windows, balconies, columns, greebles, deck clutter | 4000 tris |
 
-A whole building may be `flat` top to bottom, with no real floor in it at all. That is a supported product, not
-a degraded one, and it is what fills the far half of a city.
+A roof is judged as a whole section rather than per floor, at 4500. A building may be `flat` top to bottom,
+with no real floor in it at all. That is a supported product, not a degraded one, and it is what fills the far
+half of a city. Going over the budget fails the build with the section named, so bloat never reaches a scene.
 
-On top of the tiers:
+Two more things keep the cost down: one mesh per section however many floors it repeats, and one texture per
+building, generated from its name, carried by both the facade and the glass material.
 
-- **One mesh, many nodes.** A repeated floor is written once as a glTF mesh and referenced by many nodes. That
-  is core glTF, so Unreal, Unity and three.js all reuse it without a vendor extension.
-- **Few materials.** Textures pack into one atlas per building family, so a building is one or two materials
-  (opaque, glass). Atlas UVs are baked into the mesh, because Unreal's importer ignores `KHR_texture_transform`.
-- **LODs are the tier machine run again.** LOD1 rebuilds `full` bands as `light`, LOD2 rebuilds everything as
-  `flat`. Same document, same code path.
-- **Budgets are checked.** Triangle count per band kind is an invariant `check` enforces, so bloat fails the
-  build instead of reaching the scene.
+## The file
 
-## Export profiles
+Plain glTF 2.0: metres, Y up, right handed, one UV set, PBR metallic roughness, no Draco, no meshopt, no
+texture transform, `extensionsRequired` empty. Three materials: `facade` and `glass` share the generated
+window grid (colour and emissive), `roof` is plain grey. Nothing is scaled and nothing is mirrored, so every
+node keeps a positive determinant and the only handedness flip is the one each importer does for itself.
 
-One document, four writes. All of them are plain glTF 2.0: metres, Y up, right handed, one UV set, PBR metallic
-roughness, no Draco, no meshopt, no texture transform. Profiles differ only where the engines differ.
+Every written file passes, in this order: the stack ends in a base and a roof, every section lands on the one
+below, every stored normal agrees with its triangle's winding, every section closes into a solid with positive
+volume, nothing is buried, nothing is over budget, nothing has drifted, and then the Khronos validator reports
+no error. The validator alone would catch none of the geometry failures, which is why the rest exist.
 
-| Profile | What it adds |
-| --- | --- |
-| `general` | Core glTF only. The safest file, opens anywhere |
-| `unreal` | `UCX_` collision meshes, `_LOD0/1/2` naming, optional second UV set for lightmaps |
-| `unity` | LOD group naming, optional second UV set |
-| `threejs` | Merged draw calls, optional `EXT_mesh_gpu_instancing` |
-
-Every written file goes through three gates: normals must agree with winding, the building must close into one
-shell with positive volume, and the Khronos glTF validator must report no error. The validator alone would not
-catch any of the geometry failures, which is why the first two exist.
-
-One building is one mesh per band with one node per floor, and its parts are primitives inside those meshes.
+One building is one mesh per section with one node each, and its parts are primitives inside those meshes.
 That is the portable unit: Unreal turns it into one Static Mesh with material slots, Unity into one Mesh with
 submeshes, three.js into a Group.
 
 ## The preview loop
 
-The viewer is not a screenshot. It reads the same document and shows a blueprint over the mesh: band bands,
-floor lines, bay grid, dimensions in metres. Click picks a part or a bay and prints its id. A drag rectangle
-marks an active zone, which is a set of bay ids plus a box in building coordinates. The zone is handed back to
-the CLI, so "put a window there" resolves to bay ids the agent can name in a verb.
+The viewer is not a screenshot. It reads the same document and shows a blueprint over the mesh: sections
+coloured by kind, floor lines, bay grid, dimensions in metres. Click picks a bay and prints its id. A drag
+rectangle marks an active zone, which is a set of bay ids plus a box in building coordinates, and only faces
+turned toward the camera are caught, so the far side is never selected by accident. The zone lands in
+`selection.json`, so "put a window there" resolves to bay ids the agent can name in a verb.
 
 ## The agent's surface
 
 The agent never edits the document by hand and never touches the repo. It calls verbs. The skill is a resolver
-that routes an intent to one fat sub-skill (main floor, bulk band, custom floor, roof, materials, auto build),
-and the sub-skill runs the verbs. Auto build walks main floor, bulk, custom floors, bulk, roof in order, with a
-`check` gate at every step, so a one shot description like "high tech cyberpunk mega building" produces a file
-that already passed every proof.
+that routes an intent to one fat sub-skill (auto build, the stack, editing what was clicked, breaking up a run
+of floors, the roof deck, dimensions), and the sub-skill runs the verbs. Auto build walks base, bulk, custom
+sections, bulk, roof in order, building at every step, so a one shot description like "high tech cyberpunk
+mega building" produces a file that already passed every proof.
