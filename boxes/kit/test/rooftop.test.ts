@@ -11,6 +11,7 @@ import {
   tank,
   triangleCount,
   whips,
+  MAX_ABOVE,
   windingProblems,
   type SectionShape,
 } from '#kit';
@@ -82,6 +83,17 @@ describe('what stands on a roof', () => {
     };
     expect(drawn(7)).toEqual(drawn(7));
     expect(drawn(7)).not.toEqual(drawn(8));
+  });
+
+  it('never draws a part taller than the proof that keeps parts on the building', () => {
+    // A mast whose height is picked at random must still fit under MAX_ABOVE, or a legal
+    // placement fails the build over something the composer never chose.
+    for (let seed = 1; seed <= 40; seed++) {
+      let n = seed;
+      const mesh = alone((s, _r) => mast(s, [0, 0], 0, () => ((n = (n * 9301 + 49297) % 233280), n / 233280)));
+      const ys = mesh.positions.filter((_, i) => i % 3 === 1);
+      expect(Math.max(...ys), `seed ${seed}`).toBeLessThan(MAX_ABOVE);
+    }
   });
 
   it('stands a mast well clear of the deck and brings its guys back down to it', () => {

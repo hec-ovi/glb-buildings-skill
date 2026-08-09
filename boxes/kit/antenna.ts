@@ -6,6 +6,7 @@
  * call as one standing straight.
  */
 import { Surface, type Vec } from './geometry.ts';
+import { MAX_ABOVE } from './invariants.ts';
 import { segment } from './segment.ts';
 import type { Corner } from './plan.ts';
 
@@ -24,7 +25,11 @@ function triangle(at: Corner, reach: number, turn: number): Corner[] {
  * running down to the deck. This is the tall thing on a skyline, so it earns its triangles.
  */
 export function mast(surface: Surface, at: Corner, y: number, random: () => number): void {
-  const height = 6 + random() * 5;
+  const tip = 0.8 + random();
+  // A mast may not out-reach the proof that keeps parts on the building. Drawing one taller than
+  // that and letting the build refuse it puts a composer in front of a failure it cannot fix:
+  // nothing it chose decides how tall a mast is.
+  const height = Math.min(6 + random() * 5, MAX_ABOVE - tip - 0.2);
   const reach = 0.35 + random() * 0.2;
   const turn = random() * Math.PI;
   const legs = triangle(at, reach, turn);
@@ -51,7 +56,7 @@ export function mast(surface: Surface, at: Corner, y: number, random: () => numb
   }
 
   // The tip, and guys down to the deck.
-  segment(surface, [point(at, y + height), point(at, y + height + 0.8 + random())], { profile: 'square', thickness: 0.05 });
+  segment(surface, [point(at, y + height), point(at, y + height + tip)], { profile: 'square', thickness: 0.05 });
   for (const leg of triangle(at, 1.6 + random() * 0.5, turn + 0.5)) {
     segment(surface, [point(at, y + waist), point(leg, y + 0.05)], { profile: 'square', thickness: 0.035 });
   }
