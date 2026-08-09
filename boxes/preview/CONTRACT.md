@@ -38,6 +38,7 @@ selection.json     what the human last picked
 | `GET /` | the viewer page |
 | `GET /viewer.js` | the bundled viewer |
 | `GET /api/ping` | a line, so a server that is up can be told from a page that will not load |
+| `GET /api/health` | whether it can do its job: the document, a built file, the page bundle, the watcher. 503 when not |
 | `GET /api/scene` | `{ document, scene, hasModel }` |
 | `GET /api/model.glb` | the built file, or 404 before the first build |
 | `GET /api/selection` | the current selection |
@@ -58,12 +59,14 @@ it was asked for in the words it was asked in, and the line `describeBuilding` r
 open one carries the accent. Clicking a row makes that building current, for the page and for the CLI alike.
 The foot counts what the store holds.
 
-**Bar.** The open building's name and size, **one** of its sections at a time with arrows to step through
-them, the tools, the view, and the file out. The section on screen is brought forward in the drawing and the
+**Bar.** Three columns. The building's name, its size spoken, and the brief it was asked for; then **one**
+of its sections at a time with arrows to step through them; then the view and what is selected, which are the
+same question asked twice. The file out is one icon beside the name. The section on screen is brought forward in the drawing and the
 rest fade, so the name in the bar and the part of the building it means are obviously the same thing. That
-marking is off in `final`, which draws nothing over the building. `mode: pick` selects the bay under the cursor; `mode: zone` drags a rectangle and selects every
-bay whose centre is inside it and whose face turns toward the camera, so the far side is never caught.
-`export` hands over the built file as `<name>.glb`, and is offered only once a build exists.
+marking is off in `final`, which draws nothing over the building. A click selects the bay under the cursor; **shift and drag** marks a zone, taking every bay whose centre is
+inside the rectangle and whose face turns toward the camera, so the far side is never caught. The gesture
+decides, so there is no mode to remember. `export` hands over the built file as `<name>.glb`, and is offered
+only once a build exists.
 
 **View** is three ways to look at the same building:
 
@@ -81,6 +84,9 @@ fall. A turn swings around whatever the camera is looking at, so panning first i
 orbit. Only the primary button picks, so driving the camera never changes the selection. The blueprint is
 instanced, one draw per section, so a 40 floor tower stays interactive. Evening light, so a dark facade stays
 dark and its lit windows are the brightest thing on it.
+
+`?building=<name>` opens the page straight onto one, which is what makes a link worth sharing. It is honoured
+once, on the first load, so switching afterwards is not fought by the address bar.
 
 The page reloads its scene when the document changes on disk, keeping the camera and the selection where they
 were. Opening another building from the navigator is the exception: it frames the new one whole. Every failure is written into the bar, so a browser without WebGL or a document that will not parse

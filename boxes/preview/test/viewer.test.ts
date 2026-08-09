@@ -16,14 +16,21 @@ import { Fly } from '../viewer/Fly.ts';
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 6 });
 const scene = assemble(doc);
 
-const bar = () => new Bar(document.body, { onMode: () => {}, onView: () => {} });
+const bar = () => new Bar(document.body, { onView: () => {} });
 
 beforeEach(() => {
   document.body.replaceChildren();
 });
 
 describe('the building bar', () => {
-  it('names the building and shows one section at a time, with a place in the run', () => {
+  it('names the building, speaks its size, and shows the brief it was asked for', () => {
+    const withBrief = { ...doc, brief: 'a plain tower to test with' };
+    bar().describe(withBrief, scene, false);
+    expect(document.querySelector('.bar-size')!.textContent).toContain('6 floors in 3 sections');
+    expect(document.querySelector('.bar-brief')!.textContent).toContain('a plain tower to test with');
+  });
+
+  it('shows one section at a time, with a place in the run', () => {
     bar().describe(doc, scene, false);
     expect(screen.getByText('tower-a')).toBeTruthy();
     expect(document.querySelector('.bar-size')!.textContent).toContain('6 floors');
@@ -34,7 +41,7 @@ describe('the building bar', () => {
 
   it('walks the sections with the arrows and says which one the drawing should bring forward', async () => {
     const onSection = vi.fn();
-    const panel = new Bar(document.body, { onMode: () => {}, onView: () => {}, onSection });
+    const panel = new Bar(document.body, { onView: () => {}, onSection });
     panel.describe(doc, scene, false);
     expect(onSection).toHaveBeenLastCalledWith('ground');
 
@@ -50,25 +57,9 @@ describe('the building bar', () => {
     expect(panel.section).toBe('crown');
   });
 
-  it('switches between pick and zone, and shows which one is on', async () => {
-    const onMode = vi.fn();
-    new Bar(document.body, { onMode, onView: () => {} });
-    const pick = screen.getByTestId('mode-pick');
-    const zone = screen.getByTestId('mode-zone');
-    expect(pick.getAttribute('aria-pressed')).toBe('true');
-
-    await userEvent.click(zone);
-    expect(onMode).toHaveBeenCalledWith('zone');
-    expect(zone.getAttribute('aria-pressed')).toBe('true');
-    expect(pick.getAttribute('aria-pressed')).toBe('false');
-
-    await userEvent.click(pick);
-    expect(onMode).toHaveBeenLastCalledWith('pick');
-  });
-
   it('offers three ways to look at it, and starts on the drawing', async () => {
     const onView = vi.fn();
-    new Bar(document.body, { onMode: () => {}, onView });
+    new Bar(document.body, { onView });
     expect(screen.getByTestId('view-blueprint').getAttribute('aria-pressed')).toBe('true');
 
     await userEvent.click(screen.getByTestId('view-model'));
@@ -118,8 +109,8 @@ describe('boot', () => {
     });
     await ready;
 
-    expect(screen.getByTestId('mode-pick')).toBeTruthy();
     expect(screen.getByTestId('view-final')).toBeTruthy();
+    expect(screen.getByTestId('section')).toBeTruthy();
     expect(side.textContent).toContain('Models');
     expect(screen.getByTestId('selection').textContent).toContain('no WebGL context');
   });
@@ -128,8 +119,8 @@ describe('boot', () => {
 describe('picking', () => {
   it('takes the bays facing the camera and leaves the far side alone', () => {
     const { picker, blueprint, emitted } = mount();
-    picker.setMode('zone');
-    drag(picker, [0, 0], [800, 600]);
+    // Shift makes this one drag a zone: there is no mode to set first.
+    drag(picker, [0, 0], [800, 600], true);
 
     const selection = emitted.at(-1)!;
     expect(selection.mode).toBe('zone');
@@ -141,8 +132,7 @@ describe('picking', () => {
 
   it('reports an empty selection when the rectangle catches nothing', () => {
     const { picker, emitted } = mount();
-    picker.setMode('zone');
-    drag(picker, [0, 0], [4, 4]);
+    drag(picker, [0, 0], [4, 4], true);
 
     expect(emitted.at(-1)!.floorIds).toEqual([]);
     expect(emitted.at(-1)!.bayIds).toEqual([]);
@@ -151,12 +141,10 @@ describe('picking', () => {
 
   it('keeps the selection when the pointer travelled, because that was the camera moving', () => {
     const { picker, blueprint, emitted } = mount();
-    picker.setMode('zone');
-    drag(picker, [0, 0], [800, 600]);
+    drag(picker, [0, 0], [800, 600], true);
     const kept = blueprint.selected;
     expect(kept.length).toBeGreaterThan(0);
 
-    picker.setMode('pick');
     drag(picker, [400, 300], [700, 120]);
 
     expect(emitted).toHaveLength(1);
@@ -165,7 +153,6 @@ describe('picking', () => {
 
   it('picks the one bay under a click that stayed put', () => {
     const { picker, emitted } = mount();
-    picker.setMode('pick');
     drag(picker, [400, 300], [400, 300]);
 
     expect(emitted).toHaveLength(1);
@@ -193,10 +180,10 @@ function mount() {
   return { stage, blueprint, camera, picker, emitted };
 }
 
-function drag(picker: Picker, from: [number, number], to: [number, number]): void {
+function drag(picker: Picker, from: [number, number], to: [number, number], shiftKey = false): void {
   const target = document.querySelector('div')!;
   const at = (type: string, [x, y]: [number, number]) =>
-    target.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }));
+    target.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, shiftKey, bubbles: true }));
   at('pointerdown', from);
   at('pointermove', to);
   at('pointerup', to);

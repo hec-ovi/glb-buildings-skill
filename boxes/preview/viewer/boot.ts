@@ -43,7 +43,6 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
 
   let focusSection: ((bandId: string | undefined) => void) | undefined;
   const bar = new Bar(options.bar, {
-    onMode: (mode) => picker?.setMode(mode),
     onView: (view) => showView?.(view),
     onSection: (bandId) => focusSection?.(bandId),
   });
@@ -60,6 +59,17 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
   const listBuildings = async () => {
     const { projects, current } = await fetchProjects();
     models.show(projects, current);
+  };
+
+  /**
+   * `?building=<name>` opens straight onto one, which is what makes a link worth sharing. It is
+   * honoured once, on the first load, so switching afterwards is not fought by the address bar.
+   */
+  const asked = new URLSearchParams(window.location.search).get('building');
+  const openAsked = async () => {
+    if (!asked) return;
+    const { current } = await fetchProjects();
+    if (current !== asked) await useProject(asked);
   };
 
   const ready = (async () => {
@@ -214,6 +224,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     onChange(() => void load(true).catch((error: unknown) => bar.fail(String(error))));
 
     try {
+      await openAsked();
       await load();
     } catch (error) {
       bar.fail(`could not read the document: ${(error as Error).message}`);

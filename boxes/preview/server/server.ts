@@ -54,6 +54,7 @@ export class PreviewServer {
   readonly #port: number;
   readonly #clients = new Set<ServerResponse>();
   #server: Server | undefined;
+  readonly #started = performance.now();
   #unwatch: (() => void) | undefined;
 
   constructor(options: PreviewOptions) {
@@ -106,6 +107,7 @@ export class PreviewServer {
     if (this.#log) process.stdout.write(`${new Date().toISOString()} ${req.method} ${path}\n`);
 
     if (path === '/api/ping') return this.#send(res, 200, 'text/plain', 'preview is serving\n');
+    if (path === '/api/health') return this.#health(res);
 
     if (path === '/') return this.#sendFile(res, INDEX, 'text/html; charset=utf-8');
     if (path === '/viewer.js') return this.#send(res, 200, 'text/javascript; charset=utf-8', await this.#bundle.code());
@@ -118,6 +120,53 @@ export class PreviewServer {
     if (path === '/api/events') return this.#events(res);
 
     this.#send(res, 404, 'text/plain', 'not found');
+  }
+
+  /**
+   * Whether the thing this server exists to do is currently possible: a project it can read, a
+   * document that parses, a file to hand over. Anything watching can ask without loading a page.
+   */
+  async #health(res: ServerResponse): Promise<void> {
+    const checks: { check: string; ok: boolean; is: string }[] = [];
+    let building: string | undefined;
+
+    try {
+      const project = await this.#current();
+      building = await this.#projects?.current();
+      const document = await project.readDocument();
+      checks.push({ check: 'document', ok: true, is: `${document.name}, ${document.bands.length} sections` });
+      // Whether a file exists is a fact about the building, not the health of the service, so
+      // an unbuilt project is reported and is not a failure.
+      checks.push({
+        check: 'build',
+        ok: true,
+        is: project.hasModel() ? 'a file is ready to serve' : 'no build yet, run the build verb',
+      });
+    } catch (error) {
+      checks.push({ check: 'document', ok: false, is: error instanceof BuildingError ? error.message : String(error) });
+    }
+
+    let bundle = false;
+    try {
+      await this.#bundle.code();
+      bundle = true;
+    } catch (error) {
+      checks.push({ check: 'viewer', ok: false, is: String(error) });
+    }
+    if (bundle) checks.push({ check: 'viewer', ok: true, is: 'the page bundle builds' });
+
+    checks.push({ check: 'watching', ok: this.#unwatch !== undefined, is: this.#unwatch ? 'changes on disk reload the page' : 'not watching' });
+    checks.push({ check: 'pages open', ok: true, is: String(this.#clients.size) });
+
+    const bad = checks.filter((one) => !one.ok);
+    this.#json(res, bad.length === 0 ? 200 : 503, {
+      ok: bad.length === 0,
+      url: this.url,
+      building,
+      upSeconds: Math.round((performance.now() - this.#started) / 1000),
+      checks,
+      reads: bad.length === 0 ? 'serving' : `${bad.length} to fix: ${bad.map((one) => one.check).join(', ')}`,
+    });
   }
 
   /** The project this request is about: the fixed one, or whichever is current. */

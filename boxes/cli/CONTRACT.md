@@ -37,6 +37,8 @@ a session names the building once and every later verb knows what it means.
 
 | Verb | Does |
 | --- | --- |
+| `doctor [--port]` | whether this machine can build and preview: node, the home, the bundler, the service. Every failing check carries the command that fixes it |
+| `link [name] [--port]` | the address that opens one building in the preview |
 | `new <name> [--brief] [--width] [--depth] [--floors] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
 | `brief ["what it should be"]` | what the building was asked for; kept in the document and shown in the preview |
 | `list` | every building, whether it is built, and which is current |
@@ -55,7 +57,7 @@ a session names the building once and every later verb knows what it means.
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more deck cells |
 | `unplace <cell ...> [--section id]` | clear deck cells |
 | `build [name] [--all]` | write the GLB, proved and validated, and report the numbers. `--all` builds every building |
-| `preview [name] [--port]` | serve the blueprint editor, and stay up |
+| `preview [name] [--port]` | start the preview service and stay up; answers with a link per building |
 | `selection [name]` | what the human last picked |
 | `help` | every verb with its usage |
 

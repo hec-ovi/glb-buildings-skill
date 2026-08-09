@@ -22,9 +22,14 @@ Match the request to a row, open the file it names (next to this one), then run 
 
 ## Always
 
-0. **Set up once, if the home is not writable.** `buildings new <name> --here` keeps projects in a
-   `.buildings` folder next to your work, which is what a sandboxed agent needs. Every later verb finds it on
-   its own, with no environment variable to repeat. `buildings show` prints the `home` it is using.
+0. **Run `buildings doctor` first, and whenever anything is strange.** It answers whether this machine can
+   build and preview at all: the Node version, where projects live and whether that is writable, whether the
+   viewer bundler is installed, and whether the preview service is up. Every failing check carries the one
+   command that fixes it, so read `fix` and run it rather than guessing.
+
+   Two you will meet: if the home cannot be written, `buildings new <name> --here` keeps projects in a
+   `.buildings` folder beside your work and every later verb finds it on its own. If nothing is serving the
+   preview, `buildings preview` starts it and stays up.
 1. **Know which building you are editing.** `buildings list` shows the projects and the current one.
    `buildings new <name>` starts one and makes it current; `buildings use <name>` switches. Every other verb
    works on the current project, so you say the name once.
@@ -41,6 +46,8 @@ Run `buildings help` for the current list. Today:
 
 | Verb | What it does |
 | --- | --- |
+| `doctor [--port 4321]` | is this machine able to build and preview: node, the home, the bundler, the service. Every failure names the command that fixes it |
+| `link [name] [--port 4321]` | the address that opens one building in the preview, for sharing |
 | `new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14]` | start a building, in metres, and make it current |
 | `brief ["what it should be"]` | what this building was asked for, kept with it and shown in the preview |
 | `list` | every building, and which is current |
@@ -59,7 +66,7 @@ Run `buildings help` for the current list. Today:
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more cells |
 | `unplace <cell ...> [--section id]` | clear cells |
 | `build [name] [--all]` | write the GLB, validated. `--all` builds every building you have |
-| `preview [name] [--port 4321]` | open the blueprint editor and stay up |
+| `preview [name] [--port 4321]` | start the preview service and stay up. Answers with a link per building |
 | `selection [name]` | what the human last picked in the preview |
 
 Lengths on the command line are **metres**. Rotation is degrees.

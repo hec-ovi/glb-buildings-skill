@@ -197,9 +197,11 @@ export class Blueprint {
     for (const [id, { mesh, line }] of this.#ofBand) {
       const lit = bandId === undefined || id === bandId;
       const faded = bandId !== undefined && id !== bandId;
-      (mesh.material as MeshBasicMaterial).opacity = faded ? 0.04 : lit && bandId ? 0.34 : 0.14;
-      (line.material as LineBasicMaterial).opacity = faded ? 0.16 : 0.9;
-      (line.material as LineBasicMaterial).color.set(bandId === id ? SELECTED : BAND_COLOUR[this.#kindOf(id)] ?? 0x8899bb);
+      // Focus is depth, not selection: a section keeps its own colour and gains presence, so the
+      // one accent on screen still means exactly one thing, the bays somebody picked.
+      (mesh.material as MeshBasicMaterial).opacity = faded ? 0.03 : lit && bandId ? 0.3 : 0.14;
+      (line.material as LineBasicMaterial).opacity = faded ? 0.12 : bandId === id ? 1 : 0.75;
+      (line.material as LineBasicMaterial).color.set(BAND_COLOUR[this.#kindOf(id)] ?? 0x8899bb);
     }
   }
 

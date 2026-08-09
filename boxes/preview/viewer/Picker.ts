@@ -6,6 +6,7 @@ import { Raycaster, Vector2, Vector3, type Camera, type InstancedMesh } from 'th
 import type { Selection } from '#spec';
 import type { BayHandle, Blueprint } from './Blueprint.ts';
 
+/** A gesture is a zone when shift is held for it, and a pick otherwise. */
 export type PickerMode = 'pick' | 'zone';
 
 type Emit = (selection: Omit<Selection, 'at'>) => void;
@@ -35,6 +36,7 @@ function selectionOf(mode: PickerMode, handles: BayHandle[]): Omit<Selection, 'a
 }
 
 export class Picker {
+  /** What the gesture in progress is. Set by the shift key when it starts. */
   mode: PickerMode = 'pick';
   #dragging = false;
   #start = new Vector2();
@@ -71,6 +73,7 @@ export class Picker {
     this.#blueprint = blueprint;
   }
 
+  /** Force the mode of the next gesture. The shift key does this on its own. */
   setMode(mode: PickerMode): void {
     this.mode = mode;
     this.#setOrbit(mode === 'pick');
@@ -94,6 +97,8 @@ export class Picker {
   #down = (event: PointerEvent): void => {
     // The primary button selects. The others drive the camera, so they never pick.
     if (event.button !== 0) return;
+    // Shift turns this one drag into a zone, so there is no mode to remember or to explain.
+    this.setMode(event.shiftKey ? 'zone' : 'pick');
     this.#downPixels = [event.clientX, event.clientY];
     if (this.mode !== 'zone') return;
     this.#dragging = true;
@@ -126,6 +131,8 @@ export class Picker {
     this.#rect.hidden = true;
     this.#end = this.#ndc(event);
     this.#zone();
+    // The camera is free again the moment the rectangle is done with.
+    this.setMode('pick');
   };
 
   #paintRect(): void {

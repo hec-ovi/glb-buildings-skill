@@ -102,9 +102,13 @@ export const preview: Verb = {
     process.on('SIGINT', () => void server.close().then(() => process.exit(0)));
     process.on('SIGTERM', () => void server.close().then(() => process.exit(0)));
 
+    const names = await projects.list();
     return {
       project: name,
       url,
+      // A link straight to one building, which is what gets shared.
+      link: `${url}?building=${name}`,
+      links: Object.fromEntries(names.map((one) => [one, `${url}?building=${one}`])),
       follows: pinned ? 'this project only' : 'whichever project is current',
       picks: project.selectionPath,
       note: 'running until you stop it',

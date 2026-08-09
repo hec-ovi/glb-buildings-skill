@@ -4,12 +4,13 @@ import { Projects } from './projects.ts';
 import { bandVerbs } from './verbs/bands.ts';
 import { outputVerbs } from './verbs/build.ts';
 import { deckVerbs } from './verbs/deck.ts';
+import { doctorVerbs } from './verbs/doctor.ts';
 import { enhanceVerbs } from './verbs/enhance.ts';
 import { faceVerbs } from './verbs/faces.ts';
 import { projectVerbs } from './verbs/projects.ts';
 import type { Verb } from './verbs/verb.ts';
 
-export const VERBS: Verb[] = [...projectVerbs, ...bandVerbs, ...enhanceVerbs, ...faceVerbs, ...deckVerbs, ...outputVerbs];
+export const VERBS: Verb[] = [...doctorVerbs, ...projectVerbs, ...bandVerbs, ...enhanceVerbs, ...faceVerbs, ...deckVerbs, ...outputVerbs];
 
 export type Answer = { ok: true; verb: string; [key: string]: unknown } | { ok: false; code: string; message: string; at: string[] };
 

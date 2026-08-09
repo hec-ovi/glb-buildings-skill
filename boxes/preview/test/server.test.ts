@@ -76,6 +76,27 @@ describe('preview server', () => {
     stop();
   });
 
+  it('says whether it can do its job, without anyone loading a page', async () => {
+    const res = await fetch(new URL('/api/health', url));
+    expect(res.status).toBe(200);
+    const health = (await res.json()) as { ok: boolean; checks: { check: string; ok: boolean }[]; reads: string };
+    expect(health.ok).toBe(true);
+    expect(health.checks.find((one) => one.check === 'document')).toMatchObject({ ok: true });
+    expect(health.reads).toBe('serving');
+  }, 60_000);
+
+  it('answers 503 and names what is wrong when it cannot', async () => {
+    const broken = await mkdtemp(join(tmpdir(), 'preview-sick-'));
+    const other = new PreviewServer({ dir: broken, port: 0 });
+    const otherUrl = await other.start();
+    const res = await fetch(new URL('/api/health', otherUrl));
+    expect(res.status).toBe(503);
+    const health = (await res.json()) as { ok: boolean; reads: string };
+    expect(health.ok).toBe(false);
+    expect(health.reads).toContain('document');
+    await other.close();
+  }, 60_000);
+
   it('answers the error shape when the document is unreadable', async () => {
     const broken = await mkdtemp(join(tmpdir(), 'preview-broken-'));
     const other = new PreviewServer({ dir: broken, port: 0 });
