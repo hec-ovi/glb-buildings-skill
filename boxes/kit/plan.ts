@@ -36,7 +36,7 @@ export function insideRing(ring: Corner[], p: Corner): boolean {
 }
 
 /** The unit vector along one edge, from its start corner to its end. */
-export function tangentAt(ring: Corner[], edge: number): Corner {
+function tangentAt(ring: Corner[], edge: number): Corner {
   const a = ring[edge % ring.length]!;
   const b = ring[(edge + 1) % ring.length]!;
   const dx = b[0] - a[0];

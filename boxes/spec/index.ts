@@ -37,6 +37,6 @@ export {
   type Selection,
 } from './selection.ts';
 
-export { METRE, isMm, toMetres, toMm, partition, bayCount, type Mm } from './units.ts';
+export { METRE, toMetres, toMm, partition, bayCount, type Mm } from './units.ts';
 
 export { ERRORS, BuildingError, type ErrorCode } from './errors.ts';

@@ -71,7 +71,7 @@ export function claim(grid: Cell[], cell: string, size: number): Cell[] | undefi
 }
 
 /** The middle of a block of cells, where the part actually stands. */
-export function blockCentre(block: Cell[]): Corner {
+function blockCentre(block: Cell[]): Corner {
   const x = block.reduce((sum, cell) => sum + cell.centre[0], 0) / block.length;
   const z = block.reduce((sum, cell) => sum + cell.centre[1], 0) / block.length;
   return [x, z];

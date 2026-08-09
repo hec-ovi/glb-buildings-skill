@@ -82,6 +82,3 @@ export function checkSupport(scene: PlacedScene): Support[] {
   return found;
 }
 
-export function checkDocument(doc: BuildingDocument): Support[] {
-  return checkSupport(assemble(doc));
-}

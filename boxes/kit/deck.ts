@@ -14,7 +14,7 @@ export const CELL = 2;
 export type Cell = { name: string; centre: Corner; size: number; column: number; row: number };
 
 /** A, B, ... Z, AA, AB: column names for the grid an agent reads. */
-export function columnName(index: number): string {
+function columnName(index: number): string {
   let name = '';
   let n = index;
   do {
@@ -131,7 +131,7 @@ export function turbine(surface: Surface, centre: Corner, y: number, random: () 
 }
 
 /** The nearest point on a footprint's edge, which way is out from there, and how far away it is. */
-export function nearestEdge(ring: Corner[], from: Corner): { at: Corner; away: Corner; distance: number } {
+function nearestEdge(ring: Corner[], from: Corner): { at: Corner; away: Corner; distance: number } {
   const { at, edge, distance } = nearestOn(ring, from);
   return { at, away: outwardAt(ring, edge), distance };
 }

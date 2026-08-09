@@ -115,8 +115,8 @@ mangles.
 
 ## How it is built
 
-Ten boxes, each a folder with a `CONTRACT.md` that is enough to use it without reading its code. Start at
-[docs/INDEX.md](docs/INDEX.md).
+Nine boxes, each a folder with a `CONTRACT.md` that is enough to use it without reading its code. Start
+at [docs/INDEX.md](docs/INDEX.md).
 
 `spec` holds the document and the closed error set, in whole millimetres so every comparison is exact.
 `assemble` lays it out. `kit` builds the geometry, the runs and the roof parts. `facade` is the cell grid on

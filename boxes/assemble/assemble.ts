@@ -11,7 +11,7 @@ import { BuildingError, bandFloorHeight, bayCount, partition, type Band, type Bu
 import type { Box, Corner, PlacedBand, PlacedBay, PlacedFloor, PlacedScene } from './scene.ts';
 
 /** Facade panel depth used for blueprint volumes until the kit places real walls. */
-export const PANEL_THICKNESS: Mm = 200;
+const PANEL_THICKNESS: Mm = 200;
 
 /** How far a corner has to stand off the line through its neighbours to be a corner at all, in mm. */
 const FLAT = 50;

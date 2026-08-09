@@ -1,5 +1,5 @@
 /** Document to placed scene: transforms, footprints, bays. No geometry, no files. */
-export { assemble, floors, findBay, PANEL_THICKNESS } from './assemble.ts';
+export { assemble, floors, findBay } from './assemble.ts';
 export {
   type Box,
   type Rect,

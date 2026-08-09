@@ -8,7 +8,7 @@ export const METRE = 1000;
 
 export type Mm = number;
 
-export function isMm(value: unknown): value is Mm {
+function isMm(value: unknown): value is Mm {
   return typeof value === 'number' && Number.isSafeInteger(value);
 }
 

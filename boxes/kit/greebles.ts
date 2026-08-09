@@ -9,7 +9,7 @@
 import { Surface, type Vec } from './geometry.ts';
 import { BITE, outwardAt, ringAt, type Corner, type SectionShape } from './section.ts';
 
-export type GreebleOptions = {
+type GreebleOptions = {
   /** 0 to 1: how much of the face carries a part. */
   density: number;
   /** Same seed, same scatter. */

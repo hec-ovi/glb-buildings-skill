@@ -9,7 +9,6 @@ whether a stack of sections is a building: does each section land on the one bel
 | --- | --- | --- |
 | `supports(scene)` | `PlacedScene` | one `Support` per junction, with the share resting and a line to read |
 | `checkSupport(scene)` | `PlacedScene` | the same, or throws on the first section that floats |
-| `checkDocument(doc)` | `BuildingDocument` | assembles, then `checkSupport` |
 | `overlap(a, b)` / `area` / `centroid` / `inside` / `toPoints` | plan polygons | the geometry the answer is made of |
 
 ```
