@@ -7,6 +7,7 @@ import {
   sector,
   shellProblems,
   solar,
+  solids,
   tank,
   triangleCount,
   whips,
@@ -94,6 +95,78 @@ describe('what stands on a roof', () => {
   it('aims a dish and a solar array with the turn it was given', () => {
     for (const part of ['dish', 'solar']) {
       expect(onDeck(part, 0).positions, part).not.toEqual(onDeck(part, 90).positions);
+    }
+  });
+});
+
+/**
+ * Every piece of a part has to touch another one. Solids that merely cross do not share edges,
+ * so this groups them by whether their boxes meet, which is what "not floating" actually means.
+ */
+function loosePieces(mesh: Parameters<typeof triangleCount>[0]): number {
+  const boxes = solids([mesh]).map((group) => {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const points of group) {
+      for (const point of points) {
+        for (let a = 0; a < 3; a++) {
+          lo[a] = Math.min(lo[a]!, point[a]!);
+          hi[a] = Math.max(hi[a]!, point[a]!);
+        }
+      }
+    }
+    return { lo, hi };
+  });
+
+  const meets = (a: number, b: number) =>
+    [0, 1, 2].every((axis) => boxes[a]!.lo[axis]! <= boxes[b]!.hi[axis]! + 1e-6 && boxes[b]!.lo[axis]! <= boxes[a]!.hi[axis]! + 1e-6);
+
+  // Walk from the first piece to everything it can reach through pieces that meet.
+  const seen = new Set([0]);
+  const queue = [0];
+  while (queue.length > 0) {
+    const at = queue.pop()!;
+    for (let other = 0; other < boxes.length; other++) {
+      if (!seen.has(other) && meets(at, other)) {
+        seen.add(other);
+        queue.push(other);
+      }
+    }
+  }
+  return boxes.length - seen.size;
+}
+
+describe('nothing on a roof floats', () => {
+  it('joins a dish to the post that holds it', () => {
+    // A dish hangs in front of its post, so without the mount arm it floats clear of it.
+    for (const turn of [0, 1.2, 2.6, 4.1]) {
+      const mesh = alone((s, r) => dish(s, [0, 0], 0, turn, r));
+      expect(loosePieces(mesh), `turn ${turn}`).toBe(0);
+      // And something of it still reaches the deck it stands on.
+      const ys = mesh.positions.filter((_, i) => i % 3 === 1);
+      expect(Math.min(...ys), `turn ${turn}`).toBeLessThan(0.01);
+    }
+  });
+
+  it('leaves no piece of any part loose from the rest of it', () => {
+    for (const [name, draw] of [
+      ['mast', (s: Surface, r: () => number) => mast(s, [0, 0], 0, r)],
+      ['array', (s: Surface, r: () => number) => sector(s, [0, 0], 0, 0, r)],
+      ['tank', (s: Surface, r: () => number) => tank(s, [0, 0], 0, r)],
+    ] as const) {
+      expect(loosePieces(alone(draw)), name).toBe(0);
+    }
+  });
+
+  it('stands every other part on the deck it is placed on', () => {
+    for (const [name, draw] of [
+      ['array', (s: Surface, r: () => number) => sector(s, [0, 0], 0, 0, r)],
+      ['whip', (s: Surface, r: () => number) => whips(s, [0, 0], 0, r)],
+      ['solar', (s: Surface, r: () => number) => solar(s, [0, 0], 0, 0, r)],
+      ['tank', (s: Surface, r: () => number) => tank(s, [0, 0], 0, r)],
+    ] as const) {
+      const ys = alone(draw).positions.filter((_, i) => i % 3 === 1);
+      expect(Math.min(...ys), name).toBeLessThan(0.06);
     }
   });
 });

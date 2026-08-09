@@ -159,6 +159,17 @@ export class Sheet {
     for (const cell of wanted) this.#taken[cell] = what;
   }
 
+  /**
+   * Take cells for something the section wears rather than something composed on it: an upright,
+   * a cable run. It is already built, so it is clipped to the face rather than refused.
+   */
+  hold(rect: Rect, what: string): void {
+    const last = { col: Math.min(this.face.cols - 1, rect.col + rect.cols - 1), row: Math.min(this.face.rows - 1, rect.row + rect.rows - 1) };
+    for (let row = Math.max(0, rect.row); row <= last.row; row++) {
+      for (let col = Math.max(0, rect.col); col <= last.col; col++) this.#taken[row * this.face.cols + col] = what;
+    }
+  }
+
   /** The face as rows of text, top row first, for a human or an agent to read. */
   draw(): string[] {
     const marks = new Map<string, string>();

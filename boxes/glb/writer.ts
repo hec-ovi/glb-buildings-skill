@@ -57,9 +57,11 @@ function shapeOf(band: PlacedBand, sunk: number): SectionShape {
 }
 
 /** The document's faces, as the facade box reads them: millimetres become metres, cells stay. */
-function facePlans(faces: BandFace[]): FacePlan[] {
-  return faces.map((face) => ({
+function facePlans(band: PlacedBand): FacePlan[] {
+  return band.faces.map((face) => ({
     side: face.side,
+    // What the kit already built on this face, so nothing is composed through an upright.
+    wears: { columns: band.columns, wires: band.wires },
     elements: face.elements.map(
       (element): Element => ({
         kind: element.kind,
@@ -246,7 +248,7 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
     });
     // Composed faces and runs stand on the section the same way the dressing does, and are
     // held to the same proofs: seen from outside, not drifted off, inside the tier's budget.
-    worn.push(...dressFaces(shape, facePlans(band.faces)));
+    worn.push(...dressFaces(shape, facePlans(band)));
     worn.push(...runsOf(band.runs, band.y0 * MM - sunk));
     parts.push(...worn);
 

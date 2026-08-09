@@ -12,4 +12,4 @@ export {
   type Kind,
   type Material,
 } from './elements.ts';
-export { dressFaces, readFace, type FacePlan } from './build.ts';
+export { dressFaces, readFace, type FacePlan, type Wears } from './build.ts';

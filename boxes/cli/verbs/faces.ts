@@ -54,6 +54,11 @@ function sectionOf(doc: BuildingDocument, named: string | undefined): Band {
   return band;
 }
 
+/** What the kit builds on this section's faces without asking the grid. */
+function wornOn(band: Band) {
+  return { columns: band.columns, wires: band.wires };
+}
+
 function facesOf(band: Band, side: Side): BandFace {
   return band.faces.find((face) => face.side === side) ?? { side, elements: [] };
 }
@@ -80,7 +85,7 @@ export const face: Verb = {
 
     const scene = assemble(doc);
     const placed = scene.bands.find((one) => one.id === band.id)!;
-    const plan = { side, elements: facesOf(band, side).elements.map(elementOf) };
+    const plan = { side, elements: facesOf(band, side).elements.map(elementOf), wears: wornOn(band) };
     const { face: grid, sheet } = readFace(sectionShape(placed), plan);
 
     return {
@@ -133,7 +138,7 @@ export const put: Verb = {
     const scene = assemble(doc);
     const placed = scene.bands.find((one) => one.id === band.id)!;
     const shape = sectionShape(placed);
-    const { face: grid } = readFace(shape, { side, elements: [] });
+    const { face: grid } = readFace(shape, { side, elements: [], wears: wornOn(band) });
 
     const col = Math.min(from[0], to[0]);
     const row = Math.min(from[1], to[1]);
@@ -157,13 +162,13 @@ export const put: Verb = {
 
     const next = { ...doc, bands: doc.bands.map((one) => (one.id === band.id ? { ...one, faces } : one)) };
     // Claiming happens here, so an overlap is refused before anything is written.
-    readFace(shape, { side, elements: [...existing.elements, ...made].map(elementOf) });
+    readFace(shape, { side, elements: [...existing.elements, ...made].map(elementOf), wears: wornOn(band) });
 
     await project.writeDocument(next);
 
     // What the section's faces cost now, against what its tier promises. Said here rather than
     // at the build, so nobody composes a whole facade a tier cannot carry.
-    const spend = costOf(shape, faces, grid.floors);
+    const spend = costOf(shape, faces, grid.floors, wornOn(band));
     const allowed = band.kind === 'roof' ? ROOF_BUDGET : (BUDGET[band.tier] ?? BUDGET.full!);
 
     return {
@@ -184,10 +189,10 @@ export const put: Verb = {
 };
 
 /** Triangles a floor the composed faces of a section cost, counted from what they build. */
-function costOf(shape: Parameters<typeof dressFaces>[0], faces: BandFace[], floors: number): number {
+function costOf(shape: Parameters<typeof dressFaces>[0], faces: BandFace[], floors: number, wears: ReturnType<typeof wornOn>): number {
   const meshes = dressFaces(
     shape,
-    faces.map((face) => ({ side: face.side, elements: face.elements.map(elementOf) })),
+    faces.map((face) => ({ side: face.side, elements: face.elements.map(elementOf), wears })),
   );
   return Math.round(meshes.reduce((sum, mesh) => sum + mesh.indices.length / 3, 0) / Math.max(1, floors));
 }

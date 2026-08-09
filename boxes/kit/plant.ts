@@ -100,8 +100,9 @@ export function tank(surface: Surface, at: Corner, y: number, random: () => numb
     sides: 12,
   });
 
-  // A ladder up one side, and the outlet running back down to the deck.
-  const side: Corner = [at[0] + radius + 0.12, at[1]];
+  // A ladder up one side, and the outlet running back down to the deck. The rail sits against
+  // the drum rather than beside it: a hand's width of daylight reads as a ladder floating.
+  const side: Corner = [at[0] + radius, at[1]];
   segment(surface, [point(side, y), point(side, y + stand + body)], { profile: 'square', thickness: 0.06 });
   for (let rung = 1; rung * 0.55 < stand + body; rung++) {
     const up = y + rung * 0.55;

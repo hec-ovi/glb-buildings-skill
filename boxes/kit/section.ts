@@ -126,17 +126,19 @@ export function edgeFacing(ring: Corner[], side: 'N' | 'E' | 'S' | 'W'): number 
  * One point per floor, handed to a segment. A straight face drops the points in between and
  * comes out as one length of cable; a twisting one keeps them and bends at each floor.
  */
+export const WIRE_RUNS: { along: number; width: number }[] = [0, 1, 2, 3].map((run) => ({
+  along: 0.3 + run * 0.11,
+  width: 0.12,
+}));
+
 export function wires(surface: Surface, shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): void {
   const edge = edgeFacing(shape.bottom, side);
-  const runs = 4;
-  const thickness = 0.12;
   const stand = 0.05;
   const rows = Math.max(1, shape.floors);
 
-  for (let run = 0; run < runs; run++) {
-    const along = 0.3 + run * 0.11;
+  for (const { along, width } of WIRE_RUNS) {
     const points = Array.from({ length: rows + 1 }, (_, row) => facePoint(shape, row / rows, edge, along, stand));
-    segment(surface, points, { profile: 'square', thickness });
+    segment(surface, points, { profile: 'square', thickness: width });
   }
 }
 

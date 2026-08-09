@@ -8,6 +8,32 @@ import { BITE, cap, ringAt, tubeRing, type Corner, type SectionShape } from './s
 
 export type ColumnStyle = 'none' | 'corners' | 'ribs' | 'partial';
 
+/** How often a rib stands along a face, in metres. */
+export const RIB_PITCH = 3.5;
+
+/** Where an upright stands on a face: how far along it, and how wide it is, in metres. */
+export type Upright = { along: number; width: number };
+
+/**
+ * Every upright a style puts on one face of this length. `partial` leaves some of them out at
+ * random, so this is the full set of places one could stand: whatever reads a face has to keep
+ * all of them clear, or a composed element lands on the one that did get built.
+ */
+export function uprightsOn(run: number, style: ColumnStyle): Upright[] {
+  if (style === 'none') return [];
+  if (style === 'corners') {
+    // A corner column sits on the vertex, so it eats into both faces that meet there.
+    return [
+      { along: 0, width: 0.6 },
+      { along: 1, width: 0.6 },
+    ];
+  }
+
+  const ribs = Math.max(1, Math.round(run / RIB_PITCH));
+  const width = style === 'ribs' ? 0.38 : 0.42;
+  return Array.from({ length: ribs }, (_, rib) => ({ along: (rib + 0.5) / ribs, width }));
+}
+
 const point = (corner: Corner, y: number): Vec => [corner[0], y, corner[1]];
 
 /** One upright, following the section's twist, closed at both ends. Rows `from` to `to`. */
@@ -131,18 +157,16 @@ export function columns(surface: Surface, shape: SectionShape, style: ColumnStyl
       continue;
     }
 
-    const ribs = Math.max(1, Math.round(run / 3.5));
-    for (let rib = 0; rib < ribs; rib++) {
-      const along = (rib + 0.5) / ribs;
+    for (const { along, width } of uprightsOn(run, style)) {
       if (style === 'ribs') {
-        upright(surface, shape, edge, along, 0.38, 0.16);
+        upright(surface, shape, edge, along, width, 0.16);
         continue;
       }
       // partial: uprights stand in the gaps, over a few floors, not the whole height
       if (random() < 0.45) continue;
       const span = Math.max(1, Math.round(1 + random() * Math.min(3, rows - 1)));
       const from = Math.floor(random() * (rows - span + 1));
-      upright(surface, shape, edge, along, 0.42, 0.2, from, from + span);
+      upright(surface, shape, edge, along, width, 0.2, from, from + span);
     }
   }
 }

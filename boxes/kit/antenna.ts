@@ -67,12 +67,17 @@ export function dish(surface: Surface, at: Corner, y: number, turn: number, rand
   const lean = 0.5 + random() * 0.35;
   const aim: Corner = [Math.sin(turn), Math.cos(turn)];
 
-  segment(surface, [point(at, y), point(at, y + stand)], { profile: 'round', thickness: 0.16, sides: 8 });
+  const head = point(at, y + stand);
+  segment(surface, [point(at, y), head], { profile: 'round', thickness: 0.16, sides: 8 });
 
   // The face of the dish, a shallow drum leaning back from the direction it points.
   const centre = point(at, y + stand + radius * 0.6, aim[0] * radius * 0.4, aim[1] * radius * 0.4);
   const back: Vec = [centre[0] - aim[0] * 0.12, centre[1] - lean * 0.12, centre[2] - aim[1] * 0.12];
   const front: Vec = [centre[0] + aim[0] * 0.1, centre[1] + lean * 0.1, centre[2] + aim[1] * 0.1];
+
+  // The mount: the arm from the top of the post to the back of the dish. Without it the dish
+  // hangs in front of its post with nothing holding it, which reads as floating.
+  segment(surface, [head, back], { profile: 'square', thickness: 0.12 });
   segment(surface, [back, front], { profile: 'round', thickness: radius * 2, sides: 12 });
 
   // The feed on its arm, standing off the face.
