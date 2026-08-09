@@ -273,6 +273,8 @@ export function assemble(doc: BuildingDocument): PlacedScene {
       columns: band.columns,
       clutter: band.clutter,
       deck: band.deck,
+      faces: band.faces,
+      runs: band.runs,
       inset: band.inset,
       rect: { x0: rect.x0, x1: rect.x1, z0: rect.z0, z1: rect.z1 },
       bottom,

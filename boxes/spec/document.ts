@@ -51,6 +51,47 @@ const deckPartSchema = z.object({
 
 export type DeckPlacement = z.infer<typeof deckPartSchema>;
 
+/** What can stand on a face, and what it is made of. See the `facade` box. */
+export const ELEMENT_KINDS = ['window', 'door', 'panel', 'balcony'] as const;
+export type ElementKind = (typeof ELEMENT_KINDS)[number];
+
+export const ELEMENT_MATERIALS = ['crystal', 'concrete', 'screen', 'metal'] as const;
+export type ElementMaterial = (typeof ELEMENT_MATERIALS)[number];
+
+const cell = z.number().int().nonnegative();
+
+const elementSchema = z.object({
+  kind: z.enum(ELEMENT_KINDS),
+  /** The cell rectangle it claims: bottom left, then top right, both inside it. */
+  col: cell,
+  row: cell,
+  cols: cell.positive(),
+  rows: cell.positive(),
+  material: z.enum(ELEMENT_MATERIALS),
+  /** How far a balcony stands out, in millimetres. */
+  depth: positiveMm.optional(),
+});
+
+export type FaceElement = z.infer<typeof elementSchema>;
+
+/** One face of a section, and everything composed on it. The design repeats on every floor. */
+const faceSchema = z.object({
+  side: z.enum(SIDES),
+  elements: z.array(elementSchema).default([]),
+});
+
+export type BandFace = z.infer<typeof faceSchema>;
+
+/** A run of tube outside the building: a duct, a pipe, a cable. Points are millimetres. */
+const runSchema = z.object({
+  points: z.array(z.tuple([mm, mm, mm])).min(2),
+  profile: z.enum(['square', 'round']).default('round'),
+  thickness: positiveMm.default(200),
+  material: z.enum(ELEMENT_MATERIALS).default('metal'),
+});
+
+export type BandRun = z.infer<typeof runSchema>;
+
 const bandSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(BAND_KINDS),
@@ -108,6 +149,10 @@ const bandSchema = z.object({
   clutter: z.number().min(0).max(1).default(0),
   /** What stands where on the deck, one entry per cell. */
   deck: z.array(deckPartSchema).default([]),
+  /** What is composed on each face, cell by cell. The design repeats on every floor. */
+  faces: z.array(faceSchema).default([]),
+  /** Runs of tube standing off this section: ducts, pipes, cables. */
+  runs: z.array(runSchema).default([]),
 });
 
 /** Shapes that read as two ways of rounding the same plan are refused rather than resolved. */

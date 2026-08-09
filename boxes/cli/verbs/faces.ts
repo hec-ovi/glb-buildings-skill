@@ -1,0 +1,249 @@
+/**
+ * Composing a face. The grid is the whole interface: read it, put something in a rectangle of
+ * cells, and the tool builds the geometry. Nothing here takes a size or a position in metres.
+ */
+import { assemble } from '#assemble';
+import { CELL, MARGIN, KIND_NOTES, KINDS, MATERIAL_NOTES, MATERIALS, readFace, type Element } from '#facade';
+import { Surface, segment } from '#kit';
+import { BuildingError, SIDES, toMetres, toMm, type Band, type BandFace, type BuildingDocument, type FaceElement, type Side } from '#spec';
+import type { Verb } from './verb.ts';
+import { need, parse, size, text } from './args.ts';
+import { sectionShape } from './shape.ts';
+
+const DEFAULT_MATERIAL: Record<string, FaceElement['material']> = {
+  window: 'crystal',
+  door: 'crystal',
+  panel: 'concrete',
+  balcony: 'concrete',
+};
+
+function oneOf<T extends readonly string[]>(value: string | undefined, allowed: T, what: string, fallback?: T[number]): T[number] {
+  if (value === undefined) {
+    if (fallback !== undefined) return fallback;
+    throw new BuildingError('E_DOC_INVALID', `name a ${what}: ${allowed.join(', ')}`, [what]);
+  }
+  if (!allowed.includes(value)) {
+    throw new BuildingError('E_DOC_INVALID', `${what} must be one of ${allowed.join(', ')}`, [what]);
+  }
+  return value;
+}
+
+/** `12,8` is a cell: column across the face, row up from the floor. */
+function readCell(value: string, what: string): [number, number] {
+  const parts = value.split(',').map((part) => Number(part.trim()));
+  if (parts.length !== 2 || parts.some((n) => !Number.isInteger(n) || n < 0)) {
+    throw new BuildingError('E_DOC_INVALID', `${what} is a cell like 12,8: a column and a row, both whole numbers`, [what]);
+  }
+  return [parts[0]!, parts[1]!];
+}
+
+/** The section named, or the one the human last picked in the preview. */
+function sectionOf(doc: BuildingDocument, named: string | undefined): Band {
+  const id = named ?? doc.bands[0]?.id;
+  const band = doc.bands.find((one) => one.id === id);
+  if (!band) throw new BuildingError('E_DOC_INVALID', `no section named ${String(named)}`, ['bands', String(named)]);
+  return band;
+}
+
+function facesOf(band: Band, side: Side): BandFace {
+  return band.faces.find((face) => face.side === side) ?? { side, elements: [] };
+}
+
+function elementOf(stored: FaceElement): Element {
+  return {
+    kind: stored.kind,
+    rect: { col: stored.col, row: stored.row, cols: stored.cols, rows: stored.rows },
+    material: stored.material,
+    ...(stored.depth === undefined ? {} : { depth: toMetres(stored.depth) }),
+  };
+}
+
+export const face: Verb = {
+  name: 'face',
+  summary: 'the grid of one face, and everything standing on it',
+  usage: 'face <section> [--side S] [--draw]',
+  async run(args, { projects }) {
+    const { positionals, values } = parse(args, { side: { type: 'string' }, draw: { type: 'boolean' } });
+    const { name, project } = await projects.open();
+    const doc = await project.readDocument();
+    const band = sectionOf(doc, positionals[0]);
+    const side = oneOf(text(values.side), SIDES, 'side', 'S');
+
+    const scene = assemble(doc);
+    const placed = scene.bands.find((one) => one.id === band.id)!;
+    const plan = { side, elements: facesOf(band, side).elements.map(elementOf) };
+    const { face: grid, sheet } = readFace(sectionShape(placed), plan);
+
+    return {
+      project: name,
+      section: band.id,
+      side,
+      grid: { cols: grid.cols, rows: grid.rows, cell: CELL, margin: MARGIN },
+      size: { width: Number(grid.width.toFixed(2)), height: Number(grid.height.toFixed(2)) },
+      floors: grid.floors,
+      place: `cells run [0,0] at the bottom left to [${grid.cols - 1},${grid.rows - 1}] at the top right; keep ${MARGIN} clear all round`,
+      elements: facesOf(band, side).elements.map((element, index) => ({
+        n: index + 1,
+        kind: element.kind,
+        material: element.material,
+        from: [element.col, element.row],
+        to: [element.col + element.cols - 1, element.row + element.rows - 1],
+      })),
+      kinds: KINDS.map((kind) => ({ kind, does: KIND_NOTES[kind] })),
+      materials: MATERIALS.map((material) => ({ material, is: MATERIAL_NOTES[material] })),
+      ...(values.draw === true ? { drawn: sheet.draw() } : {}),
+    };
+  },
+};
+
+export const put: Verb = {
+  name: 'put',
+  summary: 'put a window, door, panel or balcony on a face, in cells',
+  usage: 'put <window|door|panel|balcony> <from cell> <to cell> [--section id] [--side S] [--material crystal] [--depth 1.5] [--every 3]',
+  async run(args, { projects }) {
+    const { positionals, values } = parse(args, {
+      section: { type: 'string' },
+      side: { type: 'string' },
+      material: { type: 'string' },
+      depth: { type: 'string' },
+      every: { type: 'string' },
+    });
+
+    const kind = oneOf(need(positionals, 0, 'a kind'), KINDS, 'kind');
+    const from = readCell(need(positionals, 1, 'a cell to start at'), 'from');
+    const to = readCell(need(positionals, 2, 'a cell to finish at'), 'to');
+    const material = oneOf(text(values.material), MATERIALS, 'material', DEFAULT_MATERIAL[kind]);
+    const depth = size(values.depth, 'depth');
+    const step = text(values.every) ? Number(text(values.every)) : undefined;
+
+    const { name, project } = await projects.open();
+    const doc = await project.readDocument();
+    const band = sectionOf(doc, text(values.section));
+    const side = oneOf(text(values.side), SIDES, 'side', 'S');
+
+    const scene = assemble(doc);
+    const placed = scene.bands.find((one) => one.id === band.id)!;
+    const shape = sectionShape(placed);
+    const { face: grid } = readFace(shape, { side, elements: [] });
+
+    const col = Math.min(from[0], to[0]);
+    const row = Math.min(from[1], to[1]);
+    const cols = Math.abs(to[0] - from[0]) + 1;
+    const rows = Math.abs(to[1] - from[1]) + 1;
+
+    // `--every` repeats the same element across the face on a pitch, which is what a rhythm of
+    // windows is, without the composer counting cells.
+    const pitch = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
+    const made: FaceElement[] = [];
+    for (let at = col; at + cols - 1 <= grid.cols - 1 - MARGIN; at += pitch ?? Infinity) {
+      made.push({ kind, col: at, row, cols, rows, material, ...(depth === undefined ? {} : { depth }) });
+      if (pitch === undefined) break;
+    }
+
+    const existing = facesOf(band, side);
+    const faces = [
+      ...band.faces.filter((one) => one.side !== side),
+      { side, elements: [...existing.elements, ...made] },
+    ];
+
+    const next = { ...doc, bands: doc.bands.map((one) => (one.id === band.id ? { ...one, faces } : one)) };
+    // Claiming happens here, so an overlap is refused before anything is written.
+    readFace(shape, { side, elements: [...existing.elements, ...made].map(elementOf) });
+
+    await project.writeDocument(next);
+    return {
+      project: name,
+      section: band.id,
+      side,
+      put: made.length,
+      kind,
+      material,
+      on: made.map((element) => [element.col, element.row]),
+      note: `${grid.floors} floors carry it, so the section costs it once`,
+    };
+  },
+};
+
+export const clear: Verb = {
+  name: 'clear',
+  summary: 'take elements off a face',
+  usage: 'clear [n ...] [--section id] [--side S] [--all]',
+  async run(args, { projects }) {
+    const { positionals, values } = parse(args, { section: { type: 'string' }, side: { type: 'string' }, all: { type: 'boolean' } });
+    const { name, project } = await projects.open();
+    const doc = await project.readDocument();
+    const band = sectionOf(doc, text(values.section));
+    const side = oneOf(text(values.side), SIDES, 'side', 'S');
+
+    const existing = facesOf(band, side).elements;
+    const drop = new Set(positionals.map((one) => Number(one)));
+    const kept = values.all === true ? [] : existing.filter((_, index) => !drop.has(index + 1));
+
+    const faces = [...band.faces.filter((one) => one.side !== side), { side, elements: kept }];
+    await project.writeDocument({ ...doc, bands: doc.bands.map((one) => (one.id === band.id ? { ...one, faces } : one)) });
+
+    return { project: name, section: band.id, side, cleared: existing.length - kept.length, left: kept.length };
+  },
+};
+
+export const run: Verb = {
+  name: 'run',
+  summary: 'a duct, pipe or cable along a path of points, mitred at every corner',
+  usage: 'run <x,y,z> <x,y,z> [more ...] [--section id] [--profile round|square] [--thickness 0.2] [--material metal]',
+  async run(args, { projects }) {
+    const { positionals, values } = parse(args, {
+      section: { type: 'string' },
+      profile: { type: 'string' },
+      thickness: { type: 'string' },
+      material: { type: 'string' },
+    });
+
+    if (positionals.length < 2) {
+      throw new BuildingError('E_DOC_INVALID', 'a run needs at least two points, each x,y,z in metres', ['run']);
+    }
+
+    const points = positionals.map((one, index) => {
+      const parts = one.split(',').map((part) => Number(part.trim()));
+      if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) {
+        throw new BuildingError('E_DOC_INVALID', `point ${index + 1} is not x,y,z in metres`, ['run', String(index + 1)]);
+      }
+      return parts.map(toMm) as [number, number, number];
+    });
+
+    const { name, project } = await projects.open();
+    const doc = await project.readDocument();
+    const band = sectionOf(doc, text(values.section));
+
+    const made = {
+      points,
+      profile: oneOf(text(values.profile), ['square', 'round'] as const, 'profile', 'round'),
+      thickness: size(values.thickness, 'thickness') ?? 200,
+      material: oneOf(text(values.material), MATERIALS, 'material', 'metal'),
+    };
+
+    // Draw it now and throw it away: a path that cannot be mitred is refused here, rather than
+    // sitting in the document until the next build.
+    segment(
+      new Surface(made.material),
+      points.map(([x, y, z]) => [toMetres(x), toMetres(y), toMetres(z)] as [number, number, number]),
+      { profile: made.profile, thickness: toMetres(made.thickness) },
+    );
+
+    await project.writeDocument({
+      ...doc,
+      bands: doc.bands.map((one) => (one.id === band.id ? { ...one, runs: [...one.runs, made] } : one)),
+    });
+
+    return {
+      project: name,
+      section: band.id,
+      points: points.length,
+      profile: made.profile,
+      thickness: toMetres(made.thickness),
+      material: made.material,
+      note: 'corners are mitred where the runs meet; build to prove it stands on something',
+    };
+  },
+};
+
+export const faceVerbs = [face, put, clear, run];

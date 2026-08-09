@@ -10,9 +10,10 @@
 import { Document, NodeIO, type Material, type Mesh } from '@gltf-transform/core';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
-import { FACADE, GLASS, ROOF, WINDOW, dress, proudProblems, seedOf, shellProblems, sunkProblems, template, triangleCount, windingProblems, type MeshData, type SectionShape } from '#kit';
+import { dressFaces, type Element, type FacePlan } from '#facade';
+import { FACADE, GLASS, ROOF, WINDOW, Surface, dress, proudProblems, seedOf, segment, shellProblems, sunkProblems, template, triangleCount, windingProblems, type MeshData, type SectionShape, type Vec } from '#kit';
 import { facadeTexture } from '#materials';
-import { BuildingError, type BuildingDocument } from '#spec';
+import { BuildingError, type BandFace, type BandRun, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
 
@@ -55,6 +56,35 @@ function shapeOf(band: PlacedBand, sunk: number): SectionShape {
   };
 }
 
+/** The document's faces, as the facade box reads them: millimetres become metres, cells stay. */
+function facePlans(faces: BandFace[]): FacePlan[] {
+  return faces.map((face) => ({
+    side: face.side,
+    elements: face.elements.map(
+      (element): Element => ({
+        kind: element.kind,
+        rect: { col: element.col, row: element.row, cols: element.cols, rows: element.rows },
+        material: element.material,
+        ...(element.depth === undefined ? {} : { depth: element.depth * MM }),
+      }),
+    ),
+  }));
+}
+
+/** Runs standing off a section: written in the building's own frame, drawn where they are. */
+function runsOf(runs: BandRun[], y: number): MeshData[] {
+  const surfaces = new Map<string, Surface>();
+
+  for (const run of runs) {
+    const surface = surfaces.get(run.material) ?? new Surface(run.material);
+    surfaces.set(run.material, surface);
+    const points = run.points.map(([x, up, z]): Vec => [x * MM, up * MM - y, z * MM]);
+    segment(surface, points, { profile: run.profile, thickness: run.thickness * MM });
+  }
+
+  return [...surfaces.values()].filter((surface) => !surface.empty).map((surface) => surface.data());
+}
+
 /** The stack rules that have nothing to do with geometry. */
 function checkEnds(placed: PlacedScene): void {
   const first = placed.bands[0]!;
@@ -68,47 +98,89 @@ function checkEnds(placed: PlacedScene): void {
   }
 }
 
-function palette(document: Document, seed: number): Map<string, Material> {
-  // The facade carries its windows in the texture: one tile is a floor tall and a bay wide, and
-  // the same grid glows, so a flat section reads as a lit building for eight triangles a floor.
-  const skin = facadeTexture({ seed });
-  const colour = document.createTexture('facade-colour').setImage(skin.colour).setMimeType('image/png');
-  const glow = document.createTexture('facade-emissive').setImage(skin.emissive).setMimeType('image/png');
+/**
+ * The materials, made on demand. A file carries only what its parts actually use, so a plain
+ * tower is two materials and a composed facade is as many as it asked for.
+ */
+function palette(document: Document, seed: number): (name: string) => Material {
+  const made = new Map<string, Material>();
+  const build = makers(document, seed);
 
-  const facade = document
-    .createMaterial(FACADE)
-    .setBaseColorFactor([1, 1, 1, 1])
-    .setBaseColorTexture(colour)
-    .setEmissiveFactor([1, 1, 1])
-    .setEmissiveTexture(glow)
-    .setMetallicFactor(0)
-    .setRoughnessFactor(0.85);
+  return (name: string): Material => {
+    const already = made.get(name);
+    if (already) return already;
 
-  // Glass is the same picture with a sheen on it: a pane covers the window it is built over, so
-  // the building never carries two window systems that disagree.
-  const glass = document
-    .createMaterial(GLASS)
-    .setBaseColorFactor([1, 1, 1, 1])
-    .setBaseColorTexture(colour)
-    .setEmissiveFactor([1, 1, 1])
-    .setEmissiveTexture(glow)
-    .setMetallicFactor(0.25)
-    .setRoughnessFactor(0.12);
-
-  const roof = document
-    .createMaterial(ROOF)
-    .setBaseColorFactor([0.24, 0.25, 0.27, 1])
-    .setMetallicFactor(0)
-    .setRoughnessFactor(0.95);
-
-  return new Map([
-    [FACADE, facade],
-    [ROOF, roof],
-    [GLASS, glass],
-  ]);
+    const maker = build[name];
+    if (!maker) throw new BuildingError('E_GLB_INVALID', `no material named ${name}`, [name]);
+    const material = maker();
+    made.set(name, material);
+    return material;
+  };
 }
 
-function meshOf(document: Document, name: string, parts: MeshData[], materials: Map<string, Material>): Mesh {
+function makers(document: Document, seed: number): Record<string, () => Material> {
+  // The facade carries its windows in the texture: one tile is a floor tall and a bay wide, and
+  // the same grid glows, so a flat section reads as a lit building for eight triangles a floor.
+  // Made once, on the first material that wants it, and shared by the glazing.
+  let skin: { colour: Uint8Array; emissive: Uint8Array } | undefined;
+  const drawn = () => {
+    if (!skin) skin = facadeTexture({ seed });
+    return {
+      colour: document.createTexture('facade-colour').setImage(skin.colour).setMimeType('image/png'),
+      glow: document.createTexture('facade-emissive').setImage(skin.emissive).setMimeType('image/png'),
+    };
+  };
+
+  // Glass is the same picture with a sheen on it: a pane covers the window it is built over, so
+  // the building never carries two window systems that disagree. Crystal is that glass, by the
+  // name a composed face calls it.
+  const glazing = (name: string) => () => {
+    const { colour, glow } = drawn();
+    return document
+      .createMaterial(name)
+      .setBaseColorFactor([1, 1, 1, 1])
+      .setBaseColorTexture(colour)
+      .setEmissiveFactor([1, 1, 1])
+      .setEmissiveTexture(glow)
+      .setMetallicFactor(0.25)
+      .setRoughnessFactor(0.12);
+  };
+
+  const plain = (name: string, colour: [number, number, number], metallic: number, rough: number) => () =>
+    document
+      .createMaterial(name)
+      .setBaseColorFactor([...colour, 1])
+      .setMetallicFactor(metallic)
+      .setRoughnessFactor(rough);
+
+  return {
+    [FACADE]: () => {
+      const { colour, glow } = drawn();
+      return document
+        .createMaterial(FACADE)
+        .setBaseColorFactor([1, 1, 1, 1])
+        .setBaseColorTexture(colour)
+        .setEmissiveFactor([1, 1, 1])
+        .setEmissiveTexture(glow)
+        .setMetallicFactor(0)
+        .setRoughnessFactor(0.85);
+    },
+    [GLASS]: glazing(GLASS),
+    crystal: glazing('crystal'),
+    [ROOF]: plain(ROOF, [0.24, 0.25, 0.27], 0, 0.95),
+    concrete: plain('concrete', [0.3, 0.3, 0.31], 0, 0.9),
+    metal: plain('metal', [0.42, 0.44, 0.47], 0.6, 0.45),
+    screen: () =>
+      document
+        .createMaterial('screen')
+        .setBaseColorFactor([0.06, 0.07, 0.1, 1])
+        .setEmissiveFactor([0.9, 0.35, 0.7])
+        .setMetallicFactor(0)
+        .setRoughnessFactor(0.35),
+  };
+}
+
+function meshOf(document: Document, name: string, parts: MeshData[], material: (name: string) => Material): Mesh {
   const buffer = document.getRoot().listBuffers()[0]!;
   const mesh = document.createMesh(name);
 
@@ -118,9 +190,6 @@ function meshOf(document: Document, name: string, parts: MeshData[], materials: 
     const indices = () =>
       document.createAccessor(`${name}_${part.material}_I`).setType('SCALAR').setArray(new Uint32Array(part.indices)).setBuffer(buffer);
 
-    const material = materials.get(part.material);
-    if (!material) throw new BuildingError('E_GLB_INVALID', `no material named ${part.material}`, [name]);
-
     mesh.addPrimitive(
       document
         .createPrimitive()
@@ -128,7 +197,7 @@ function meshOf(document: Document, name: string, parts: MeshData[], materials: 
         .setAttribute('NORMAL', floats('N', 'VEC3', part.normals))
         .setAttribute('TEXCOORD_0', floats('T', 'VEC2', part.uvs))
         .setIndices(indices())
-        .setMaterial(material),
+        .setMaterial(material(part.material)),
     );
   }
   return mesh;
@@ -164,6 +233,10 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
       covered: above ? metres(above.bottom) : undefined,
       seed: seedOf(`${doc.name}/${band.id}`),
     });
+    // Composed faces and runs stand on the section the same way the dressing does, and are
+    // held to the same proofs: seen from outside, not drifted off, inside the tier's budget.
+    worn.push(...dressFaces(shape, facePlans(band.faces)));
+    worn.push(...runsOf(band.runs, band.y0 * MM - sunk));
     parts.push(...worn);
 
     // A stored normal that disagrees with its triangle lights the surface the wrong way round,

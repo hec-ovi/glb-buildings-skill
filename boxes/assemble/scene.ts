@@ -1,5 +1,5 @@
 /** What a placed scene is made of. Building coordinates, Y up, millimetres. */
-import type { BandKind, Mm, Side, Tier } from '#spec';
+import type { BandFace, BandKind, BandRun, Mm, Side, Tier } from '#spec';
 
 export type Vec3 = [Mm, Mm, Mm];
 
@@ -48,6 +48,9 @@ export type PlacedBand = {
   columns: 'none' | 'corners' | 'ribs' | 'partial';
   clutter: number;
   deck: { cell: string; part: string; turn: number }[];
+  /** What is composed on each face, and the runs standing off the section. */
+  faces: BandFace[];
+  runs: BandRun[];
   inset: Mm;
   /** Where this band's footprint actually sits, after its step and shift. */
   rect: Rect;

@@ -15,6 +15,7 @@
     "#glb": "./boxes/glb/index.ts",
     "#cli": "./boxes/cli/index.ts",
     "#check": "./boxes/check/index.ts",
+    "#facade": "./boxes/facade/index.ts",
     "#materials": "./boxes/materials/index.ts"
   },
   "bin": {

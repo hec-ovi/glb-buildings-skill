@@ -8,6 +8,7 @@ import { DECK_PART_NOTES, PART_SIZE, claim, deckCells } from '#kit';
 import { BuildingError, DECK_PARTS, parseDocument, type DeckPart, type DeckPlacement } from '#spec';
 import type { Verb } from './verb.ts';
 import { degrees, need, parse, text } from './args.ts';
+import { sectionShape } from './shape.ts';
 
 const MM = 0.001;
 
@@ -21,12 +22,7 @@ async function target(projects: Parameters<Verb['run']>[1]['projects'], named: s
   const placed = assemble(doc);
   const section = placed.bands[at]!;
   const above = placed.bands[at + 1];
-  const shape = {
-    bottom: section.bottom.map(([x, z]) => [x * MM, z * MM] as [number, number]),
-    top: section.top.map(([x, z]) => [x * MM, z * MM] as [number, number]),
-    height: (section.y1 - section.y0) * MM,
-    floors: section.floors.length,
-  };
+  const shape = sectionShape(section);
   const covered = above ? above.bottom.map(([x, z]) => [x * MM, z * MM] as [number, number]) : undefined;
   return { name, project, doc, at, band: doc.bands[at]!, grid: deckCells(shape, covered) };
 }

@@ -17,8 +17,35 @@ describe('buildGlb', () => {
     const { stats } = await buildGlb(doc);
     expect(stats.meshes).toBe(3);
     expect(stats.nodes).toBe(3);
-    expect(stats.materials).toBe(3);
+    // A plain tower is walls and a roof, and carries no material it never uses.
+    expect(stats.materials).toBe(2);
     expect(stats.triangles).toBeLessThan(200);
+  });
+
+  it('carries a material only where something is made of it', async () => {
+    const composed = parseDocument({
+      ...doc,
+      bands: doc.bands.map((band) =>
+        band.id === 'body'
+          ? {
+              ...band,
+              tier: 'light',
+              faces: [
+                {
+                  side: 'S',
+                  elements: [
+                    { kind: 'window', col: 4, row: 8, cols: 10, rows: 14, material: 'crystal' },
+                    { kind: 'panel', col: 20, row: 10, cols: 12, rows: 8, material: 'screen' },
+                  ],
+                },
+              ],
+            }
+          : band,
+      ),
+    });
+    const { stats } = await buildGlb(composed);
+    // Walls, roof, and the two the face asked for.
+    expect(stats.materials).toBe(4);
   });
 
   it('steps a section in over the one below, and keeps every section closed', async () => {

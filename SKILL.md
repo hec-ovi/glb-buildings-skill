@@ -14,6 +14,7 @@ Match the request to a row, open the file it names (next to this one), then run 
 | --- | --- |
 | a building from a description, start to finish | `parts/auto.md` |
 | to shape the stack: floors, heights, setbacks, the roof | `parts/stack.md` |
+| windows, doors, balconies, screens, pipes on a wall | `parts/facade.md` |
 | to change what is already there, using what they clicked in the preview | `parts/editing.md` |
 | to break up a run of identical floors | `parts/enhance.md` |
 | to lay out a roof: turbines, pipes, tanks, masts | `parts/roof.md` |
@@ -49,6 +50,10 @@ Run `buildings help` for the current list. Today:
 | `set-band <id> [same flags]` | change a section; omitted flags keep what was there |
 | `remove-band <id>` | take a section out |
 | `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | give one floor a shape of its own, so a section stops being uniform. With no floor named it uses what the human picked |
+| `face <section> [--side S] [--draw]` | the face as a grid of 10 cm cells, and what stands on it |
+| `put <window\|door\|panel\|balcony> <from> <to> [--section id] [--side S] [--material] [--depth] [--every 3]` | put something on a face, in cells |
+| `clear [n ...] [--section id] [--side S] [--all]` | take elements off a face |
+| `run <x,y,z> <x,y,z> [more ...] [--section id] [--profile] [--thickness] [--material]` | a duct, pipe or cable along a path, mitred at every corner |
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts you can use |
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more cells |
 | `unplace <cell ...> [--section id]` | clear cells |
@@ -72,9 +77,11 @@ The verbs spell a section `band`: `add-band`, `set-band`, `remove-band`. Same th
 - Shape it with `--width` `--depth` (its own footprint), `--shape box\|round` (a round section is a cylinder),
   `--inset` (step in, or out with a negative), `--shift-x` `--shift-z` (slide), `--rotation` (turn), `--twist`
   (turn across the section), `--taper` (pull in toward the top).
-- Dress it with `--greebles 0.4` (fake parts standing off the faces, which is what stops a bulk section
-  reading as a box), `--columns corners\|ribs\|partial` (uprights), `--balconies S` (a slab with a rounded
-  front, one per floor), `--wires S` (cables up one face).
+- Dress it in bulk with `--greebles 0.4` (fake parts standing off the faces, which is what stops a bulk
+  section reading as a box), `--columns corners\|ribs\|partial` (uprights), `--wires S` (cables up one face).
+- Compose its faces one at a time with `face` and `put`: a face is a grid of 10 cm cells, and a window,
+  door, balcony, panel or screen is a rectangle of them. Two things cannot share a cell, so an overlap is
+  refused instead of shipped. See `parts/facade.md`.
 - A whole building may be `flat` top to bottom. That is a real product, not a degraded one, and it is what
   fills a city.
 
