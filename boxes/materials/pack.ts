@@ -26,6 +26,14 @@ export type Maps = { colour: Bitmap; emissive?: Bitmap };
  */
 export type Grid = { across: number; down: number };
 
+/**
+ * How many metres of building one tile of a picture covers, where the picture is not a bay grid.
+ * A wall of brick and a wall of three metre panels are both `wall`, and the only way to know
+ * which is which is to be told: 21 courses of brick is 1.6 m, the same picture read as panels is
+ * 3 m, and at the wrong one every brick comes out the size of a door.
+ */
+export type Scale = { metres: number };
+
 const MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -49,11 +57,13 @@ export type Pack = {
   variants: Record<string, number>;
   /** The grid each wall picture actually holds, where the pack says so. */
   grids: Record<string, Grid>;
+  /** How many metres a tile covers, where the pack says so. */
+  metres: Record<string, number>;
   /** One finish, picking between its pictures with the building's own seed. */
   get(finish: string, seed?: number): Maps | undefined;
 };
 
-export const EMPTY_PACK: Pack = { dir: '', finishes: [], variants: {}, grids: {}, get: () => undefined };
+export const EMPTY_PACK: Pack = { dir: '', finishes: [], variants: {}, grids: {}, metres: {}, get: () => undefined };
 
 /**
  * Read every image in a style's folder. glTF carries PNG and JPEG and nothing else without an
@@ -71,7 +81,7 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
 
   const colour = new Map<string, Map<number, Bitmap>>();
   const glow = new Map<string, Map<number, Bitmap>>();
-  const grids = await readGrids(dir);
+  const declared = await readDeclared(dir);
 
   const keep = (into: Map<string, Map<number, Bitmap>>, stem: string, bitmap: Bitmap) => {
     const { finish, variant } = split(stem);
@@ -95,7 +105,8 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     dir,
     finishes: [...colour.keys()].sort(),
     variants: Object.fromEntries([...colour].map(([finish, set]) => [finish, set.size])),
-    grids,
+    grids: declared.grids,
+    metres: declared.metres,
     get(finish, seed = 0) {
       const set = colour.get(finish);
       if (!set) return undefined;
@@ -114,25 +125,30 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
  * What the pack says about its own pictures. Missing, unreadable or nonsense is the same answer:
  * nothing, and the kit falls back to the grid it draws its own tiles on.
  */
-async function readGrids(dir: string): Promise<Record<string, Grid>> {
+async function readDeclared(dir: string): Promise<{ grids: Record<string, Grid>; metres: Record<string, number> }> {
+  const nothing = { grids: {}, metres: {} };
+
   let text: string;
   try {
     text = await readFile(join(dir, 'pack.json'), 'utf8');
   } catch {
-    return {};
+    return nothing;
   }
 
   try {
-    const read = JSON.parse(text) as Record<string, Partial<Grid>>;
-    const found: Record<string, Grid> = {};
-    for (const [finish, grid] of Object.entries(read)) {
-      const across = Math.round(Number(grid?.across));
-      const down = Math.round(Number(grid?.down));
-      if (across > 0 && down > 0) found[finish] = { across, down };
+    const read = JSON.parse(text) as Record<string, Partial<Grid & Scale>>;
+    const grids: Record<string, Grid> = {};
+    const metres: Record<string, number> = {};
+    for (const [finish, said] of Object.entries(read)) {
+      const across = Math.round(Number(said?.across));
+      const down = Math.round(Number(said?.down));
+      if (across > 0 && down > 0) grids[finish] = { across, down };
+      const covers = Number(said?.metres);
+      if (covers > 0) metres[finish] = covers;
     }
-    return found;
+    return { grids, metres };
   } catch {
-    return {};
+    return nothing;
   }
 }
 

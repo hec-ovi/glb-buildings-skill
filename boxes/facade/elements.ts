@@ -5,7 +5,7 @@
  * Everything bites a little into the wall behind it and reaches further out in front, so no
  * surface shares a plane with the wall and every part is seen from outside the section.
  */
-import { bands, fits, tileOf, PAINTS, PAINT_NOTES, type PaintName } from '#materials';
+import { bands, fits, PAINTS, PAINT_NOTES, type PaintName } from '#materials';
 import { BuildingError } from '#spec';
 import { CONCRETE, Surface, type Patch, type Surfaces, type Vec } from '#kit';
 import { MARGIN, describeRect, type Face, type Rect } from './grid.ts';
@@ -80,16 +80,16 @@ const across = (a: Vec, b: Vec): number => Math.hypot(b[0] - a[0], b[1] - a[1], 
  * repeats along its length so the balusters keep one pitch whatever the face is, and everything
  * else tiles by the metre both ways.
  */
-function patchOf(material: string, width: number): Patch | undefined {
-  if (bands(material)) return { u0: 0, u1: Math.max(0.25, width / tileOf(material)), v0: 0, v1: 1 };
-  return fits(material) ? FULL : undefined;
+function patchOf(surface: Surface, width: number): Patch | undefined {
+  if (bands(surface.material)) return { u0: 0, u1: Math.max(0.25, width / surface.tile), v0: 0, v1: 1 };
+  return fits(surface.material) ? FULL : undefined;
 }
 
 /** A box between two rectangles of the face: `near` behind, `far` in front. */
 function plate(surface: Surface, face: Face, floor: number, rect: Rect, near: number, far: number): void {
   const a = face.corners(floor, rect, near);
   const b = face.corners(floor, rect, far);
-  const front = patchOf(surface.material, across(b[0], b[1]));
+  const front = patchOf(surface, across(b[0], b[1]));
   const edge = front ? EDGE : undefined;
 
   surface.quad(b[0], b[1], b[2], b[3], front);
@@ -165,8 +165,8 @@ function balcony(kit: Surfaces, face: Face, floor: number, element: Element): vo
     const deep = across(b[0]!, a[0]!);
     const facingOut = wide >= deep;
     const dressed = fit || bands(surface.material);
-    const outward = facingOut ? patchOf(surface.material, wide) : dressed ? EDGE : undefined;
-    const sideways = facingOut ? (dressed ? EDGE : undefined) : patchOf(surface.material, deep);
+    const outward = facingOut ? patchOf(surface, wide) : dressed ? EDGE : undefined;
+    const sideways = facingOut ? (dressed ? EDGE : undefined) : patchOf(surface, deep);
 
     surface.quad(b[0]!, b[1]!, b[2]!, b[3]!, outward);
     surface.quad(a[3]!, a[2]!, a[1]!, a[0]!, outward);
@@ -176,7 +176,11 @@ function balcony(kit: Surfaces, face: Face, floor: number, element: Element): vo
     // The two faces that look along the balcony rather than out of it. Their corners start one
     // step round the same loop, so the winding is untouched and the picture lands the way up it
     // was drawn: without that a balustrade on a side rail comes out lying on its side.
-    surface.quad(a[2]!, b[2]!, b[1]!, a[1]!, sideways);
+    //
+    // Each starts at a corner on the bottom edge. A patch puts the bottom of the picture on the
+    // first two corners it is given, so starting at the top hangs the balustrade upside down, and
+    // the two sides are mirrored because each is read from outside its own end.
+    surface.quad(b[1]!, a[1]!, a[2]!, b[2]!, sideways);
     surface.quad(a[0]!, b[0]!, b[3]!, a[3]!, sideways);
   };
 

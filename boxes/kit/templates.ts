@@ -9,7 +9,7 @@
  *
  * Everything is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
-import { FACADE_WALL, tileOf } from '#materials';
+import { FACADE_WALL, gridded, tileOf } from '#materials';
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData, type Patch } from './geometry.ts';
 import { BASE, FACADE, GLASS, GLASS_BAND, PIPE, ROOF, WALL } from './names.ts';
@@ -34,6 +34,20 @@ export const WALL_PATCH: Patch = { u0: FACADE_WALL.u, u1: FACADE_WALL.u, v0: FAC
 
 export { BASE, FACADE, GLASS, GLASS_BAND, ROOF, WALL, CONCRETE, METAL, PIPE, ANTENNA, BEACON, NEON } from './names.ts';
 
+/** How many metres a tile of this material covers on this section. */
+function metresOf(shape: SectionShape, material: string): number {
+  return shape.scale?.[material] ?? tileOf(material);
+}
+
+/**
+ * The skin of a section, in whatever it is made of. A picture drawn as bays and floors takes the
+ * one point of plain wall for its caps and bevels, so they do not show a slice of somebody's
+ * windows. A plain material has no such point: it tiles, and its caps tile with it.
+ */
+function skinOf(shape: SectionShape, material: string): Surface {
+  return new Surface(material, gridded(material) ? WALL_PATCH : undefined, metresOf(shape, material));
+}
+
 function surfaces(...list: Surface[]): MeshData[] {
   return list.filter((surface) => !surface.empty).map((surface) => surface.data());
 }
@@ -44,7 +58,7 @@ const TEMPLATES: Template[] = [
     tier: 'flat',
     purpose: 'a plain section: four textured walls, windows live in the image',
     build: (shape) => {
-      const skin = new Surface(shape.skin ?? FACADE, WALL_PATCH, tileOf(shape.skin ?? FACADE));
+      const skin = skinOf(shape, shape.skin ?? FACADE);
       const pane = new Surface(GLASS, WALL_PATCH);
       walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
@@ -59,7 +73,7 @@ const TEMPLATES: Template[] = [
     build: (shape) => {
       // The base wears its own wall. A ground floor is where a building is seen from two metres,
       // and the wall tile would stack another row of lit offices on the pavement.
-      const skin = new Surface(BASE, undefined, tileOf(BASE));
+      const skin = skinOf(shape, BASE);
       const pane = new Surface(GLASS, WALL_PATCH);
       walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
@@ -72,7 +86,7 @@ const TEMPLATES: Template[] = [
     tier: 'flat',
     purpose: 'a band of nothing but lit glazing, four or five floors of it in an otherwise dark tower',
     build: (shape) => {
-      const skin = new Surface(GLASS_BAND, WALL_PATCH, tileOf(GLASS_BAND));
+      const skin = skinOf(shape, GLASS_BAND);
       walls(skin, shape);
       cap(skin, capRing(shape, 0), 0, false);
       cap(skin, capRing(shape, 1), shape.height, true);
@@ -84,7 +98,7 @@ const TEMPLATES: Template[] = [
     tier: 'light',
     purpose: 'the crown: a parapet and the roof deck that closes the building',
     build: (shape) => {
-      const skin = new Surface(shape.skin ?? FACADE, WALL_PATCH, tileOf(shape.skin ?? FACADE));
+      const skin = skinOf(shape, shape.skin ?? FACADE);
       walls(skin, shape);
       cap(skin, capRing(shape, 0), 0, false);
       const deck = new Surface(ROOF);
@@ -134,7 +148,7 @@ export type Dressing = {
  * is made of, so a mast is galvanised steel, a pipe is a pipe, and a line is lit.
  */
 export function dress(shape: SectionShape, options: Dressing): MeshData[] {
-  const kit = new Surfaces();
+  const kit = new Surfaces(shape.scale);
   const skin = kit.get(FACADE, WALL_PATCH);
 
   if (options.wires && options.wires !== 'none') wires(kit.get(PIPE), shape, options.wires);

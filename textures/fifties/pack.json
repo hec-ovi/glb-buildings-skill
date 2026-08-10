@@ -6,5 +6,8 @@
   "glass-band": {
     "across": 5,
     "down": 4
+  },
+  "wall": {
+    "metres": 1.6
   }
 }

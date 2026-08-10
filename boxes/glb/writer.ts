@@ -71,7 +71,13 @@ export const BUDGET: Record<string, number> = { flat: 120, light: 1200, full: 40
 /** A crown is one floor carrying a whole roof, so it is judged as a section, not per floor. */
 export const ROOF_BUDGET = 4500;
 
-function shapeOf(band: PlacedBand, sunk: number, storey: number, tiles: Record<string, { across: number; down: number }>): SectionShape {
+function shapeOf(
+  band: PlacedBand,
+  sunk: number,
+  storey: number,
+  tiles: Record<string, { across: number; down: number }>,
+  scale: Record<string, number>,
+): SectionShape {
   // A section somebody has composed on wears the plain wall: the tile with windows drawn in it
   // puts one in the middle of every bay, which is exactly where a door composed on the bay goes.
   const composed = band.faces.some((face) => face.elements.length > 0);
@@ -84,6 +90,7 @@ function shapeOf(band: PlacedBand, sunk: number, storey: number, tiles: Record<s
     windows: band.windows ? WINDOW : undefined,
     storey,
     tiles,
+    scale,
     ...(composed ? { skin: WALL } : {}),
   };
 }
@@ -334,7 +341,7 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
     const above = placed.bands[index + 1];
     // The building's own floor height is the storey the wall tile was drawn for, so a taller
     // floor shows more of the tile rather than stretching one row of it over a lobby.
-    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM, pack?.grids ?? {});
+    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM, pack?.grids ?? {}, pack?.metres ?? {});
     const parts = template(band.template).build(shape);
     const worn = dress(shape, {
       wires: band.wires,

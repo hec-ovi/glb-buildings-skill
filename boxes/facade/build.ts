@@ -47,7 +47,7 @@ function sheetFor(face: Face, wears: Wears | undefined): Sheet {
  * against the little it has to obey.
  */
 export function dressFaces(shape: SectionShape, plans: FacePlan[]): MeshData[] {
-  const kit = new Surfaces();
+  const kit = new Surfaces(shape.scale);
 
   for (const plan of plans) {
     const face = new Face(shape, plan.side);

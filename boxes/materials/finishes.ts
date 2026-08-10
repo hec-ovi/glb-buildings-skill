@@ -132,6 +132,12 @@ type Recipe = {
   alpha?: number;
   /** Keeps all of its picture's brightness: it is a light, not a surface lit by one. */
   bright?: boolean;
+  /**
+   * Drawn as a grid of window bays, so a wall lays it one bay across and one floor up. Everything
+   * else is a material and tiles by the metre: brick laid on a bay grid comes out with every
+   * course a metre deep.
+   */
+  grid?: boolean;
   fit?: boolean;
   band?: boolean;
   tile?: number;
@@ -152,6 +158,7 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.85,
     emissive: () => WHITE,
     tile: 3,
+    grid: true,
     draws: facade,
   },
 
@@ -175,6 +182,7 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.12,
     emissive: () => WHITE,
     tile: 3,
+    grid: true,
     draws: facade,
   },
   'glass-band': {
@@ -184,6 +192,7 @@ const RECIPES: Record<string, Recipe> = {
     bright: true,
     emissive: () => WHITE,
     tile: 3,
+    grid: true,
     draws: { key: 'glass-band', draw: (style, seed) => drawGlassBand(look(style), seed) },
   },
   window: {
@@ -295,6 +304,11 @@ export function tileOf(name: string): number {
 /** Whether one picture covers one whole element, rather than tiling by the metre. */
 export function fits(name: string): boolean {
   return RECIPES[splitName(name).base]?.fit ?? false;
+}
+
+/** Whether a wall lays this one out as bays and floors, rather than tiling it by the metre. */
+export function gridded(name: string): boolean {
+  return RECIPES[splitName(name).base]?.grid ?? false;
 }
 
 /** Whether it fills the height and repeats along the length, the way a balustrade does. */

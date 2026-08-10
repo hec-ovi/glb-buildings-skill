@@ -11,6 +11,12 @@ import { Surface, type MeshData, type Patch } from './geometry.ts';
 
 export class Surfaces {
   readonly #made = new Map<string, Surface>();
+  /** Metres a tile covers, by material, where the pack said so rather than the library. */
+  readonly #scale: Record<string, number>;
+
+  constructor(scale: Record<string, number> = {}) {
+    this.#scale = scale;
+  }
 
   /**
    * The surface for one material. The patch is taken from the first call for that material, which
@@ -20,7 +26,7 @@ export class Surfaces {
     const already = this.#made.get(material);
     if (already) return already;
 
-    const made = new Surface(material, patch, tileOf(material));
+    const made = new Surface(material, patch, this.#scale[material] ?? tileOf(material));
     this.#made.set(material, made);
     return made;
   }

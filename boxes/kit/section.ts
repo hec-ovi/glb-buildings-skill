@@ -5,7 +5,7 @@
  *
  * Everything here is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
-import { FACADE_STYLE } from '#materials';
+import { FACADE_STYLE, gridded } from '#materials';
 import { Surface, type Vec } from './geometry.ts';
 import { baysOn, insetRing, lerp, outwardAt, type Corner } from './plan.ts';
 import { windowRow, WINDOW, type WindowStyle } from './openings.ts';
@@ -40,6 +40,11 @@ export type SectionShape = {
    * wall instead of the one with windows drawn in it, or the two land in the same place.
    */
   skin?: string;
+  /**
+   * Metres a tile covers, by material, where the pack knows better than the library: 21 courses
+   * of brick is 1.6 m of wall, and the same picture read at 3 m makes every brick a door.
+   */
+  scale?: Record<string, number>;
 };
 
 /** The footprint partway up the section. */
@@ -103,6 +108,10 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
   const perFloor = rowsPerFloor(shape);
   // The grid this wall's own picture holds, which is not always the one the kit draws.
   const grid = shape.tiles?.[surface.material] ?? { across: FACADE_STYLE.across, down: FACADE_STYLE.down };
+  // Only a picture drawn as bays and floors is laid out as bays and floors. A plain wall is a
+  // material: it tiles by the metre like concrete does, or every course of brick comes out a
+  // metre deep.
+  const asBays = gridded(surface.material);
   const chamfer = Math.min(shape.chamfer ?? 0, shape.height / 3);
   const low = chamfer;
   const high = shape.height - chamfer;
@@ -117,7 +126,7 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
     const lower = ringAt(shape, y0 / shape.height);
     const upper = ringAt(shape, y1 / shape.height);
 
-    band(surface, lower, upper, y0, y1, row, perFloor, grid);
+    band(surface, lower, upper, y0, y1, asBays ? row : undefined, perFloor, grid);
     if (!shape.windows || !pane) continue;
 
     // A floor with windows: every face is cut into bays and each bay gets a pane.
