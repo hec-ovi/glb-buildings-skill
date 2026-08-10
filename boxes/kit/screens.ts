@@ -37,9 +37,16 @@ export type ScreenStyle = {
   aspect?: number;
 };
 
-/** How thick the panel is, and how far a bracket bites into the wall behind it. */
-const DEPTH = 0.3;
+/**
+ * How thick the panel is. A screen is a plane hanging in the air, not a crate: thin enough to read
+ * as one, thick enough to still be a closed solid with every proof the kit makes about it intact.
+ */
+const DEPTH = 0.06;
 const BITE = 0.05;
+
+/** How far in front of the picture the dotted glass sits, and what it is made of. */
+const GLASS_GAP = 0.03;
+const GLASS = 'screen-glass';
 
 /** The whole picture across the front of the panel, however big the panel is. */
 const FULL = { u0: 0, u1: 1, v0: 0, v1: 1 };
@@ -101,6 +108,19 @@ export function screen(kit: Surfaces, shape: SectionShape, style: ScreenStyle): 
   face.quad(back[1], back[2], front[2], front[1]);
   face.quad(back[2], back[3], front[3], front[2]);
   face.quad(back[3], back[0], front[0], front[3]);
+
+  // The dotted glass in front of it. This is what makes a lit rectangle read as a screen: the
+  // grid of lamps behind the glass, at the same size on a screen of any size. It carries no
+  // picture of its own, so it tiles by the metre and the dots stay put.
+  const lens = kit.get(GLASS);
+  const outer = corners(style.stand + GLASS_GAP + DEPTH);
+  const inner = corners(style.stand + GLASS_GAP);
+  lens.quad(outer[0], outer[1], outer[2], outer[3]);
+  lens.quad(inner[3], inner[2], inner[1], inner[0]);
+  lens.quad(inner[0], inner[1], outer[1], outer[0]);
+  lens.quad(inner[1], inner[2], outer[2], outer[1]);
+  lens.quad(inner[2], inner[3], outer[3], outer[2]);
+  lens.quad(inner[3], inner[0], outer[0], outer[3]);
 
   // Two brackets back to the wall, so the panel is held up by something.
   const arms = kit.get(METAL);

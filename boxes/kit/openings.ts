@@ -38,6 +38,7 @@ export function windowRow(
   y0: number,
   y1: number,
   style: WindowStyle = WINDOW,
+  grid: { across: number; down: number } = FACADE_STYLE,
 ): void {
   const next = (edge + 1) % lowerRing.length;
   const lower: [Corner, Corner] = [lowerRing[edge]!, lowerRing[next]!];
@@ -45,7 +46,8 @@ export function windowRow(
   const run = Math.hypot(lower[1][0] - lower[0][0], lower[1][1] - lower[0][1]);
   const outward = outwardAt(lowerRing, edge);
 
-  const { across, down, pane: glass } = FACADE_STYLE;
+  const { across, down } = grid;
+  const glass = FACADE_STYLE.pane;
   // The same whole number of bays the wall lays its tile on, so the pane covers the window the
   // wall draws under it rather than a slice of the one next door.
   const bays = baysOn(run, style.bay);

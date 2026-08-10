@@ -149,22 +149,30 @@ export const put: Verb = {
       throw new BuildingError('E_DOC_INVALID', '--row is the row to stand on, a whole number of cells up from the floor', ['row']);
     }
 
-    // `--every` repeats the same element across the face on a pitch. Left out, the pitch is the
-    // face's own bay: the wall texture draws one window per bay, so a rhythm on that pitch lands
-    // under the windows the plain floors draw, and nobody counts anything.
+    // `--every` repeats the same element across the face on a pitch. Left out, a window, a panel
+    // or a balcony takes the face's own bay, because the wall texture draws one window per bay and
+    // a rhythm on that pitch lands under them.
+    //
+    // A door is the exception and is one door. A building has an entrance, not a row of them, and
+    // a rhythm of front doors is the thing nobody ever wants and everybody gets by accident.
     const asked = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
+    const repeats = kind !== 'door' || asked !== undefined;
     const pitch = byShape ? (asked ?? Math.round(grid.bayCells)) : asked;
 
-    // And it starts in the middle of its first bay rather than against the margin, so the whole
-    // run sits centred on the bays. Both are measured from the same end of the same face.
-    const col = byShape ? Math.max(MARGIN, Math.round(pitch! / 2 - cols / 2)) : Math.min(from[0], to[0]);
+    // A rhythm starts in the middle of its first bay rather than against the margin, so the run
+    // sits centred on the bays. The one door sits in the middle of the face.
+    const col = byShape
+      ? repeats
+        ? Math.max(MARGIN, Math.round(pitch! / 2 - cols / 2))
+        : Math.max(MARGIN, Math.round(grid.cols / 2 - cols / 2))
+      : Math.min(from[0], to[0]);
     const existing = facesOf(band, side);
 
     // Given a shape rather than two cells, walk the face and take what is free. What a section
     // already wears is on the grid, so a rhythm steps over its own ribs instead of failing on one.
     const made: FaceElement[] = [];
     const skipped: number[] = [];
-    const walk = byShape ? pitch! : (pitch ?? Infinity);
+    const walk = byShape ? (repeats ? pitch! : Infinity) : (pitch ?? Infinity);
 
     for (let at = col; at + cols - 1 <= grid.cols - 1 - MARGIN; at += walk) {
       const candidate: FaceElement = { kind, col: at, row, cols, rows, material, ...(depth === undefined ? {} : { depth }) };
@@ -177,7 +185,7 @@ export const put: Verb = {
         }
       }
       made.push(candidate);
-      if (!byShape && pitch === undefined) break;
+      if (!repeats || (!byShape && pitch === undefined)) break;
     }
 
     if (made.length === 0) {

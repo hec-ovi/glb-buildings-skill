@@ -17,8 +17,9 @@ describe('buildGlb', () => {
     const { stats } = await buildGlb(doc);
     expect(stats.meshes).toBe(3);
     expect(stats.nodes).toBe(3);
-    // A plain tower is walls and a roof, and carries no material it never uses.
-    expect(stats.materials).toBe(2);
+    // A plain tower is its base, its walls and a roof, and carries no material it never uses.
+    // The base is its own wall: a ground floor is not a floor of the tower with bigger glass.
+    expect(stats.materials).toBe(3);
     expect(stats.triangles).toBeLessThan(200);
   });
 
@@ -44,8 +45,8 @@ describe('buildGlb', () => {
       ),
     });
     const { stats } = await buildGlb(composed);
-    // Walls, roof, and the two the face asked for.
-    expect(stats.materials).toBe(4);
+    // Base, walls, roof, and the two the face asked for.
+    expect(stats.materials).toBe(5);
   });
 
   it('draws one picture for the wall and the glass in it, not one each', async () => {
@@ -68,7 +69,7 @@ describe('buildGlb', () => {
 
     expect(written.getRoot().listTextures()).toEqual([]);
     // The materials are still there and still named, so an engine can drop its own on them.
-    expect(written.getRoot().listMaterials().map((one) => one.getName()).sort()).toEqual(['facade', 'roof']);
+    expect(written.getRoot().listMaterials().map((one) => one.getName()).sort()).toEqual(['base', 'facade', 'roof']);
   });
 
   it('never lights a whole surface: a wall glows only where a map says a window is lit', async () => {
@@ -200,7 +201,7 @@ describe('buildGlb', () => {
     const buried = parseDocument({
       ...doc,
       bands: doc.bands.map((band) =>
-        band.id === 'body' ? { ...band, screens: [{ side: 'S', along: 1000, width: 4000, from: 0, to: 3, stand: 100 }] } : band,
+        band.id === 'body' ? { ...band, screens: [{ side: 'S', along: 1000, width: 4000, from: 0, to: 3, stand: 20 }] } : band,
       ),
     });
     await expect(buildGlb(buried)).rejects.toThrow(BuildingError);

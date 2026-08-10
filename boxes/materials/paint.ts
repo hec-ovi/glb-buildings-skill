@@ -54,19 +54,23 @@ export class Canvas {
     this.fill(base);
   }
 
-  fill(colour: Rgb): this {
-    for (let y = 0; y < this.height; y++) for (let x = 0; x < this.width; x++) this.pixel(x, y, colour);
+  fill(colour: Rgb, alpha = 255): this {
+    for (let y = 0; y < this.height; y++) for (let x = 0; x < this.width; x++) this.pixel(x, y, colour, alpha);
     return this;
   }
 
-  /** One pixel. Coordinates wrap, so nothing a template draws can fall off the tile. */
-  pixel(x: number, y: number, colour: Rgb): this {
+  /**
+   * One pixel. Coordinates wrap, so nothing a template draws can fall off the tile. `alpha` is
+   * how much of it is there at all, which is what lets a tile be seen through: the dot matrix
+   * over a screen is a picture that is mostly nothing.
+   */
+  pixel(x: number, y: number, colour: Rgb, alpha = 255): this {
     const at = (((y % this.height) + this.height) % this.height) * this.width + (((x % this.width) + this.width) % this.width);
     const i = at * 4;
     this.#rgba[i] = clamp(colour[0]);
     this.#rgba[i + 1] = clamp(colour[1]);
     this.#rgba[i + 2] = clamp(colour[2]);
-    this.#rgba[i + 3] = 255;
+    this.#rgba[i + 3] = clamp(alpha);
     return this;
   }
 
@@ -76,8 +80,8 @@ export class Canvas {
     return [this.#rgba[i]!, this.#rgba[i + 1]!, this.#rgba[i + 2]!];
   }
 
-  rect(x: number, y: number, width: number, height: number, colour: Rgb): this {
-    for (let dy = 0; dy < height; dy++) for (let dx = 0; dx < width; dx++) this.pixel(x + dx, y + dy, colour);
+  rect(x: number, y: number, width: number, height: number, colour: Rgb, alpha = 255): this {
+    for (let dy = 0; dy < height; dy++) for (let dx = 0; dx < width; dx++) this.pixel(x + dx, y + dy, colour, alpha);
     return this;
   }
 

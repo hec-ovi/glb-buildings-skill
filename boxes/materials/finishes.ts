@@ -13,6 +13,7 @@ import { sheet, type Style } from './styles.ts';
 import { EMPTY_PACK, type Bitmap, type Maps, type Pack } from './pack.ts';
 import { drawAntenna } from './templates/antenna.ts';
 import { drawBalcony } from './templates/balcony.ts';
+import { drawBase } from './templates/base.ts';
 import { drawBeacon } from './templates/beacon.ts';
 import { drawConcrete } from './templates/concrete.ts';
 import { drawDoor } from './templates/door.ts';
@@ -23,6 +24,7 @@ import { drawNeon } from './templates/neon.ts';
 import { drawPipe } from './templates/pipe.ts';
 import { drawRoof } from './templates/roof.ts';
 import { drawScreen } from './templates/screen.ts';
+import { drawScreenGlass } from './templates/screenglass.ts';
 import { drawWindow } from './templates/window.ts';
 
 export const MODES = ['textured', 'plain'] as const;
@@ -50,7 +52,7 @@ export const PAINT_NOTES: Record<PaintName, string> = {
 };
 
 /** The rest of the library, which geometry names for itself. */
-export const FINISHES: string[] = [...PAINTS, 'facade', 'glass', 'glass-band', 'beacon', 'roof'];
+export const FINISHES: string[] = [...PAINTS, 'facade', 'base', 'glass', 'glass-band', 'screen-glass', 'beacon', 'roof'];
 
 /** Colours a finish can be tinted with, and anything else as #rrggbb. */
 const COLOURS: Record<string, Rgb> = {
@@ -96,6 +98,8 @@ export type Finish = {
   emissive?: [number, number, number];
   /** The whole surface is the light, rather than the few places an emissive map names. */
   lit: boolean;
+  /** How solid it is. Under 1 the file blends it, so what is behind shows through. */
+  alpha: number;
   /** One picture per element, instead of tiling by the metre. */
   fit: boolean;
   /** Metres of surface one tile covers, when it tiles. */
@@ -114,6 +118,8 @@ type Recipe = {
    * only where its emissive map says so, which is a few windows in a dark wall.
    */
   lit?: boolean;
+  /** Under 1 makes it see-through: a screen, and the dotted glass over one. */
+  alpha?: number;
   fit?: boolean;
   tile?: number;
   /** The tile this finish draws, and the name it is shared under. */
@@ -134,6 +140,13 @@ const RECIPES: Record<string, Recipe> = {
     emissive: () => WHITE,
     tile: 3,
     draws: facade,
+  },
+  base: {
+    colour: (style) => look(style).concrete,
+    metallic: 0,
+    roughness: 0.9,
+    tile: 3,
+    draws: { key: 'base', draw: (style, seed) => drawBase(look(style), seed) },
   },
   glass: {
     colour: (style) => look(style).glass,
@@ -214,6 +227,8 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.35,
     emissive: (style) => look(style).screen,
     lit: true,
+    // A screen on a tower is a light hanging in the air, and the city shows through it a little.
+    alpha: 0.88,
     fit: true,
     draws: { key: 'screen', draw: (style, seed) => drawScreen(look(style), seed) },
   },
@@ -225,6 +240,14 @@ const RECIPES: Record<string, Recipe> = {
     lit: true,
     tile: 1,
     draws: { key: 'neon', draw: (style, seed) => drawNeon(look(style), seed) },
+  },
+  'screen-glass': {
+    colour: () => [0, 0, 0],
+    metallic: 0,
+    roughness: 0.25,
+    alpha: 1,
+    tile: 1,
+    draws: { key: 'screen-glass', draw: () => drawScreenGlass() },
   },
   beacon: {
     colour: () => [255, 70, 55],
@@ -275,6 +298,7 @@ export function finish(name: string, at: Look): Finish | undefined {
     roughness: recipe.roughness,
     ...(emissive ? { emissive } : {}),
     lit: recipe.lit ?? false,
+    alpha: recipe.alpha ?? 1,
     fit: recipe.fit ?? false,
     tile: recipe.tile ?? 3,
   };

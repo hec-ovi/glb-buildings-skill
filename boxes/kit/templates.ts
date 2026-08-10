@@ -12,7 +12,7 @@
 import { FACADE_WALL, tileOf } from '#materials';
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData, type Patch } from './geometry.ts';
-import { FACADE, GLASS, GLASS_BAND, PIPE, ROOF } from './names.ts';
+import { BASE, FACADE, GLASS, GLASS_BAND, PIPE, ROOF } from './names.ts';
 import { cap, capRing, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
 import { columns, type ColumnStyle } from './columns.ts';
@@ -32,7 +32,7 @@ export type Template = {
 /** One point of plain wall. Everything that is not a window takes its colour from there. */
 export const WALL_PATCH: Patch = { u0: FACADE_WALL.u, u1: FACADE_WALL.u, v0: FACADE_WALL.v, v1: FACADE_WALL.v };
 
-export { FACADE, GLASS, GLASS_BAND, ROOF, CONCRETE, METAL, PIPE, ANTENNA, BEACON, NEON } from './names.ts';
+export { BASE, FACADE, GLASS, GLASS_BAND, ROOF, CONCRETE, METAL, PIPE, ANTENNA, BEACON, NEON } from './names.ts';
 
 function surfaces(...list: Surface[]): MeshData[] {
   return list.filter((surface) => !surface.empty).map((surface) => surface.data());
@@ -55,9 +55,11 @@ const TEMPLATES: Template[] = [
   {
     id: 'main-plain',
     tier: 'full',
-    purpose: 'the base: taller walls, and the underside that closes the building',
+    purpose: 'the base: street level, a plain heavier wall with no window grid, and the underside',
     build: (shape) => {
-      const skin = new Surface(FACADE, WALL_PATCH);
+      // The base wears its own wall. A ground floor is where a building is seen from two metres,
+      // and the wall tile would stack another row of lit offices on the pavement.
+      const skin = new Surface(BASE, undefined, tileOf(BASE));
       const pane = new Surface(GLASS, WALL_PATCH);
       walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);

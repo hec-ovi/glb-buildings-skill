@@ -10,6 +10,7 @@ export {
   type Dressing,
   type LineSpec,
   TEMPLATE_IDS,
+  BASE,
   FACADE,
   GLASS,
   GLASS_BAND,

@@ -29,6 +29,12 @@ export type SectionShape = {
    * tile instead of stretching one row of it over a two storey lobby. Left out, one row a floor.
    */
   storey?: number;
+  /**
+   * The grid each wall picture actually holds, by material. A generated picture holds whatever
+   * grid the model drew, and laying UVs on the wrong one slices the windows at every floor. Left
+   * out, the grid the kit draws its own tiles on.
+   */
+  tiles?: Record<string, { across: number; down: number }>;
 };
 
 /** The footprint partway up the section. */
@@ -62,8 +68,8 @@ export function rowsPerFloor(shape: SectionShape): number {
  * The tile runs up the building the way it was drawn, so its bottom row lands on the bottom
  * floor. Beyond the tile's own height it repeats, which is what the sampler does with a UV past 1.
  */
-function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number, floor?: number, rows = 1): void {
-  const { across, down } = FACADE_STYLE;
+function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number, floor: number | undefined, rows: number, grid: { across: number; down: number }): void {
+  const { across, down } = grid;
 
   for (let i = 0; i < lower.length; i++) {
     const next = (i + 1) % lower.length;
@@ -90,11 +96,13 @@ function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1
 export function walls(surface: Surface, shape: SectionShape, pane?: Surface): void {
   const rows = Math.max(1, shape.floors);
   const perFloor = rowsPerFloor(shape);
+  // The grid this wall's own picture holds, which is not always the one the kit draws.
+  const grid = shape.tiles?.[surface.material] ?? { across: FACADE_STYLE.across, down: FACADE_STYLE.down };
   const chamfer = Math.min(shape.chamfer ?? 0, shape.height / 3);
   const low = chamfer;
   const high = shape.height - chamfer;
 
-  if (chamfer > 0) band(surface, capRing(shape, 0), ringAt(shape, chamfer / shape.height), 0, chamfer);
+  if (chamfer > 0) band(surface, capRing(shape, 0), ringAt(shape, chamfer / shape.height), 0, chamfer, undefined, 1, grid);
 
   for (let row = 0; row < rows; row++) {
     const t0 = row / rows;
@@ -104,14 +112,14 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
     const lower = ringAt(shape, y0 / shape.height);
     const upper = ringAt(shape, y1 / shape.height);
 
-    band(surface, lower, upper, y0, y1, row, perFloor);
+    band(surface, lower, upper, y0, y1, row, perFloor, grid);
     if (!shape.windows || !pane) continue;
 
     // A floor with windows: every face is cut into bays and each bay gets a pane.
-    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, row, y0, y1, shape.windows);
+    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, row, y0, y1, shape.windows, grid);
   }
 
-  if (chamfer > 0) band(surface, ringAt(shape, high / shape.height), capRing(shape, 1), high, shape.height);
+  if (chamfer > 0) band(surface, ringAt(shape, high / shape.height), capRing(shape, 1), high, shape.height, undefined, 1, grid);
 }
 
 /** The deck on top, or the underside at the bottom. A fan, so any footprint closes. */

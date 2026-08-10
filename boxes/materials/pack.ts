@@ -15,6 +15,17 @@ import { sizeOf, type Size } from './size.ts';
 export type Bitmap = { bytes: Uint8Array; mime: string };
 export type Maps = { colour: Bitmap; emissive?: Bitmap };
 
+/**
+ * How many bays across and floors down a wall picture actually holds.
+ *
+ * The kit draws its own tiles on an 8 by 4 grid, but a picture from an image model holds whatever
+ * grid it felt like drawing. Declared here, the wall lays its UVs on the real one, so the windows
+ * land on the floors instead of being sliced by them. `pack.json` beside the images:
+ *
+ *     { "facade": { "across": 10, "down": 3 }, "glass-band": { "across": 6, "down": 4 } }
+ */
+export type Grid = { across: number; down: number };
+
 const MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -36,11 +47,13 @@ export type Pack = {
   /** What it carries, and how many pictures each one has. */
   finishes: string[];
   variants: Record<string, number>;
+  /** The grid each wall picture actually holds, where the pack says so. */
+  grids: Record<string, Grid>;
   /** One finish, picking between its pictures with the building's own seed. */
   get(finish: string, seed?: number): Maps | undefined;
 };
 
-export const EMPTY_PACK: Pack = { dir: '', finishes: [], variants: {}, get: () => undefined };
+export const EMPTY_PACK: Pack = { dir: '', finishes: [], variants: {}, grids: {}, get: () => undefined };
 
 /**
  * Read every image in a style's folder. glTF carries PNG and JPEG and nothing else without an
@@ -58,6 +71,7 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
 
   const colour = new Map<string, Map<number, Bitmap>>();
   const glow = new Map<string, Map<number, Bitmap>>();
+  const grids = await readGrids(dir);
 
   const keep = (into: Map<string, Map<number, Bitmap>>, stem: string, bitmap: Bitmap) => {
     const { finish, variant } = split(stem);
@@ -81,6 +95,7 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     dir,
     finishes: [...colour.keys()].sort(),
     variants: Object.fromEntries([...colour].map(([finish, set]) => [finish, set.size])),
+    grids,
     get(finish, seed = 0) {
       const set = colour.get(finish);
       if (!set) return undefined;
@@ -93,6 +108,32 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
       return lit ? { colour: base, emissive: lit } : { colour: base };
     },
   };
+}
+
+/**
+ * What the pack says about its own pictures. Missing, unreadable or nonsense is the same answer:
+ * nothing, and the kit falls back to the grid it draws its own tiles on.
+ */
+async function readGrids(dir: string): Promise<Record<string, Grid>> {
+  let text: string;
+  try {
+    text = await readFile(join(dir, 'pack.json'), 'utf8');
+  } catch {
+    return {};
+  }
+
+  try {
+    const read = JSON.parse(text) as Record<string, Partial<Grid>>;
+    const found: Record<string, Grid> = {};
+    for (const [finish, grid] of Object.entries(read)) {
+      const across = Math.round(Number(grid?.across));
+      const down = Math.round(Number(grid?.down));
+      if (across > 0 && down > 0) found[finish] = { across, down };
+    }
+    return found;
+  } catch {
+    return {};
+  }
 }
 
 /** One picture supplied for one thing, like the image on one screen, and how big it is. */

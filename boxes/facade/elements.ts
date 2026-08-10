@@ -141,12 +141,24 @@ function balcony(kit: Surfaces, face: Face, floor: number, element: Element): vo
       face.point(floor, from, top, back),
     ];
     const b = a.map((corner) => step(corner, front - back));
-    surface.quad(b[0]!, b[1]!, b[2]!, b[3]!, fit ? FULL : undefined);
-    surface.quad(a[3]!, a[2]!, a[1]!, a[0]!, fit ? FULL : undefined);
+
+    // A picture fills the pair of faces you actually look at, which is not always the pair facing
+    // out. A balustrade across the front is wide and shallow, so its picture goes on the front and
+    // the back. A side rail is the same box turned ninety degrees: 10 cm across and a metre and a
+    // half deep, so putting the picture on the front there squeezes a whole balustrade into a
+    // sliver and smears a strip of it down the side anybody can see.
+    const across = Math.hypot(b[1]![0] - b[0]![0], b[1]![2] - b[0]![2]);
+    const along = Math.hypot(b[0]![0] - a[0]![0], b[0]![2] - a[0]![2]);
+    const facingOut = across >= along;
+    const outward = fit ? (facingOut ? FULL : EDGE) : undefined;
+    const sideways = fit ? (facingOut ? EDGE : FULL) : undefined;
+
+    surface.quad(b[0]!, b[1]!, b[2]!, b[3]!, outward);
+    surface.quad(a[3]!, a[2]!, a[1]!, a[0]!, outward);
     surface.quad(a[0]!, a[1]!, b[1]!, b[0]!, fit ? EDGE : undefined);
-    surface.quad(a[1]!, a[2]!, b[2]!, b[1]!, fit ? EDGE : undefined);
+    surface.quad(a[1]!, a[2]!, b[2]!, b[1]!, sideways);
     surface.quad(a[2]!, a[3]!, b[3]!, b[2]!, fit ? EDGE : undefined);
-    surface.quad(a[3]!, a[0]!, b[0]!, b[3]!, fit ? EDGE : undefined);
+    surface.quad(a[3]!, a[0]!, b[0]!, b[3]!, sideways);
   };
 
   const left = rect.col;

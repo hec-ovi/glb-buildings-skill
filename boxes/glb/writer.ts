@@ -70,7 +70,7 @@ export const BUDGET: Record<string, number> = { flat: 120, light: 1200, full: 40
 /** A crown is one floor carrying a whole roof, so it is judged as a section, not per floor. */
 export const ROOF_BUDGET = 4500;
 
-function shapeOf(band: PlacedBand, sunk: number, storey: number): SectionShape {
+function shapeOf(band: PlacedBand, sunk: number, storey: number, tiles: Record<string, { across: number; down: number }>): SectionShape {
   return {
     bottom: metres(band.bottom),
     top: metres(band.top),
@@ -79,6 +79,7 @@ function shapeOf(band: PlacedBand, sunk: number, storey: number): SectionShape {
     chamfer: band.chamfer * MM,
     windows: band.windows ? WINDOW : undefined,
     storey,
+    tiles,
   };
 }
 
@@ -167,14 +168,19 @@ function palette(document: Document, look: Look, screens: Map<string, (Bitmap & 
 
     const material = document
       .createMaterial(name)
-      .setBaseColorFactor([...recipe.colour, 1])
+      .setBaseColorFactor([...recipe.colour, recipe.alpha])
       .setMetallicFactor(recipe.metallic)
       .setRoughnessFactor(recipe.roughness);
+
+    // Anything you can see through has to say so, or it is drawn as a solid rectangle. The dotted
+    // glass over a screen is almost entirely nothing, and a screen itself lets the city through.
+    const seeThrough = recipe.alpha < 1 || name === 'screen-glass' || screens.has(name);
+    if (seeThrough) material.setAlphaMode('BLEND');
 
     const image = shown ? { key: name, load: () => ({ colour: shown, emissive: shown }) } : recipe.image;
     if (image) {
       const maps = image.load();
-      material.setBaseColorFactor([1, 1, 1, 1]).setBaseColorTexture(textureOf(`${image.key}-colour`, maps.colour));
+      material.setBaseColorFactor([1, 1, 1, recipe.alpha]).setBaseColorTexture(textureOf(`${image.key}-colour`, maps.colour));
 
       // A neon tube, a screen and a beacon are the light, so their own picture is what glows when
       // no separate one was supplied. A wall glows only where its emissive map says a window is
@@ -319,7 +325,7 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
     const above = placed.bands[index + 1];
     // The building's own floor height is the storey the wall tile was drawn for, so a taller
     // floor shows more of the tile rather than stretching one row of it over a lobby.
-    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM);
+    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM, pack?.grids ?? {});
     const parts = template(band.template).build(shape);
     const worn = dress(shape, {
       wires: band.wires,

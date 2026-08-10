@@ -3,6 +3,8 @@
  * here they are only names, so a part says what it is made of and nothing more.
  */
 export const FACADE = 'facade';
+/** The wall a building stands on at street level: plain, heavier, and carrying the entrance. */
+export const BASE = 'base';
 export const GLASS = 'glass';
 export const GLASS_BAND = 'glass-band';
 export const ROOF = 'roof';

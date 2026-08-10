@@ -91,6 +91,19 @@ describe('a pack of generated images', () => {
     expect(chosen.emissive!.bytes.byteLength).toBeGreaterThan(0);
   });
 
+  it('reads the grid a wall picture actually holds, and shrugs off a bad one', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'packs-'));
+    await mkdir(join(root, 'cyber'), { recursive: true });
+    await writeFile(join(root, 'cyber', 'pack.json'), JSON.stringify({ facade: { across: 10, down: 3 }, glass: { across: 0 }, roof: 'nonsense' }));
+
+    const pack = await loadPack(root, 'cyber');
+    expect(pack.grids).toEqual({ facade: { across: 10, down: 3 } });
+
+    // A folder with no pack.json at all is the same answer: nothing, and the drawn grid stands.
+    await mkdir(join(root, 'modern'), { recursive: true });
+    expect((await loadPack(root, 'modern')).grids).toEqual({});
+  });
+
   it('is nothing at all when the folder is not there, so a build still works', async () => {
     const pack = await loadPack(join(tmpdir(), 'no-such-packs'), 'cyber');
     expect(pack.finishes).toEqual([]);
