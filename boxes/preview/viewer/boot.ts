@@ -238,6 +238,11 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
      * it smears into one glowing rectangle, which is the opposite of what a screen is for: the
      * bleed belongs to the few things that really are brighter than white.
      *
+     * Strength and radius stay small for the same reason the threshold is high: a neon tube seen
+     * from across the street is a whole column of pixels over the threshold, and a wide bloom
+     * turns it into a pillar of fog that hides the building carrying it. A glow the width of the
+     * tube reads as a light; anything past that reads as weather.
+     *
      * If the browser cannot give the composer its render targets, the scene still draws: bloom is
      * the difference between good and better, not between working and not.
      */
@@ -245,7 +250,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     try {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 1.1, 0.75, 0.85));
+      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 0.45, 0.35, 0.85));
       composer.addPass(new OutputPass());
       draw = () => composer!.render();
     } catch {
