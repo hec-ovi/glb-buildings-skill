@@ -14,13 +14,11 @@ import { EMPTY_PACK, type Bitmap, type Maps, type Pack } from './pack.ts';
 import { drawAntenna } from './templates/antenna.ts';
 import { drawBalcony } from './templates/balcony.ts';
 import { drawBase } from './templates/base.ts';
-import { drawBeacon } from './templates/beacon.ts';
 import { drawConcrete } from './templates/concrete.ts';
 import { drawDoor } from './templates/door.ts';
 import { drawFacade } from './templates/facade.ts';
 import { drawGlassBand } from './templates/glassband.ts';
 import { drawMetal } from './templates/metal.ts';
-import { drawNeon } from './templates/neon.ts';
 import { drawPipe } from './templates/pipe.ts';
 import { drawRoof } from './templates/roof.ts';
 import { drawScreen } from './templates/screen.ts';
@@ -232,6 +230,8 @@ const RECIPES: Record<string, Recipe> = {
     fit: true,
     draws: { key: 'screen', draw: (style, seed) => drawScreen(look(style), seed) },
   },
+  // A neon run and a beacon lens are lights, not surfaces. A picture of a tube only dulls them:
+  // flat colour, emitting the same colour, is brighter and reads better at every distance.
   neon: {
     colour: (style) => look(style).neon,
     metallic: 0,
@@ -239,7 +239,6 @@ const RECIPES: Record<string, Recipe> = {
     emissive: (style) => look(style).neon,
     lit: true,
     tile: 1,
-    draws: { key: 'neon', draw: (style, seed) => drawNeon(look(style), seed) },
   },
   'screen-glass': {
     colour: () => [0, 0, 0],
@@ -256,7 +255,6 @@ const RECIPES: Record<string, Recipe> = {
     emissive: () => [255, 70, 55],
     lit: true,
     fit: true,
-    draws: { key: 'beacon', draw: (style, seed) => drawBeacon(look(style), seed) },
   },
 };
 

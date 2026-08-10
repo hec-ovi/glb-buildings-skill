@@ -96,7 +96,40 @@ export function screen(kit: Surfaces, shape: SectionShape, style: ScreenStyle): 
   const { t0, t1 } = span;
 
   const at = (t: number, along: number, out: number): Vec => facePoint(shape, t, edge, along, out);
-  const corners = (out: number): [Vec, Vec, Vec, Vec] => [at(t0, span.left, out), at(t0, span.right, out), at(t1, span.right, out), at(t1, span.left, out)];
+
+  /**
+   * A screen is a rigid flat panel bolted to a wall, so it is built on one plane of its own rather
+   * than on four points of the wall. On a section that twists or tapers those four points are not
+   * coplanar, and a panel six centimetres thick built across them folds through itself.
+   *
+   * The plane is taken from the middle of the space it was given: the point it centres on, the way
+   * across, and the way up. The brackets are what take up the difference to the wall, which is
+   * what they do on a real building.
+   */
+  const middleAt = (out: number) => at((t0 + t1) / 2, (span.left + span.right) / 2, out);
+  const centre = middleAt(style.stand);
+  const away = middleAt(style.stand + 1);
+  const normal: Vec = [away[0] - centre[0], away[1] - centre[1], away[2] - centre[2]];
+
+  const rightEnd = at((t0 + t1) / 2, span.right, style.stand);
+  const leftEnd = at((t0 + t1) / 2, span.left, style.stand);
+  const across: Vec = [(rightEnd[0] - leftEnd[0]) / 2, (rightEnd[1] - leftEnd[1]) / 2, (rightEnd[2] - leftEnd[2]) / 2];
+
+  const topEnd = at(t1, (span.left + span.right) / 2, style.stand);
+  const lowEnd = at(t0, (span.left + span.right) / 2, style.stand);
+  const up: Vec = [(topEnd[0] - lowEnd[0]) / 2, (topEnd[1] - lowEnd[1]) / 2, (topEnd[2] - lowEnd[2]) / 2];
+
+  const corner = (x: number, y: number, out: number): Vec => [
+    centre[0] + across[0] * x + up[0] * y + normal[0] * (out - style.stand),
+    centre[1] + across[1] * x + up[1] * y + normal[1] * (out - style.stand),
+    centre[2] + across[2] * x + up[2] * y + normal[2] * (out - style.stand),
+  ];
+  const corners = (out: number): [Vec, Vec, Vec, Vec] => [
+    corner(-1, -1, out),
+    corner(1, -1, out),
+    corner(1, 1, out),
+    corner(-1, 1, out),
+  ];
 
   const back = corners(style.stand - DEPTH);
   const front = corners(style.stand);

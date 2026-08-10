@@ -3,7 +3,12 @@
  * is written into the bar, so a browser without a context, or a document that does not parse,
  * shows a sentence instead of a blank page.
  */
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import {
+  ACESFilmicToneMapping,
   AmbientLight,
   Color,
   DirectionalLight,
@@ -13,6 +18,7 @@ import {
   MOUSE,
   PerspectiveCamera,
   Scene,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -86,17 +92,26 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     }
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // A night building is mostly black with a few things far brighter than white. Filmic tone
+    // mapping is what keeps those from clipping to flat white patches.
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
     stage.appendChild(renderer.domElement);
 
     const scene = new Scene();
     scene.background = new Color(0x0b1020);
     // Evening light: enough sun to model the massing, little enough fill that a dark facade
     // stays dark and its lit windows are the brightest thing on it.
-    scene.add(new AmbientLight(0xffffff, 0.22));
-    scene.add(new HemisphereLight(0x35507e, 0x090d18, 0.7));
-    const sun = new DirectionalLight(0xffe9cf, 1.15);
+    scene.add(new AmbientLight(0xffffff, 0.16));
+    scene.add(new HemisphereLight(0x35507e, 0x090d18, 0.55));
+    const sun = new DirectionalLight(0xffe9cf, 0.95);
     sun.position.set(30, 60, 40);
     scene.add(sun);
+    // A second, much dimmer light from the other side, so the face away from the sun is readable
+    // without lifting the whole building off black.
+    const fill = new DirectionalLight(0x9fc0ff, 0.25);
+    fill.position.set(-40, 25, -30);
+    scene.add(fill);
 
     const ground = new GridHelper(200, 200, 0x2a3b63, 0x16223c);
     scene.add(ground);
@@ -166,6 +181,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       ground.scale.setScalar(Math.max(1, reach / 100));
     };
 
+    let composer: EffectComposer | undefined;
     const resize = () => {
       const width = stage.clientWidth || window.innerWidth;
       const height = stage.clientHeight || window.innerHeight;
@@ -174,6 +190,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       renderer.domElement.style.height = '100%';
       camera.aspect = width / Math.max(1, height);
       camera.updateProjectionMatrix();
+      composer?.setSize(width, height);
     };
 
     const load = async (keepCamera = false) => {
@@ -212,6 +229,25 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       else modelRoot.clear();
     };
 
+    /**
+     * What makes a lit window read as a light rather than as a pale rectangle: everything brighter
+     * than the threshold bleeds into the air around it. Neon, screens and lit windows are the only
+     * things on a night building that pass it.
+     *
+     * If the browser cannot give the composer its render targets, the scene still draws: bloom is
+     * the difference between good and better, not between working and not.
+     */
+    let draw = () => renderer.render(scene, camera);
+    try {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 0.85, 0.5, 0.75));
+      composer.addPass(new OutputPass());
+      draw = () => composer!.render();
+    } catch {
+      composer = undefined;
+    }
+
     window.addEventListener('resize', resize);
     window.addEventListener('error', (event) => bar.fail(event.message));
     resize();
@@ -222,7 +258,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
       last = now;
       fly.step(seconds);
       controls.update();
-      renderer.render(scene, camera);
+      draw();
     });
 
     onChange(() => void load(true).catch((error: unknown) => bar.fail(String(error))));

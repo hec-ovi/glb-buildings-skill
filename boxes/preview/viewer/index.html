@@ -172,7 +172,9 @@
         text-align: right;
         cursor: pointer;
       }
-      .action .action-text { text-align: right; letter-spacing: 0.01em; }
+      /* The words sit back: the icons carry the meaning and the actions are not the subject. */
+      .action .action-text { text-align: right; letter-spacing: 0.01em; opacity: 0.55; }
+      .action:hover .action-text { opacity: 0.9; }
       .action svg { display: block; }
       .action:hover { color: var(--accent); border-color: var(--accent); }
       .action.danger:hover { color: var(--warn); border-color: var(--warn); }

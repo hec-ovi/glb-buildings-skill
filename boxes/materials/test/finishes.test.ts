@@ -19,15 +19,18 @@ describe('the finish library', () => {
     expect(finish('concrete', { ...look, mode: 'plain' })?.colour).toHaveLength(3);
   });
 
-  it('tints one tile into any colour, so a tower runs six lines for one picture', () => {
+  it('gives a light a colour and no picture at all', () => {
     const cyan = finish('neon:cyan', look)!;
     const magenta = finish('neon:magenta', look)!;
     const mixed = finish('neon:#ff2f88', look)!;
 
     expect(cyan.emissive).not.toEqual(magenta.emissive);
     expect(mixed.emissive).toEqual([255 / 255, 0x2f / 255, 0x88 / 255]);
-    // And it is one picture: the tile does not change with the colour.
-    expect([...cyan.image!.load().colour.bytes]).toEqual([...magenta.image!.load().colour.bytes]);
+    // A neon run and a beacon lens are lights. A photograph of a tube only dulls them, so they
+    // carry no tile in either mode and the colour is the whole material.
+    expect(cyan.image).toBeUndefined();
+    expect(finish('beacon:red', look)!.image).toBeUndefined();
+    expect(cyan.emissive).toEqual(cyan.colour);
   });
 
   it('draws every family differently, and the same one the same way twice', () => {
