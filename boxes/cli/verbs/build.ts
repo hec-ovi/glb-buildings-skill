@@ -23,7 +23,13 @@ async function buildOne(projects: Parameters<Verb['run']>[1]['projects'], named:
     await mkdir(dirname(project.modelPath), { recursive: true });
     await writeFile(project.modelPath, result.glb);
 
+    // A building with no door anywhere is a legal file and usually a mistake: it is the one thing
+    // a person notices immediately and a driver never checks. Said, not refused, because a
+    // background block seen from two streets away is meant to have nothing composed on it.
+    const wayIn = doc.bands.some((band) => band.faces.some((face) => face.elements.some((one) => one.kind === 'door')));
+
     return {
+      ...(wayIn ? {} : { missing: 'no door on any face: there is no way into this building. `put door --row 1 --wide 1.8 --tall 2.6 --section <ground> --side S`' }),
       project: name,
       file: project.modelPath,
       style: doc.style,

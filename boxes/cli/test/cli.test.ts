@@ -301,6 +301,17 @@ describe('build', () => {
     expect(built.triangles).toBeLessThan(200);
   });
 
+  it('says when a building has no way into it, without refusing to write one', async () => {
+    await call('new', 'tower-a', '--floors', '8');
+    // A background block is meant to have nothing composed on it, so this is said, not refused.
+    const bare = (await call('build')) as unknown as { ok: boolean; missing?: string };
+    expect(bare.ok).toBe(true);
+    expect(bare.missing).toContain('no door');
+
+    await call('put', 'door', '--row', '1', '--wide', '1.8', '--tall', '2.6', '--section', 'ground', '--side', 'S');
+    expect(await call('build')).not.toHaveProperty('missing');
+  });
+
   it('builds a setback, and reports what each section rests on', async () => {
     await call('new', 'tower-a');
     await call('set-band', 'body', '--inset', '1.5');

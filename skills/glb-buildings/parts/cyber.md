@@ -24,6 +24,17 @@ In this order. Each one only works because the ones around it are dark.
 
 Do not do all five on every building. A city is mostly towers with one or two of them.
 
+**Then the way in.** Every tower somebody walks up to needs one door at street level, and it is the
+thing that gets forgotten on this style because everything above it is so much louder:
+
+```bash
+buildings put door --row 1 --wide 2 --tall 3.2 --section ground --side S
+```
+
+A door on a `cyber` tower is wide and tall, two metres by three or more, because the ground floor
+is six or seven metres high. `buildings build` says `missing` when a building has no door on any
+face, so read that line before you report the building finished.
+
 ## Full glass floors
 
 A band of nothing but glazing, lit, sitting in a mass that is otherwise dark. It is a section of its own,
@@ -107,7 +118,8 @@ one is already there if you do not.
 
 ```bash
 buildings new spire --style cyber --brief "black megastructure with a lit band and a screen" --width 24 --depth 20 --floors 44
-buildings set-band ground --height 6
+buildings set-band ground --height 6 --tier light
+buildings put door --row 1 --wide 2 --tall 3.2 --section ground --side S
 buildings set-band body --floors 26
 buildings add-band glow --kind custom --tier flat --template bulk-glass --floors 5 --after body
 buildings add-band upper --kind bulk --tier flat --floors 10 --inset 1.5 --after glow
