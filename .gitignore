@@ -8,6 +8,7 @@ dist/
 docs/private/
 docs/IDEA.md
 docs/REQUIREMENTS.md
+docs/features.md
 
 # Agent scratch
 *.probe.*
