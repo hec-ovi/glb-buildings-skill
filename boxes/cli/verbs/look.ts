@@ -11,11 +11,11 @@ async function packOf(root: string, style: string) {
   const pack = await loadPack(root, style);
   return {
     dir: pack.dir,
-    has: pack.finishes,
+    has: pack.finishes.map((finish) => (pack.variants[finish]! > 1 ? `${finish} x${pack.variants[finish]}` : finish)),
     note:
       pack.finishes.length === 0
-        ? `no generated images here yet, so every finish is drawn from code. Put PNGs or JPEGs named after the finish in ${pack.dir} to override them`
-        : `${pack.finishes.length} finishes come from images, the rest are drawn from code`,
+        ? `no generated images here yet, so every finish is drawn from code. Put PNGs or JPEGs named after the finish in ${pack.dir} to override them: facade.png, or facade_1.png to facade_4.png for a building to pick between`
+        : `${pack.finishes.length} finishes come from images, the rest are drawn from code. A finish with several pictures is picked between per building`,
   };
 }
 

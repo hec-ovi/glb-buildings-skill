@@ -275,7 +275,7 @@ export function finish(name: string, at: Look): Finish | undefined {
   made.image = {
     key,
     load: () => {
-      const supplied = pack.get(key);
+      const supplied = pack.get(key, at.seed);
       if (supplied) return supplied;
       const drawn = draw(at.style, at.seed);
       return { colour: asBitmap(drawn.colour), ...(drawn.emissive ? { emissive: asBitmap(drawn.emissive) } : {}) };

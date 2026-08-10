@@ -4,6 +4,9 @@
  * Nothing is required. A pack with one file in it overrides that one finish and everything else
  * falls back to the drawing, so a set can be generated a texture at a time and the build never
  * stops working. Where the folder is comes from the caller, never from a path baked in here.
+ *
+ * A finish can carry several pictures, `facade_1.png` to `facade_4.png`, and a building picks one
+ * of them from its own seed. That is what stops a street of towers wearing one wall.
  */
 import { readFile, readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
@@ -20,15 +23,23 @@ const MIME: Record<string, string> = {
 /** `facade.png` is the colour map, `facade-emissive.png` is what glows. */
 const EMISSIVE = '-emissive';
 
+/** `facade_2` is the second picture of the facade. Without a number there is only the one. */
+function split(stem: string): { finish: string; variant: number } {
+  const found = /^(.+)_(\d+)$/.exec(stem);
+  return found ? { finish: found[1]!, variant: Number(found[2]) } : { finish: stem, variant: 0 };
+}
+
 export type Pack = {
   /** Where it was read from, so a verb can say where to put files. */
   dir: string;
-  /** What it carries, for reporting. */
+  /** What it carries, and how many pictures each one has. */
   finishes: string[];
-  get(finish: string): Maps | undefined;
+  variants: Record<string, number>;
+  /** One finish, picking between its pictures with the building's own seed. */
+  get(finish: string, seed?: number): Maps | undefined;
 };
 
-export const EMPTY_PACK: Pack = { dir: '', finishes: [], get: () => undefined };
+export const EMPTY_PACK: Pack = { dir: '', finishes: [], variants: {}, get: () => undefined };
 
 /**
  * Read every image in a style's folder. glTF carries PNG and JPEG and nothing else without an
@@ -44,8 +55,15 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     return { ...EMPTY_PACK, dir };
   }
 
-  const colour = new Map<string, Bitmap>();
-  const glow = new Map<string, Bitmap>();
+  const colour = new Map<string, Map<number, Bitmap>>();
+  const glow = new Map<string, Map<number, Bitmap>>();
+
+  const keep = (into: Map<string, Map<number, Bitmap>>, stem: string, bitmap: Bitmap) => {
+    const { finish, variant } = split(stem);
+    const set = into.get(finish) ?? new Map<number, Bitmap>();
+    set.set(variant, bitmap);
+    into.set(finish, set);
+  };
 
   for (const name of names) {
     const ext = extname(name).toLowerCase();
@@ -54,17 +72,23 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
 
     const stem = name.slice(0, -ext.length);
     const bytes = new Uint8Array(await readFile(join(dir, name)));
-    if (stem.endsWith(EMISSIVE)) glow.set(stem.slice(0, -EMISSIVE.length), { bytes, mime });
-    else colour.set(stem, { bytes, mime });
+    if (stem.endsWith(EMISSIVE)) keep(glow, stem.slice(0, -EMISSIVE.length), { bytes, mime });
+    else keep(colour, stem, { bytes, mime });
   }
 
   return {
     dir,
     finishes: [...colour.keys()].sort(),
-    get(finish) {
-      const base = colour.get(finish);
-      if (!base) return undefined;
-      const lit = glow.get(finish);
+    variants: Object.fromEntries([...colour].map(([finish, set]) => [finish, set.size])),
+    get(finish, seed = 0) {
+      const set = colour.get(finish);
+      if (!set) return undefined;
+
+      // Same seed, same picture, every build; different buildings spread across what is there.
+      const numbers = [...set.keys()].sort((a, b) => a - b);
+      const chosen = numbers[Math.abs(seed) % numbers.length]!;
+      const base = set.get(chosen)!;
+      const lit = glow.get(finish)?.get(chosen);
       return lit ? { colour: base, emissive: lit } : { colour: base };
     },
   };

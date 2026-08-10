@@ -58,8 +58,12 @@ the pane is lit are drawn per window.
 
 A pack is a folder per style holding `<finish>.png` and `<finish>-emissive.png` (JPEG works for colour).
 Anything the folder carries stands in for the drawn tile; anything it lacks stays drawn, so a set can be
-generated one texture at a time and the build never stops working. Where the folder is comes from the
-caller. Generating them is `docs/textures/PROMPTS.md`.
+generated one texture at a time and the build never stops working.
+
+A finish may carry several pictures, `facade_1.png` to `facade_4.png`, and a building picks one of them from
+its own seed, so a street of towers does not wear one wall. The emissive map of a variant is named after it:
+`facade_2-emissive.png`. Where the folder is comes from the caller. Generating them is
+`docs/textures/PROMPTS.md`.
 
 ## Invariants
 

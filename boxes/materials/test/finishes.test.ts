@@ -69,6 +69,28 @@ describe('a pack of generated images', () => {
     expect([...finish('metal', dressed)!.image!.load().colour.bytes]).toEqual([...finish('metal', look)!.image!.load().colour.bytes]);
   });
 
+  it('picks between the pictures a finish has, so a street is not one wall repeated', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'packs-'));
+    await mkdir(join(root, 'cyber'), { recursive: true });
+    const shade = async (n: number, grey: number) => {
+      await writeFile(join(root, 'cyber', `facade_${n}.png`), png({ width: 2, height: 2, rgba: new Uint8Array(16).fill(grey) }));
+      await writeFile(join(root, 'cyber', `facade_${n}-emissive.png`), png({ width: 2, height: 2, rgba: new Uint8Array(16).fill(grey / 2) }));
+    };
+    await shade(1, 40);
+    await shade(2, 120);
+    await shade(3, 200);
+
+    const pack = await loadPack(root, 'cyber');
+    expect(pack.variants).toEqual({ facade: 3 });
+
+    const picked = (seed: number) => [...finish('facade', { ...look, seed, pack })!.image!.load().colour.bytes];
+    expect(picked(1)).toEqual(picked(4));
+    expect(new Set([picked(0), picked(1), picked(2)].map((one) => one.join())).size).toBe(3);
+    // And the emissive map that comes with a picture is the one that belongs to it.
+    const chosen = finish('facade', { ...look, seed: 1, pack })!.image!.load();
+    expect(chosen.emissive!.bytes.byteLength).toBeGreaterThan(0);
+  });
+
   it('is nothing at all when the folder is not there, so a build still works', async () => {
     const pack = await loadPack(join(tmpdir(), 'no-such-packs'), 'cyber');
     expect(pack.finishes).toEqual([]);

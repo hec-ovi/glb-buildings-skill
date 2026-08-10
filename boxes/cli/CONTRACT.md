@@ -19,7 +19,7 @@ The binary is `boxes/cli/bin/buildings.ts`. It prints the answer as JSON and exi
 ```
 <home>/
   current                   the name of the building being edited
-  textures/<style>/          generated images that stand in for the drawn tiles
+  textures/<style>/          generated images that stand in for the drawn tiles, `<finish>_<n>.jpg`
   projects/<name>/
     building.json           the document
     build/model.glb         the built file
