@@ -8,10 +8,6 @@ export const METRE = 1000;
 
 export type Mm = number;
 
-function isMm(value: unknown): value is Mm {
-  return typeof value === 'number' && Number.isSafeInteger(value);
-}
-
 /** Millimetres to metres, for export and for anything shown to a human. */
 export function toMetres(mm: Mm): number {
   return mm / METRE;

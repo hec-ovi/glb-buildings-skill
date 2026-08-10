@@ -10,7 +10,7 @@ import { edgeFacing } from '#kit';
 import { COLOUR_NAMES, loadImage } from '#materials';
 import { BuildingError, SIDES, bandFloorHeight, toMetres, toMm, type Band, type BandLine, type BandScreen, type BuildingDocument, type Side } from '#spec';
 import type { Verb } from './verb.ts';
-import { count, need, oneOf, parse, size, text } from './args.ts';
+import { count, oneOf, parse, size, text } from './args.ts';
 
 /** The section named, or the first one, so a verb always has something to work on. */
 function sectionOf(doc: BuildingDocument, named: string | undefined): Band {
@@ -154,7 +154,7 @@ export const screen: Verb = {
 
     let made: BandScreen | undefined;
     let fitted = '';
-    const { project, doc, band } = await editBand(projects, positionals[0], (found, doc) => {
+    const { project, band } = await editBand(projects, positionals[0], (found, doc) => {
       const asked = whole(values.to, 'to');
       const first = whole(values.from, 'from') ?? 0;
       const storey = bandFloorHeight(doc, found);

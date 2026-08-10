@@ -231,9 +231,10 @@ every face. `materials` is the finish library. `check` proves the stack. `glb` w
 `preview` is the service. `cli` is the toolkit.
 
 ```bash
-npm test        # every box, one pass
-npm run doctor  # can this machine build and preview
-npm run serve   # start the preview service
+npm test          # every box, one pass
+npm run typecheck # types, and anything left unused
+npm run doctor    # can this machine build and preview
+npm run serve     # start the preview service
 ```
 
 MIT licensed.

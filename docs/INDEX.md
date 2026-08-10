@@ -35,6 +35,7 @@ is not expressible.
 ```bash
 npm install
 npm test                         # every box, one pass
+npm run typecheck                # types, and anything left unused
 node boxes/cli/bin/buildings.ts help
 npm link && buildings new tower-a && buildings build && buildings preview
 ```

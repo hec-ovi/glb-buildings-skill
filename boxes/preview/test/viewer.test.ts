@@ -146,9 +146,9 @@ describe('boot', () => {
 
 describe('picking', () => {
   it('takes the bays facing the camera and leaves the far side alone', () => {
-    const { picker, blueprint, emitted } = mount();
+    const { stage, blueprint, emitted } = mount();
     // Shift makes this one drag a zone: there is no mode to set first.
-    drag(picker, [0, 0], [800, 600], true);
+    drag(stage, [0, 0], [800, 600], true);
 
     const selection = emitted.at(-1)!;
     expect(selection.mode).toBe('zone');
@@ -159,8 +159,8 @@ describe('picking', () => {
   });
 
   it('reports an empty selection when the rectangle catches nothing', () => {
-    const { picker, emitted } = mount();
-    drag(picker, [0, 0], [4, 4], true);
+    const { stage, emitted } = mount();
+    drag(stage, [0, 0], [4, 4], true);
 
     expect(emitted.at(-1)!.floorIds).toEqual([]);
     expect(emitted.at(-1)!.bayIds).toEqual([]);
@@ -168,20 +168,20 @@ describe('picking', () => {
   });
 
   it('keeps the selection when the pointer travelled, because that was the camera moving', () => {
-    const { picker, blueprint, emitted } = mount();
-    drag(picker, [0, 0], [800, 600], true);
+    const { stage, blueprint, emitted } = mount();
+    drag(stage, [0, 0], [800, 600], true);
     const kept = blueprint.selected;
     expect(kept.length).toBeGreaterThan(0);
 
-    drag(picker, [400, 300], [700, 120]);
+    drag(stage, [400, 300], [700, 120]);
 
     expect(emitted).toHaveLength(1);
     expect(blueprint.selected).toEqual(kept);
   });
 
   it('picks the one bay under a click that stayed put', () => {
-    const { picker, emitted } = mount();
-    drag(picker, [400, 300], [400, 300]);
+    const { stage, emitted } = mount();
+    drag(stage, [400, 300], [400, 300]);
 
     expect(emitted).toHaveLength(1);
     expect(emitted[0]!.mode).toBe('pick');
@@ -204,14 +204,14 @@ function mount() {
   camera.updateMatrixWorld(true);
 
   const emitted: Omit<Selection, 'at'>[] = [];
-  const picker = new Picker(stage, camera, blueprint, (value) => emitted.push(value), () => {});
-  return { stage, blueprint, camera, picker, emitted };
+  // The picker listens on the stage, so what is dragged is the element, not the picker.
+  new Picker(stage, camera, blueprint, (value) => emitted.push(value), () => {});
+  return { stage, blueprint, camera, emitted };
 }
 
-function drag(picker: Picker, from: [number, number], to: [number, number], shiftKey = false): void {
-  const target = document.querySelector('div')!;
+function drag(stage: HTMLElement, from: [number, number], to: [number, number], shiftKey = false): void {
   const at = (type: string, [x, y]: [number, number]) =>
-    target.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, shiftKey, bubbles: true }));
+    stage.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, shiftKey, bubbles: true }));
   at('pointerdown', from);
   at('pointermove', to);
   at('pointerup', to);

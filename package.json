@@ -23,6 +23,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "serve": "node boxes/cli/bin/buildings.ts preview",
     "doctor": "node boxes/cli/bin/buildings.ts doctor",
     "preview": "node boxes/preview/bin/preview.ts"

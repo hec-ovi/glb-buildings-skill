@@ -16,7 +16,6 @@ import {
   NEON,
   WALL,
   WINDOW,
-  Surface,
   Surfaces,
   dress,
   edgeFacing,

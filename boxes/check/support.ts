@@ -4,8 +4,8 @@
  * reaches out over the edge is a cantilever and worth reporting, and one that touches almost
  * nothing is floating and is refused.
  */
-import { BuildingError, type BuildingDocument } from '#spec';
-import { assemble, type PlacedScene } from '#assemble';
+import { BuildingError } from '#spec';
+import type { PlacedScene } from '#assemble';
 import { area, centroid, inside, overlap, toPoints } from './polygon.ts';
 
 /** Under this share of its own footprint, a section is not resting on anything. */

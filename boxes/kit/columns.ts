@@ -4,7 +4,7 @@
  * what makes a tall run read as built rather than extruded.
  */
 import { Surface, type Vec } from './geometry.ts';
-import { BITE, cap, ringAt, tubeRing, type Corner, type SectionShape } from './section.ts';
+import { cap, ringAt, tubeRing, type Corner, type SectionShape } from './section.ts';
 
 export type ColumnStyle = 'none' | 'corners' | 'ribs' | 'partial';
 

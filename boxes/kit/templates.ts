@@ -12,7 +12,7 @@
 import { FACADE_WALL, gridded, tileOf } from '#materials';
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData, type Patch } from './geometry.ts';
-import { BASE, FACADE, GLASS, GLASS_BAND, PIPE, ROOF, WALL } from './names.ts';
+import { BASE, FACADE, GLASS, GLASS_BAND, PIPE, ROOF } from './names.ts';
 import { cap, capRing, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
 import { columns, type ColumnStyle } from './columns.ts';
