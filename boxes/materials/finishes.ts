@@ -136,8 +136,6 @@ type Recipe = {
   lit?: boolean;
   /** Under 1 makes it see-through: a screen, and the dotted glass over one. */
   alpha?: number;
-  /** Keeps all of its picture's brightness: it is a light, not a surface lit by one. */
-  bright?: boolean;
   /** Past one, how much light it throws. */
   glow?: number;
   /**
@@ -197,9 +195,17 @@ const RECIPES: Record<string, Recipe> = {
     colour: (style) => look(style).glass,
     metallic: 0.2,
     roughness: 0.15,
-    bright: true,
     emissive: () => WHITE,
-    glow: 1.8,
+    // A floor lit from inside is bright because it emits, not because it is a white wall. Keeping
+    // the photograph's own brightness in the base colour gave the band a near white surface as
+    // well as its light, and under any lamp at all the two together blew the whole band out. So
+    // the picture drops to the family's tint like any other surface and the emissive map does the
+    // lighting, which is what the map is for.
+    //
+    // Just over one: a lit office is brighter than the wall around it and dimmer than a screen,
+    // and the lit panes of a wall picture are large. Past this they bleed into each other and the
+    // band stops being floors and becomes a cloud.
+    glow: 1.25,
     tile: 3,
     grid: true,
     draws: { key: 'glass-band', draw: (style, seed) => drawGlassBand(look(style), seed) },
@@ -358,8 +364,9 @@ export function finish(name: string, at: Look): Finish | undefined {
   const recipe = RECIPES[base];
   if (!recipe) return undefined;
 
-  // The flat colour drops with the same tint, so plain mode and textured mode read the same.
-  const shade = recipe.bright || recipe.lit ? 1 : sheet(at.style).dim;
+  // The flat colour drops with the same tint, so plain mode and textured mode read the same. Only
+  // a surface that is itself a light keeps all of it.
+  const shade = recipe.lit ? 1 : sheet(at.style).dim;
   const raw = colour ?? recipe.colour(at.style);
   const flat: Rgb = colour ? raw : [raw[0] * shade, raw[1] * shade, raw[2] * shade];
   const emissive = recipe.emissive ? unit(colour ?? recipe.emissive(at.style)) : undefined;

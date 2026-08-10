@@ -105,6 +105,11 @@ which is exactly right.
 The colour map says what the wall is. The emissive map says which part of it is a light: the lit
 panes, hot, and pure black everywhere else.
 
+**It is a mask, not a dimmer.** Lit panes go in near white, whatever brightness they are in the
+photograph, and everything else goes to black. How bright the window ends up on the building is the
+material's job, not the map's, and a map whose lit panes are half grey gives a band of glass floors
+that never reads as lit however the tower is looked at.
+
 **Build it from the colour map rather than generating it fresh**, or the two will not line up: mask
 the colour map to the pane rectangles, keep only the lit ones, fill the rest with black. If your
 image tool cannot mask, ask for the same picture "on pure black, with only the lit windows visible,
