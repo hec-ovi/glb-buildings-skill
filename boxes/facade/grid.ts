@@ -10,7 +10,8 @@
  * row 0 sits on the floor.
  */
 import { BuildingError } from '#spec';
-import { edgeFacing, facePoint, type SectionShape, type Vec } from '#kit';
+import { FACADE_STYLE } from '#materials';
+import { baysOn, edgeFacing, facePoint, type SectionShape, type Vec } from '#kit';
 
 /** One cell, in metres. Ten centimetres is a hand's width: fine enough to place a sill on. */
 export const CELL = 0.1;
@@ -64,6 +65,19 @@ export class Face {
   /** Metres across and up, for a caller sizing something in real units. */
   get width(): number {
     return this.cols * CELL;
+  }
+
+  /**
+   * How many whole bays this face carries, and how wide one is in cells. The wall texture draws
+   * exactly this many windows across the face, so a rhythm composed on this pitch lands under the
+   * ones the plain floors draw. Nobody has to work it out, or type it.
+   */
+  get bays(): number {
+    return baysOn(this.width, FACADE_STYLE.bay);
+  }
+
+  get bayCells(): number {
+    return this.cols / this.bays;
   }
 
   get height(): number {

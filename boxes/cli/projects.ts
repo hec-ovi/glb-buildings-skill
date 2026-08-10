@@ -37,11 +37,18 @@ export class Projects {
   }
 
   /**
-   * Where the generated image packs live: one folder per style, beside the projects, or wherever
-   * `BUILDINGS_TEXTURES` says. Anything a pack does not carry falls back to the drawn tile.
+   * Where the generated image packs live. Order:
+   * `BUILDINGS_TEXTURES`, then a visible `textures/` next to the work when the projects home is
+   * the hidden user default (`~/.glb-buildings` or a local `.buildings`), else `<home>/textures`.
+   * Anything a pack does not carry falls back to the drawn tile.
    */
   get textures(): string {
-    return process.env.BUILDINGS_TEXTURES ?? join(this.root, 'textures');
+    if (process.env.BUILDINGS_TEXTURES) return process.env.BUILDINGS_TEXTURES;
+    // Hidden homes keep projects out of the way; packs stay in plain sight next to the work.
+    if (this.root === join(homedir(), '.glb-buildings') || this.root.endsWith(`/${LOCAL}`) || this.root.endsWith(LOCAL)) {
+      return join(process.cwd(), 'textures');
+    }
+    return join(this.root, 'textures');
   }
 
   get currentFile(): string {

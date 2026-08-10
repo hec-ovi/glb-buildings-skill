@@ -222,6 +222,21 @@ describe('faces', () => {
     expect(put.on.map((cell) => cell[0]! + 7)).toEqual([15, 45, 75, 105, 135, 165, 195, 225]);
   });
 
+  it('works the rhythm out on its own when no pitch is given', async () => {
+    // A 28 m face carries nine whole bays of 3.11 m, not nine of 3 m and a slice. The face knows
+    // that, so nobody types a pitch and nothing drifts across the face.
+    await call('new', 'tower-a', '--width', '28', '--depth', '16');
+    const read = (await call('face', 'body')) as unknown as { grid: { bays: number; bayCells: number }; rhythm: string };
+    expect(read.grid).toMatchObject({ bays: 9, bayCells: 31 });
+    expect(read.rhythm).toContain('9 bays');
+
+    const put = (await call('put', 'window', '--row', '9', '--wide', '1.4', '--section', 'body')) as unknown as { put: number; on: number[][] };
+    expect(put.put).toBe(9);
+    // Nine windows, one to a bay, each centred in its own bay across the whole face.
+    const centres = put.on.map((cell) => cell[0]! + 7);
+    for (const [i, centre] of centres.entries()) expect(Math.abs(centre - (i + 0.5) * 280 / 9)).toBeLessThan(1);
+  });
+
   it('says where to look when a shape fits nowhere on the face', async () => {
     await call('new', 'tower-a', '--width', '12', '--depth', '9');
     const tooBig = (await call('put', 'window', '--row', '9', '--wide', '40', '--tall', '1.5', '--section', 'body')) as unknown as {

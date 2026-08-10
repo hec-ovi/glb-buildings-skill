@@ -180,10 +180,13 @@ describe('one window, drawn and built', () => {
     const vs = front.filter((_, i) => i % 2 === 1);
     const { across, down, pane: glass } = FACADE_STYLE;
 
+    // The bottom floor sits in the bottom row of the tile, and the glass sits inside that row
+    // exactly where the wall draws it: measured down from the row's own top.
+    const rowTop = 1 - 1 / down;
     expect(Math.min(...us)).toBeCloseTo(glass.left / across, 5);
     expect(Math.max(...us)).toBeCloseTo(glass.right / across, 5);
-    expect(Math.min(...vs)).toBeCloseTo(glass.top / down, 5);
-    expect(Math.max(...vs)).toBeCloseTo(glass.bottom / down, 5);
+    expect(Math.min(...vs)).toBeCloseTo(rowTop + glass.top / down, 5);
+    expect(Math.max(...vs)).toBeCloseTo(rowTop + glass.bottom / down, 5);
   });
 
   it('cuts it at the height the texture draws it, so the two never disagree', () => {
@@ -200,10 +203,48 @@ describe('one window, drawn and built', () => {
     const us = uvs.filter((_, i) => i % 2 === 0);
     const vs = uvs.filter((_, i) => i % 2 === 1);
 
-    // A 24 m face is exactly one tile across, and six floors walk the four rows of it and repeat.
+    // A 24 m face is exactly one tile across. The bottom floor lands on the bottom row of the
+    // tile and each floor above walks up one row, so six floors cover one and a half tiles and
+    // the sampler repeats past the top.
     expect(Math.max(...us)).toBeCloseTo(1, 5);
     expect(Math.max(...vs)).toBeCloseTo(1, 5);
-    expect(new Set(vs.map((v) => Math.round(v * 1000))).size).toBe(FACADE_STYLE.down + 1);
+    expect(Math.min(...vs)).toBeCloseTo(1 - 6 / FACADE_STYLE.down, 5);
+    expect(new Set(vs.map((v) => Math.round(v * 1000))).size).toBe(7);
+  });
+
+  it('ends every face on a mullion, whatever width the face is', () => {
+    // The bay is a target, not a rule: a face carries a whole number of them and they come out
+    // however wide they need to be. Otherwise the bay at a corner is sliced through a window.
+    for (const [width, bays] of [[24, 8], [28, 9], [17, 6], [7, 2]] as const) {
+      // Square, so every face of it carries the same count and the reading is unambiguous.
+      const half = width / 2;
+      const ring: [number, number][] = [[-half, half], [half, half], [half, -half], [-half, -half]];
+      const skin = new Surface('facade');
+      walls(skin, { bottom: ring, top: ring, height: 3.2, floors: 1 });
+
+      const us = skin.data().uvs.filter((_, i) => i % 2 === 0);
+      expect(Math.max(...us) * FACADE_STYLE.across, `${width} m face`).toBeCloseTo(bays, 5);
+    }
+  });
+
+  it('puts the cut pane on the window the wall draws, on a face that is not a whole tile', () => {
+    // A 28 m face carries nine bays, so the tile is stretched a little and the pane has to be
+    // stretched with it. Reading the same bay count in both places is what keeps them together.
+    const half = 14;
+    const ring: [number, number][] = [[-half, half], [half, half], [half, -half], [-half, -half]];
+    const skin = new Surface('facade');
+    const pane = new Surface('glass');
+    walls(skin, { bottom: ring, top: ring, height: 3.2, floors: 1, windows: WINDOW }, pane);
+
+    const wallU = Math.max(...skin.data().uvs.filter((_, i) => i % 2 === 0));
+    const front = pane.data().uvs.slice(0, 12);
+    const paneU = front.filter((_, i) => i % 2 === 0);
+    const bays = wallU * FACADE_STYLE.across;
+
+    expect(bays).toBeCloseTo(9, 5);
+    // The first pane sits in the first bay of the tile, wherever the face ends.
+    expect(Math.min(...paneU)).toBeCloseTo(FACADE_STYLE.pane.left / FACADE_STYLE.across, 5);
+    expect(Math.max(...paneU)).toBeCloseTo(FACADE_STYLE.pane.right / FACADE_STYLE.across, 5);
   });
 });
 

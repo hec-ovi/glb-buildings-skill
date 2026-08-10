@@ -11,8 +11,8 @@ street of towers does not wear one wall.
 ## 1. Naming
 
 ```
-<home>/textures/<style>/<finish>_<n>.jpg
-<home>/textures/<style>/<finish>_<n>-emissive.png
+./textures/<style>/<finish>_<n>.jpg
+./textures/<style>/<finish>_<n>-emissive.png
 ```
 
 - **The folder is the style.** `cyber/facade_1.jpg` is the cyber family's wall. Nothing else says which
@@ -20,8 +20,8 @@ street of towers does not wear one wall.
 - `_1` to `_4` are variants of the same finish. A building picks one from its own name, so the same building
   always looks the same and its neighbour does not.
 - `-emissive` is the map of what glows, black everywhere else. Only some finishes have one.
-- `<home>` is where projects live: run `buildings style` and it prints the exact path. `BUILDINGS_TEXTURES`
-  overrides it.
+- Packs live in a visible `textures/` next to the work (not under the hidden projects home). Run
+  `buildings style` and it prints the exact path. `BUILDINGS_TEXTURES` overrides it.
 - PNG and JPEG only. Colour maps as JPEG, emissive as PNG (black compresses to nothing).
 
 **Nothing is required.** A folder with one file in it overrides that one finish; everything else stays drawn
@@ -722,7 +722,7 @@ teal-green.
    shallow: these are seen from tens of metres and a strong normal reads as noise.
 5. **Downsample to the ship size** in section 3. Colour to JPEG, emissive to PNG.
 6. **Check the darkness** on the cyber family: the wall should sit around 8 to 12 out of 255.
-7. **Drop them in** `<home>/textures/<style>/` and run `buildings style` to confirm they were picked up.
+7. **Drop them in** `./textures/<style>/` and run `buildings style` to confirm they were picked up.
 
 ---
 

@@ -10,6 +10,18 @@
 /** A footprint corner on the ground plane, in metres. */
 export type Corner = [number, number];
 
+/**
+ * How many whole bays a face of this length carries. Always a whole number, so a face begins and
+ * ends on a mullion and the bay at a corner is never cut in half. The bays come out exactly
+ * `length / bays` wide, which is the target bay give or take a few centimetres.
+ *
+ * The wall tile and the panes cut into it both measure their bays here, so the window a wall
+ * draws and the window geometry cuts are the same window on any width of face.
+ */
+export function baysOn(length: number, bay: number): number {
+  return Math.max(1, Math.round(length / bay));
+}
+
 export function lerp(a: Corner, b: Corner, t: number): Corner {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }

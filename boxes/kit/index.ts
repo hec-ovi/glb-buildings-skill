@@ -1,7 +1,7 @@
 /** The parts. Geometry in metres, correct winding, and the proofs that keep it that way. */
 export { Surface, normalOf, triangleCount, TILE, type MeshData, type Patch, type Vec } from './geometry.ts';
 export { windingProblems, shellProblems, sunkProblems, proudProblems, solids, MAX_PROUD, MAX_ABOVE, SHOWS, type MeshProblem } from './invariants.ts';
-export { insideRing, insetRing, middleOf, outsideBy, outwardAt, type Corner } from './plan.ts';
+export { baysOn, insideRing, insetRing, middleOf, outsideBy, outwardAt, type Corner } from './plan.ts';
 export { walls, cap, capRing, WINDOW, type WindowStyle, wires, WIRE_RUNS, ringAt, edgeFacing, facePoint, tubeRing, type SectionShape } from './section.ts';
 export {
   template,

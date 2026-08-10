@@ -9,7 +9,7 @@
  */
 import { FACADE_STYLE } from '#materials';
 import { Surface, type Vec } from './geometry.ts';
-import { outwardAt, type Corner } from './plan.ts';
+import { baysOn, outwardAt, type Corner } from './plan.ts';
 
 export type WindowStyle = {
   /** How wide a bay is, in metres. The row is split into whole bays. */
@@ -43,15 +43,16 @@ export function windowRow(
   const lower: [Corner, Corner] = [lowerRing[edge]!, lowerRing[next]!];
   const upper: [Corner, Corner] = [upperRing[edge]!, upperRing[next]!];
   const run = Math.hypot(lower[1][0] - lower[0][0], lower[1][1] - lower[0][1]);
-  const bays = Math.max(1, Math.round(run / style.bay));
   const outward = outwardAt(lowerRing, edge);
 
   const { across, down, pane: glass } = FACADE_STYLE;
+  // The same whole number of bays the wall lays its tile on, so the pane covers the window the
+  // wall draws under it rather than a slice of the one next door.
+  const bays = baysOn(run, style.bay);
   const rise = y1 - y0;
   // The drawn window, read as the wall reads it: across the bay, and down from the floor's top.
   const sill = y0 + rise * (1 - glass.bottom);
   const head = y0 + rise * (1 - glass.top);
-  const row = floor % down;
 
   for (let bay = 0; bay < bays; bay++) {
     const left = (bay + glass.left) / bays;
@@ -66,12 +67,13 @@ export function windowRow(
     const bottom = [at(left, lower, style.depth), at(right, lower, style.depth), at(right, lower, -style.back), at(left, lower, -style.back)];
     const top = [at(left, upper, style.depth), at(right, upper, style.depth), at(right, upper, -style.back), at(left, upper, -style.back)];
 
-    // The front face carries the window it stands on. The reveals and the back take the wall.
+    // The front face carries the window it stands on, read off the tile exactly where the wall
+    // behind it reads: the same bay across, and the same row up.
     const patch = {
       u0: (bay + glass.left) / across,
       u1: (bay + glass.right) / across,
-      v0: (row + glass.top) / down,
-      v1: (row + glass.bottom) / down,
+      v0: 1 - (floor + 1 - glass.top) / down,
+      v1: 1 - (floor + 1 - glass.bottom) / down,
     };
 
     for (let i = 0; i < 4; i++) {

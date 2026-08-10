@@ -7,7 +7,7 @@
  */
 import { FACADE_STYLE } from '#materials';
 import { Surface, type Vec } from './geometry.ts';
-import { insetRing, lerp, outwardAt, type Corner } from './plan.ts';
+import { baysOn, insetRing, lerp, outwardAt, type Corner } from './plan.ts';
 import { windowRow, WINDOW, type WindowStyle } from './openings.ts';
 import { segment } from './segment.ts';
 
@@ -24,6 +24,11 @@ export type SectionShape = {
   chamfer?: number;
   /** Real openings in every bay of every floor. Left out, the walls stay flat. */
   windows?: WindowStyle;
+  /**
+   * The storey the wall tile was drawn for, in metres. A floor taller than this shows more of the
+   * tile instead of stretching one row of it over a two storey lobby. Left out, one row a floor.
+   */
+  storey?: number;
 };
 
 /** The footprint partway up the section. */
@@ -39,12 +44,27 @@ export function capRing(shape: SectionShape, end: 0 | 1): Corner[] {
 }
 
 /**
- * One row of quads around the section. `floor` places the row on the facade tile: the tile holds
- * a few floors of windows, so floor 5 shows the row of the tile that floor 5 lands on, and a
- * face as long as three bays shows three bays of it. Left out, the row takes the plain
- * real-world scale, which is what a bevel wants.
+ * How many rows of the tile one floor shows. A storey the tile was drawn for shows one row; a
+ * taller one, a 6 m lobby under 3.2 m floors, shows two rather than stretching one row over it.
+ * A section that cuts real windows always shows one, because one pane is drawn per floor.
  */
-function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number, floor?: number): void {
+export function rowsPerFloor(shape: SectionShape): number {
+  const storey = shape.storey;
+  if (shape.windows || !storey || storey <= 0) return 1;
+  return Math.max(1, Math.round(shape.height / Math.max(1, shape.floors) / storey));
+}
+
+/**
+ * One row of quads around the section. `floor` places the row on the wall tile: a whole number of
+ * bays across the face, and the rows of the tile this floor covers going up. Left out, the row
+ * takes the plain real-world scale, which is what a bevel wants.
+ *
+ * The tile runs up the building the way it was drawn, so its bottom row lands on the bottom
+ * floor. Beyond the tile's own height it repeats, which is what the sampler does with a UV past 1.
+ */
+function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number, floor?: number, rows = 1): void {
+  const { across, down } = FACADE_STYLE;
+
   for (let i = 0; i < lower.length; i++) {
     const next = (i + 1) % lower.length;
     const a = lower[i]!;
@@ -54,9 +74,9 @@ function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1
         ? undefined
         : {
             u0: 0,
-            u1: Math.hypot(b[0] - a[0], b[1] - a[1]) / (FACADE_STYLE.across * FACADE_STYLE.bay),
-            v0: (floor % FACADE_STYLE.down) / FACADE_STYLE.down,
-            v1: ((floor % FACADE_STYLE.down) + 1) / FACADE_STYLE.down,
+            u1: baysOn(Math.hypot(b[0] - a[0], b[1] - a[1]), FACADE_STYLE.bay) / across,
+            v0: 1 - ((floor + 1) * rows) / down,
+            v1: 1 - (floor * rows) / down,
           };
     surface.quad(point(a, y0), point(b, y0), point(upper[next]!, y1), point(upper[i]!, y1), patch);
   }
@@ -69,6 +89,7 @@ function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1
  */
 export function walls(surface: Surface, shape: SectionShape, pane?: Surface): void {
   const rows = Math.max(1, shape.floors);
+  const perFloor = rowsPerFloor(shape);
   const chamfer = Math.min(shape.chamfer ?? 0, shape.height / 3);
   const low = chamfer;
   const high = shape.height - chamfer;
@@ -83,7 +104,7 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
     const lower = ringAt(shape, y0 / shape.height);
     const upper = ringAt(shape, y1 / shape.height);
 
-    band(surface, lower, upper, y0, y1, row);
+    band(surface, lower, upper, y0, y1, row, perFloor);
     if (!shape.windows || !pane) continue;
 
     // A floor with windows: every face is cut into bays and each bay gets a pane.

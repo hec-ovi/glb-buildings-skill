@@ -74,9 +74,10 @@ export const face: Verb = {
       project: name,
       section: band.id,
       side,
-      grid: { cols: grid.cols, rows: grid.rows, cell: CELL, margin: MARGIN },
+      grid: { cols: grid.cols, rows: grid.rows, cell: CELL, margin: MARGIN, bays: grid.bays, bayCells: Math.round(grid.bayCells) },
       size: { width: Number(grid.width.toFixed(2)), height: Number(grid.height.toFixed(2)) },
       repeats: `one floor of ${band.id}; whatever you compose here is built on each of its ${grid.floors} floors`,
+      rhythm: `this face carries ${grid.bays} bays of ${Math.round(grid.bayCells)} cells, which is what the wall texture draws. Leave --every out and a rhythm lands on them`,
       place: `cells run [0,0] at the bottom left to [${grid.cols - 1},${grid.rows - 1}] at the top right, both ends of a rectangle included; keep ${MARGIN} clear all round`,
       elements: facesOf(band, side).elements.map((element, index) => ({
         n: index + 1,
@@ -148,21 +149,22 @@ export const put: Verb = {
       throw new BuildingError('E_DOC_INVALID', '--row is the row to stand on, a whole number of cells up from the floor', ['row']);
     }
 
-    // `--every` repeats the same element across the face on a pitch, which is what a rhythm of
-    // windows is, without the composer counting cells.
-    const pitch = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
+    // `--every` repeats the same element across the face on a pitch. Left out, the pitch is the
+    // face's own bay: the wall texture draws one window per bay, so a rhythm on that pitch lands
+    // under the windows the plain floors draw, and nobody counts anything.
+    const asked = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
+    const pitch = byShape ? (asked ?? Math.round(grid.bayCells)) : asked;
 
-    // A rhythm starts in the middle of its first bay, not against the margin, so what is composed
-    // on a special floor lands under the windows the wall texture draws on the floors around it.
-    // Both are measured from the same end of the same face, so they line up by construction.
-    const col = byShape ? (pitch === undefined ? MARGIN : Math.max(MARGIN, Math.round(pitch / 2 - cols / 2))) : Math.min(from[0], to[0]);
+    // And it starts in the middle of its first bay rather than against the margin, so the whole
+    // run sits centred on the bays. Both are measured from the same end of the same face.
+    const col = byShape ? Math.max(MARGIN, Math.round(pitch! / 2 - cols / 2)) : Math.min(from[0], to[0]);
     const existing = facesOf(band, side);
 
     // Given a shape rather than two cells, walk the face and take what is free. What a section
     // already wears is on the grid, so a rhythm steps over its own ribs instead of failing on one.
     const made: FaceElement[] = [];
     const skipped: number[] = [];
-    const walk = byShape ? (pitch ?? cols + Math.round(1 / CELL)) : (pitch ?? Infinity);
+    const walk = byShape ? pitch! : (pitch ?? Infinity);
 
     for (let at = col; at + cols - 1 <= grid.cols - 1 - MARGIN; at += walk) {
       const candidate: FaceElement = { kind, col: at, row, cols, rows, material, ...(depth === undefined ? {} : { depth }) };

@@ -19,18 +19,20 @@ The binary is `boxes/cli/bin/buildings.ts`. It prints the answer as JSON and exi
 ```
 <home>/
   current                   the name of the building being edited
-  textures/<style>/          generated images that stand in for the drawn tiles, `<finish>_<n>.jpg`
   projects/<name>/
     building.json           the document
     build/model.glb         the built file
     selection.json          what the human last picked in the preview
+
+./textures/<style>/         generated images (visible next to the work), `<finish>_<n>.jpg`
 ```
 
 The home is the first of these that applies: `BUILDINGS_HOME`, a `.buildings` folder in the current directory,
-then `~/.glb-buildings`. Image packs live in `textures/<style>/` under that home, or wherever
-`BUILDINGS_TEXTURES` points. `new <name> --here` makes that middle one, which is what an agent that cannot write
-outside its workspace uses: it says `--here` once and every later verb finds the folder on its own. Every verb
-that opens a project reports the `home` it used.
+then `~/.glb-buildings`. Image packs live in a visible `textures/<style>/` next to the work when the home is
+that hidden default, or under `<home>/textures` when the home is an explicit root (tests, a custom
+`BUILDINGS_HOME`). `BUILDINGS_TEXTURES` overrides either. `new <name> --here` makes the middle home, which is
+what an agent that cannot write outside its workspace uses: it says `--here` once and every later verb finds
+the folder on its own. Every verb that opens a project reports the `home` it used.
 
 A name is letters, digits, dash and underscore, up to 64 characters. `new` creates and selects in one step, so
 a session names the building once and every later verb knows what it means.

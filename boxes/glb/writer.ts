@@ -70,7 +70,7 @@ export const BUDGET: Record<string, number> = { flat: 120, light: 1200, full: 40
 /** A crown is one floor carrying a whole roof, so it is judged as a section, not per floor. */
 export const ROOF_BUDGET = 4500;
 
-function shapeOf(band: PlacedBand, sunk: number): SectionShape {
+function shapeOf(band: PlacedBand, sunk: number, storey: number): SectionShape {
   return {
     bottom: metres(band.bottom),
     top: metres(band.top),
@@ -78,6 +78,7 @@ function shapeOf(band: PlacedBand, sunk: number): SectionShape {
     floors: band.floors.length,
     chamfer: band.chamfer * MM,
     windows: band.windows ? WINDOW : undefined,
+    storey,
   };
 }
 
@@ -313,7 +314,9 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
   placed.bands.forEach((band, index) => {
     const sunk = index === 0 ? 0 : BITE;
     const above = placed.bands[index + 1];
-    const shape = shapeOf(band, sunk);
+    // The building's own floor height is the storey the wall tile was drawn for, so a taller
+    // floor shows more of the tile rather than stretching one row of it over a lobby.
+    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM);
     const parts = template(band.template).build(shape);
     const worn = dress(shape, {
       wires: band.wires,
