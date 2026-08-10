@@ -8,7 +8,7 @@
 import { assemble } from '#assemble';
 import { edgeFacing } from '#kit';
 import { COLOUR_NAMES, loadImage } from '#materials';
-import { BuildingError, SIDES, toMetres, toMm, type Band, type BandLine, type BandScreen, type BuildingDocument, type Side } from '#spec';
+import { BuildingError, SIDES, bandFloorHeight, toMetres, toMm, type Band, type BandLine, type BandScreen, type BuildingDocument, type Side } from '#spec';
 import type { Verb } from './verb.ts';
 import { count, need, oneOf, parse, size, text } from './args.ts';
 
@@ -139,21 +139,44 @@ export const screen: Verb = {
 
     const side = oneOf(text(values.side), SIDES, 'side', 'S');
     const picture = text(values.image) ?? '';
+
     // Read it now: a path that is wrong is worth saying here, not three verbs later at the build.
+    // Its shape is worth having too, because a panel is fitted to the picture it carries.
+    let aspect: number | undefined;
     if (picture !== '') {
       try {
-        await loadImage(picture);
+        const read = await loadImage(picture);
+        if (read.size) aspect = read.size.width / read.size.height;
       } catch (error) {
         throw new BuildingError('E_DOC_INVALID', `--image ${picture} cannot be read: ${(error as Error).message}`, ['screen', 'image']);
       }
     }
 
     let made: BandScreen | undefined;
-    const { project, band } = await editBand(projects, positionals[0], (found, doc) => {
-      const floors = floorsOf(found, whole(values.from, 'from'), whole(values.to, 'to'));
+    let fitted = '';
+    const { project, doc, band } = await editBand(projects, positionals[0], (found, doc) => {
+      const asked = whole(values.to, 'to');
+      const first = whole(values.from, 'from') ?? 0;
+      const storey = bandFloorHeight(doc, found);
+      let wide = size(values.width, 'width');
+      let last = asked;
+
+      // A picture has a shape, and a panel that ignores it squashes the picture. Whichever of the
+      // two the caller left out is worked out from the other, so an ad is never stretched.
+      if (aspect) {
+        if (last === undefined && wide !== undefined) {
+          last = first + Math.max(1, Math.round(wide / aspect / storey)) - 1;
+          fitted = `its ${Math.round(wide / aspect / storey)} floors come from the picture`;
+        } else if (last !== undefined && wide === undefined) {
+          wide = Math.round((last - first + 1) * storey * aspect);
+          fitted = `its ${toMetres(wide)} m width comes from the picture`;
+        }
+      }
+
+      const floors = floorsOf(found, first, last);
       const width = faceWidth(doc, found, side);
       const along = size(values.along, 'along') ?? 1000;
-      const wide = size(values.width, 'width') ?? Math.round(toMm(width * 0.4));
+      wide ??= Math.round(toMm(width * 0.4));
 
       if (toMetres(along + wide) > width) {
         throw new BuildingError(
@@ -175,6 +198,8 @@ export const screen: Verb = {
       spans: `floors ${made!.from} to ${made!.to}`,
       size: { width: toMetres(made!.width), stand: toMetres(made!.stand) },
       image: picture === '' ? 'the generated screen' : picture,
+      ...(fitted === '' ? {} : { fitted }),
+      ...(aspect === undefined ? {} : { picture: `${Math.round(aspect * 100) / 100} wide to tall, and the panel is fitted to it inside the space above` }),
       note: 'it carries its own picture across its whole front, and hangs on brackets back to the wall',
     };
   },

@@ -29,6 +29,12 @@ export type ScreenStyle = {
   stand: number;
   /** What it is drawn in: one material per screen, so each carries its own picture. */
   material: string;
+  /**
+   * The shape of the picture it carries, width over height. The panel is fitted to it inside the
+   * space it was given, centred, so a picture is never stretched to fill a span that is the wrong
+   * shape. Floors are whole and pictures are not, which is why this cannot be left to the caller.
+   */
+  aspect?: number;
 };
 
 /** How thick the panel is, and how far a bracket bites into the wall behind it. */
@@ -54,15 +60,39 @@ export function screen(kit: Surfaces, shape: SectionShape, style: ScreenStyle): 
   }
 
   const edge = edgeFacing(shape.bottom, style.side);
-  const t0 = from / floors;
-  const t1 = (to + 1) / floors;
   const face = kit.get(style.material);
 
-  const at = (t: number, along: number, out: number): Vec => facePoint(shape, t, edge, along, out);
-  const ring = (out: number): [Vec, Vec, Vec, Vec] => [at(t0, left, out), at(t0, right, out), at(t1, right, out), at(t1, left, out)];
+  // The space it was given: whole floors up, and a share of the face across.
+  const span = { t0: from / floors, t1: (to + 1) / floors, left, right };
+  const ring = shape.bottom;
+  const a = ring[edge]!;
+  const b = ring[(edge + 1) % ring.length]!;
+  const faceLength = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
 
-  const back = ring(style.stand - DEPTH);
-  const front = ring(style.stand);
+  // Fitted to the picture inside that space, centred. A span is whole floors and a picture is
+  // whatever shape it is, so without this the picture is stretched to whatever the floors gave it.
+  if (style.aspect && style.aspect > 0) {
+    const wide = (span.right - span.left) * faceLength;
+    const tall = (span.t1 - span.t0) * shape.height;
+    if (wide / tall > style.aspect) {
+      const want = (tall * style.aspect) / faceLength;
+      const middle = (span.left + span.right) / 2;
+      span.left = middle - want / 2;
+      span.right = middle + want / 2;
+    } else {
+      const want = wide / style.aspect / shape.height;
+      const middle = (span.t0 + span.t1) / 2;
+      span.t0 = middle - want / 2;
+      span.t1 = middle + want / 2;
+    }
+  }
+  const { t0, t1 } = span;
+
+  const at = (t: number, along: number, out: number): Vec => facePoint(shape, t, edge, along, out);
+  const corners = (out: number): [Vec, Vec, Vec, Vec] => [at(t0, span.left, out), at(t0, span.right, out), at(t1, span.right, out), at(t1, span.left, out)];
+
+  const back = corners(style.stand - DEPTH);
+  const front = corners(style.stand);
 
   // The picture, then the rest of the box round it.
   face.quad(front[0], front[1], front[2], front[3], FULL);
@@ -75,8 +105,8 @@ export function screen(kit: Surfaces, shape: SectionShape, style: ScreenStyle): 
   // Two brackets back to the wall, so the panel is held up by something.
   const arms = kit.get(METAL);
   const middle = (t0 + t1) / 2;
-  const reach = right - left;
-  for (const along of [left + reach * 0.2, left + reach * 0.8]) {
+  const reach = span.right - span.left;
+  for (const along of [span.left + reach * 0.2, span.right - reach * 0.2]) {
     for (const t of [t0 + (t1 - t0) * 0.15, t0 + (t1 - t0) * 0.85]) {
       segment(arms, [at(t, along, -BITE), at(t, along, style.stand - DEPTH + 0.02)], { profile: 'square', thickness: 0.12 });
     }

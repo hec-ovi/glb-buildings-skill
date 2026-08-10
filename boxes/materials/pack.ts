@@ -10,6 +10,7 @@
  */
 import { readFile, readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { sizeOf, type Size } from './size.ts';
 
 export type Bitmap = { bytes: Uint8Array; mime: string };
 export type Maps = { colour: Bitmap; emissive?: Bitmap };
@@ -94,11 +95,13 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
   };
 }
 
-/** One picture supplied for one thing, like the image on one screen. */
-export async function loadImage(path: string): Promise<Bitmap> {
+/** One picture supplied for one thing, like the image on one screen, and how big it is. */
+export async function loadImage(path: string): Promise<Bitmap & { size?: Size }> {
   const mime = MIME[extname(path).toLowerCase()];
   if (!mime) {
     throw new Error(`${path} is not a PNG or a JPEG, and glTF carries nothing else without an extension`);
   }
-  return { bytes: new Uint8Array(await readFile(path)), mime };
+  const bytes = new Uint8Array(await readFile(path));
+  const size = sizeOf(bytes);
+  return { bytes, mime, ...(size ? { size } : {}) };
 }

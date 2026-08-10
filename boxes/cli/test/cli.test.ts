@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs';
-import { chmod, mkdir, mkdtemp } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Projects, run } from '#cli';
+import { png } from '#materials';
 
 let projects: Projects;
 const call = (...argv: string[]) => run(argv, projects);
@@ -392,6 +393,25 @@ describe('the lit parts', () => {
       ok: true,
       spans: 'floors 2 to 8',
     });
+    expect(await call('build')).toMatchObject({ ok: true, validator: { errors: 0 } });
+  });
+
+  it('fits the panel to the picture it carries, so an ad is never squashed', async () => {
+    // A 1:2 portrait ad over ten 3.2 m floors has to be 16 m wide, and the verb works that out
+    // rather than leaving a picture stretched across whatever width somebody typed.
+    const tall = join(await mkdtemp(join(tmpdir(), 'ads-')), 'tall.png');
+    await writeFile(tall, png({ width: 64, height: 128, rgba: new Uint8Array(64 * 128 * 4).fill(120) }));
+
+    await call('new', 'tower-a', '--style', 'cyber', '--floors', '24', '--width', '30');
+    const put = (await call('screen', 'body', '--side', 'S', '--along', '4', '--from', '4', '--to', '13', '--image', tall)) as unknown as {
+      size: { width: number };
+      fitted: string;
+      picture: string;
+    };
+
+    expect(put.size.width).toBe(16);
+    expect(put.fitted).toContain('comes from the picture');
+    expect(put.picture).toContain('0.5');
     expect(await call('build')).toMatchObject({ ok: true, validator: { errors: 0 } });
   });
 

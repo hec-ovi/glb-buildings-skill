@@ -32,7 +32,7 @@ import {
   type SectionShape,
   type Vec,
 } from '#kit';
-import { finish, loadImage, loadPack, type Bitmap, type Look, type Mode } from '#materials';
+import { finish, loadImage, loadPack, type Bitmap, type Look, type Mode, type Size } from '#materials';
 import { BuildingError, type BandRun, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
@@ -143,7 +143,7 @@ function checkEnds(placed: PlacedScene): void {
  * in `plain` mode it is a named flat colour and the file holds no images at all. Two materials
  * over one picture (the wall and its glass) point at one texture rather than two copies of it.
  */
-function palette(document: Document, look: Look, screens: Map<string, Bitmap | undefined>): (name: string) => Material {
+function palette(document: Document, look: Look, screens: Map<string, (Bitmap & { size?: Size }) | undefined>): (name: string) => Material {
   const made = new Map<string, Material>();
   const drawn = new Map<string, Texture>();
 
@@ -207,8 +207,8 @@ function screenMaterial(bandId: string, index: number): string {
  * carries none, since that is what makes it its own material. A path that is not there stops the
  * build with the screen named, rather than writing a file with a blank panel in it.
  */
-async function screenPictures(doc: BuildingDocument): Promise<Map<string, Bitmap | undefined>> {
-  const found = new Map<string, Bitmap | undefined>();
+async function screenPictures(doc: BuildingDocument): Promise<Map<string, (Bitmap & { size?: Size }) | undefined>> {
+  const found = new Map<string, (Bitmap & { size?: Size }) | undefined>();
 
   for (const band of doc.bands) {
     for (const [index, screen] of band.screens.entries()) {
@@ -253,9 +253,10 @@ function linesOf(band: PlacedBand, shape: SectionShape): LineSpec[] {
 }
 
 /** The panels standing off this section's faces. */
-function screensOf(band: PlacedBand, shape: SectionShape): ScreenStyle[] {
+function screensOf(band: PlacedBand, shape: SectionShape, pictures: Map<string, (Bitmap & { size?: Size }) | undefined>): ScreenStyle[] {
   return band.screens.map((screen, index) => {
     const width = faceWidth(shape, screen.side);
+    const size = pictures.get(screenMaterial(band.id, index))?.size;
     return {
       side: screen.side,
       along: Math.max(0, Math.min(1, (screen.along * MM) / width)),
@@ -264,6 +265,7 @@ function screensOf(band: PlacedBand, shape: SectionShape): ScreenStyle[] {
       to: screen.to,
       stand: screen.stand * MM,
       material: screenMaterial(band.id, index),
+      ...(size ? { aspect: size.width / size.height } : {}),
     };
   });
 }
@@ -305,7 +307,8 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
   const pack = mode === 'textured' && options.packs ? await loadPack(options.packs, doc.style) : undefined;
   const look: Look = { mode, style: doc.style, seed: seedOf(doc.name), ...(pack ? { pack } : {}) };
 
-  const materials = palette(document, look, await screenPictures(doc));
+  const pictures = await screenPictures(doc);
+  const materials = palette(document, look, pictures);
   const scene = document.createScene(doc.name);
 
   let triangles = 0;
@@ -330,7 +333,7 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
       covered: above ? metres(above.bottom) : undefined,
       seed: seedOf(`${doc.name}/${band.id}`),
       lines: linesOf(band, shape),
-      screens: screensOf(band, shape),
+      screens: screensOf(band, shape, pictures),
       ...(band.crown === '' ? {} : { crown: { material: `${NEON}:${band.crown}`, thickness: 0.16 } }),
     });
     // Composed faces and runs stand on the section the same way the dressing does, and are
