@@ -42,5 +42,8 @@
   "facade_13": {
     "across": 8,
     "down": 4
+  },
+  "wall_2": {
+    "dim": 0.42
   }
 }

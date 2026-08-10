@@ -2,6 +2,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { buildGlb, validateGlb } from '#glb';
+import { seedOf } from '#kit';
+import { loadPack } from '#materials';
 import { PreviewServer } from '#preview';
 import { BuildingError, describeSelection, toMetres } from '#spec';
 import type { Verb } from './verb.ts';
@@ -28,8 +30,18 @@ async function buildOne(projects: Parameters<Verb['run']>[1]['projects'], named:
     // background block seen from two streets away is meant to have nothing composed on it.
     const wayIn = doc.bands.some((band) => band.faces.some((face) => face.elements.some((one) => one.kind === 'door')));
 
+    // The wall this building picked may be one of the family's dark ones, and then every window on
+    // it is off however many floors it has. Said here rather than left to be noticed in a preview.
+    const pack = doc.textures ? await loadPack(projects.textures, doc.style) : undefined;
+    const unlit = pack !== undefined && pack.finishes.includes('facade') && pack.get('facade', seedOf(doc.name))?.emissive === undefined;
+
+    const missing = [
+      wayIn ? '' : 'no door on any face: there is no way into this building. `put door --row 1 --wide 1.8 --tall 2.6 --section <ground> --side S`',
+      unlit ? `the ${doc.style} wall this building picked carries no lit windows, so it comes out dark. That is one of the family's unlit pictures: \`buildings style\` says how many there are` : '',
+    ].filter(Boolean);
+
     return {
-      ...(wayIn ? {} : { missing: 'no door on any face: there is no way into this building. `put door --row 1 --wide 1.8 --tall 2.6 --section <ground> --side S`' }),
+      ...(missing.length === 0 ? {} : { missing }),
       project: name,
       file: project.modelPath,
       style: doc.style,

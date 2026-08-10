@@ -20,7 +20,7 @@ what lets a scene carry thousands of them.
 | `splitName(name)` | `neon:cyan` | the base finish and the colour asked for |
 | `loadPack(root, style)` | a folder and a style | the generated images for that family |
 | `pack.get(finish, seed)` | a finish and a building's seed | the picture that building wears, and what glows on it |
-| `pack.gridOf(finish, seed)` / `pack.metresOf(...)` | the same | what that picture holds, where the pack says so |
+| `pack.gridOf(finish, seed)` / `metresOf` / `dimOf` | the same | what that picture holds and how far to drop it, where the pack says so |
 | `loadImage(path)` | a PNG or JPEG path | its bytes and mime type |
 | `sheet(style)` | a style | the colours and wear that family is drawn from |
 | `facadeTexture(style)` | a partial wall style | the wall tile, both maps, and how many windows are lit |
@@ -86,11 +86,14 @@ A generated picture holds whatever grid the image model felt like drawing, and t
 told. `pack.json` beside the images says so, and the kit lays its UVs on the real one:
 
 ```json
-{ "facade": { "across": 10, "down": 3 }, "facade_2": { "across": 8, "down": 4 }, "wall": { "metres": 1.6 } }
+{ "facade": { "across": 10, "down": 3 }, "facade_2": { "across": 8, "down": 4 },
+  "wall": { "metres": 1.6 }, "wall_2": { "dim": 0.42 } }
 ```
 
 `across` and `down` are the bays and floors a wall picture holds; `metres` is how much building one tile of a
-material covers, which is what keeps 21 courses of brick at 1.6 m instead of the size of a door.
+material covers, which is what keeps 21 courses of brick at 1.6 m instead of the size of a door; `dim` is how
+much of that one picture's brightness to keep, for a picture that came back brighter than the rest of its
+family, and it stands in for the family's own tint.
 
 A key names either a finish or one picture of it. Two pictures of one finish need not hold the same grid, so
 `facade_2` wins over `facade` for the second picture, and a key naming the finish alone covers every picture

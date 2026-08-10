@@ -4,7 +4,7 @@
  * whatever is left, seeded, so a roof is never bare and never the same twice.
  */
 import { METAL, PIPE } from './names.ts';
-import { nearestOn } from './plan.ts';
+import { middleOf, nearestOn } from './plan.ts';
 import { ringAt, type Corner, type SectionShape } from './section.ts';
 import type { Surfaces } from './surfaces.ts';
 import { CELL, block, cells, cylinder, pipe, rng, turbine, type Cell } from './deck.ts';
@@ -154,20 +154,32 @@ function one(kit: Surfaces, part: DeckPart, at: Corner, y: number, turn: number,
 /**
  * A mast, as near the middle of the deck as there is room for. Nearest the middle because that is
  * where a mast goes and because the edge cells are where everything else wants to be.
+ *
+ * A mast wants a two by two block, and a small crown has none: a 10 by 9 m deck comes out as five
+ * cells in a plus and every block claim on it fails. Rather than leave the tower with no lit tip,
+ * which is the one thing this roof must have, it falls back to a single free cell. A mast standing
+ * on one cell of a small crown is still a mast; a tower with nothing against the sky is not.
  */
 function standMast(kit: Surfaces, grid: Cell[], ring: Corner[], taken: Set<string>, y: number, random: () => number): string | undefined {
-  if (grid.length === 0) return undefined;
+  // A crown small enough to hold no cells at all, a 4 by 2 m spire top, still has a middle, and a
+  // mast is a pole rather than a floor plan. It stands there and claims nothing.
+  if (grid.length === 0) {
+    mast(kit, middleOf(ring), y - SINK, random);
+    return undefined;
+  }
   const middle = blockCentre(grid);
   const near = [...grid].sort(
     (a, b) => Math.hypot(a.centre[0] - middle[0], a.centre[1] - middle[1]) - Math.hypot(b.centre[0] - middle[0], b.centre[1] - middle[1]),
   );
 
-  for (const cell of near) {
-    const block = covers(grid, ring, cell.name, 'mast');
-    if (!block || block.some((one) => taken.has(one.name))) continue;
-    for (const one of block) taken.add(one.name);
-    mast(kit, blockCentre(block), y - SINK, random);
-    return cell.name;
+  for (const wide of [true, false]) {
+    for (const cell of near) {
+      const block = wide ? covers(grid, ring, cell.name, 'mast') : [cell];
+      if (!block || block.some((one) => taken.has(one.name))) continue;
+      for (const one of block) taken.add(one.name);
+      mast(kit, blockCentre(block), y - SINK, random);
+      return cell.name;
+    }
   }
   return undefined;
 }

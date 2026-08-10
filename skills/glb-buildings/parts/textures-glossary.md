@@ -55,7 +55,7 @@ by path and belongs to that one screen. See `parts/textures-ads.md`.
 
 ```bash
 buildings add-texture <finish> <file> [--emissive file] [--across 8 --down 4] [--metres 1.6]
-                                      [--style cyber] [--as 2]
+                                      [--dim 0.45] [--style cyber] [--as 2]
 ```
 
 It copies the file in under the name the loader reads, pairs the emissive map to it, takes the next
@@ -70,7 +70,14 @@ hand.
 
 ```bash
 buildings add-texture facade --as 5 --across 8 --down 4     # count first, then say so
+buildings add-texture wall --as 2 --dim 0.42                # this one came back too bright
 ```
+
+**`--dim` is the exposure fix.** Every dead surface already drops to its family's own tint, because
+a photograph was exposed to be looked at and a wall at night was not. One picture in a set can still
+come back two stops brighter than the rest, and then one building in the street glows for no reason
+anybody can see. Rather than regenerate it, say what that picture needs: `--dim 0.42` keeps 42% of
+it. The family default is 0.62 for `modern` and 0.34 for `cyber`.
 
 ## Reusing them
 
@@ -115,7 +122,10 @@ If it looks wrong, the usual causes in order:
    declared, or is declared wrong. Count the bays and the floors off the picture and say so.
 2. **Bricks the size of doors, or a material that reads as wallpaper.** A tile that is not 3 m has
    to say `--metres`.
-3. **Nothing glows at night.** The emissive map is missing, or it was generated fresh instead of
-   built from the colour map, so its lit pixels do not sit where the windows are.
-4. **The tower reads as noise.** Every window in the picture is lit. Generate the quiet variants:
+3. **One building brighter than every other in its family.** That picture is over-exposed against
+   the rest of the set: `--dim` it.
+4. **Nothing glows at night.** The wall picture this building picked carries no emissive map. The
+   build says so in `missing`, and `buildings style` says how many of the family's pictures are like
+   that. Either generate emissive maps for them or add more lit pictures.
+5. **The tower reads as noise.** Every window in the picture is lit. Generate the quiet variants:
    `parts/textures-walls.md`.

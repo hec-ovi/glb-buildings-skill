@@ -41,7 +41,10 @@ Match the request to a row, open the file it names (next to this one), then run 
    edit instead of assuming.
 3. **Build to check your work.** `buildings build` writes the GLB and runs the Khronos validator. A build that
    answers `"ok": false` did not write a file; fix what the message says and build again.
-4. **Report the file path and the numbers** (floors, height, triangles) when you are done.
+4. **Read `missing` on a build that succeeded.** It lists what is legal but almost certainly wrong: no door
+   on any face, or a wall picture that carries no lit windows. Each line says what to run. Do not report a
+   building finished while `missing` is in its answer, unless the user asked for scenery.
+5. **Report the file path and the numbers** (floors, height, triangles) when you are done.
 
 ## The verbs
 

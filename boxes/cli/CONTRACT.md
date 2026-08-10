@@ -54,7 +54,7 @@ a session names the building once and every later verb knows what it means.
 | `new <name> [--brief] [--width] [--depth] [--floors] [--style] [--textures] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
 | `style [modern\|cyber]` | which family of finishes the building wears, and what the pack for it holds |
 | `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
-| `add-texture <finish> <file> [--emissive] [--across --down] [--metres] [--style] [--as]` | put a generated picture into a style pack: copies it in under the name the loader reads, pairs its emissive map, and records what grid it holds |
+| `add-texture <finish> [file] [--emissive] [--across --down] [--metres] [--dim] [--style] [--as]` | put a generated picture into a style pack: copies it in under the name the loader reads, pairs its emissive map, and records what grid it holds, how many metres it covers, or how far to drop it. With no file it declares a picture that is already there |
 | `brief ["what it should be"]` | what the building was asked for; kept in the document and shown in the preview |
 | `list` | every building, whether it is built, and which is current |
 | `use <name>` | switch the current building |
@@ -77,7 +77,7 @@ a session names the building once and every later verb knows what it means.
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts available |
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more deck cells |
 | `unplace <cell ...> [--section id]` | clear deck cells |
-| `build [name] [--all]` | write the GLB, proved and validated, and report the numbers. `--all` builds every building |
+| `build [name] [--all]` | write the GLB, proved and validated, and report the numbers, plus `missing`: what is legal but almost certainly wrong, a building with no door or a wall picture with no lit windows. `--all` builds every building |
 | `preview [name] [--port]` | start the preview service and stay up; answers with a link per building |
 | `selection [name]` | what the human last picked |
 | `help` | every verb with its usage |

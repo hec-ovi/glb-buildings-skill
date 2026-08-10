@@ -34,6 +34,16 @@ export type Grid = { across: number; down: number };
  */
 export type Scale = { metres: number };
 
+/**
+ * How far down to drop one picture, past what its family already does.
+ *
+ * Every dead surface drops to the family's own tint, because a photograph was exposed to be looked
+ * at and a wall at night is not. One picture in a set can still come back two stops brighter than
+ * the rest of it, and then one building in the street glows for no reason anybody can see. Rather
+ * than regenerate it, the pack says what that picture needs: `{ "wall_2": { "dim": 0.45 } }`.
+ */
+export type Dim = { dim: number };
+
 const MIME: Record<string, string> = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -64,6 +74,7 @@ export type Pack = {
    */
   grids: Record<string, Grid>;
   metres: Record<string, number>;
+  dims: Record<string, number>;
   /**
    * The pictures in the folder's `ads/`, in name order. They are not finishes: one is given to one
    * screen, by path, so a tower carries an advertisement rather than a repeated tile.
@@ -75,6 +86,8 @@ export type Pack = {
   gridOf(finish: string, seed?: number): Grid | undefined;
   /** How many metres of building that picture covers, where the pack says so. */
   metresOf(finish: string, seed?: number): number | undefined;
+  /** How far down that picture asks to be dropped, where the pack says so. */
+  dimOf(finish: string, seed?: number): number | undefined;
 };
 
 export const EMPTY_PACK: Pack = {
@@ -84,10 +97,12 @@ export const EMPTY_PACK: Pack = {
   lit: {},
   grids: {},
   metres: {},
+  dims: {},
   ads: [],
   get: () => undefined,
   gridOf: () => undefined,
   metresOf: () => undefined,
+  dimOf: () => undefined,
 };
 
 /** The pictures in `<style>/ads/`, which are given to screens one at a time rather than tiled. */
@@ -162,6 +177,7 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     lit: Object.fromEntries([...colour].map(([finish, set]) => [finish, [...set.keys()].filter((n) => glow.get(finish)?.has(n)).length])),
     grids: declared.grids,
     metres: declared.metres,
+    dims: declared.dims,
     get(finish, seed = 0) {
       const chosen = pickedBy(finish, seed);
       if (chosen === undefined) return undefined;
@@ -171,6 +187,7 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     },
     gridOf: (finish, seed = 0) => said(declared.grids, finish, seed),
     metresOf: (finish, seed = 0) => said(declared.metres, finish, seed),
+    dimOf: (finish, seed = 0) => said(declared.dims, finish, seed),
   };
 }
 
@@ -178,8 +195,8 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
  * What the pack says about its own pictures. Missing, unreadable or nonsense is the same answer:
  * nothing, and the kit falls back to the grid it draws its own tiles on.
  */
-async function readDeclared(dir: string): Promise<{ grids: Record<string, Grid>; metres: Record<string, number> }> {
-  const nothing = { grids: {}, metres: {} };
+async function readDeclared(dir: string): Promise<{ grids: Record<string, Grid>; metres: Record<string, number>; dims: Record<string, number> }> {
+  const nothing = { grids: {}, metres: {}, dims: {} };
 
   let text: string;
   try {
@@ -189,17 +206,20 @@ async function readDeclared(dir: string): Promise<{ grids: Record<string, Grid>;
   }
 
   try {
-    const read = JSON.parse(text) as Record<string, Partial<Grid & Scale>>;
+    const read = JSON.parse(text) as Record<string, Partial<Grid & Scale & Dim>>;
     const grids: Record<string, Grid> = {};
     const metres: Record<string, number> = {};
+    const dims: Record<string, number> = {};
     for (const [finish, said] of Object.entries(read)) {
       const across = Math.round(Number(said?.across));
       const down = Math.round(Number(said?.down));
       if (across > 0 && down > 0) grids[finish] = { across, down };
       const covers = Number(said?.metres);
       if (covers > 0) metres[finish] = covers;
+      const dim = Number(said?.dim);
+      if (dim > 0 && dim <= 1) dims[finish] = dim;
     }
-    return { grids, metres };
+    return { grids, metres, dims };
   } catch {
     return nothing;
   }

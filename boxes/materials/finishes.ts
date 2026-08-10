@@ -366,7 +366,12 @@ export function finish(name: string, at: Look): Finish | undefined {
 
   // The flat colour drops with the same tint, so plain mode and textured mode read the same. Only
   // a surface that is itself a light keeps all of it.
-  const shade = recipe.lit ? 1 : sheet(at.style).dim;
+  //
+  // The family's tint is the default; a picture that came back brighter than the rest of its set
+  // says so in the pack and takes that instead, which is what stops one building in a street
+  // glowing for no reason anybody can see.
+  const asked = recipe.lit ? undefined : (at.pack ?? EMPTY_PACK).dimOf(recipe.draws?.key ?? base, at.seed);
+  const shade = recipe.lit ? 1 : (asked ?? sheet(at.style).dim);
   const raw = colour ?? recipe.colour(at.style);
   const flat: Rgb = colour ? raw : [raw[0] * shade, raw[1] * shade, raw[2] * shade];
   const emissive = recipe.emissive ? unit(colour ?? recipe.emissive(at.style)) : undefined;

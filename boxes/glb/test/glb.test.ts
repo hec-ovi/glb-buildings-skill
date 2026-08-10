@@ -214,6 +214,21 @@ describe('buildGlb', () => {
     expect(quiet).not.toContain('beacon:red');
   });
 
+  it('stands it on a crown too small to hold a deck cell, which is where it used to give up', async () => {
+    // A mast wants a two by two block of the deck grid. A 10 by 9 m crown comes out as five cells
+    // in a plus with no such block, and a 10 by 8 m one inset 3 m holds no cells at all: both used
+    // to leave the tower with nothing against the sky, silently.
+    for (const crown of [{ width: 10000, depth: 9000 }, { width: 10000, depth: 8000, inset: 3000 }]) {
+      const spire = parseDocument({
+        ...doc,
+        style: 'cyber',
+        bands: doc.bands.map((band) => (band.kind === 'roof' ? { ...band, ...crown } : band)),
+      });
+      const names = (await io().readBinary((await buildGlb(spire)).glb)).getRoot().listMaterials().map((one) => one.getName());
+      expect(names, JSON.stringify(crown)).toContain('beacon:red');
+    }
+  });
+
   it('refuses a screen that would stand inside the wall it hangs on', async () => {
     const buried = parseDocument({
       ...doc,

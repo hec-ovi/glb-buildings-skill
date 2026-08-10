@@ -34,7 +34,7 @@ async function nextVariant(dir: string, finish: string): Promise<number> {
  * one finish need not hold the same grid. A key naming the finish alone still covers the ones that
  * say nothing for themselves, which is how a hand written pack works.
  */
-async function declare(dir: string, key: string, said: { across: number; down: number } | { metres: number }): Promise<void> {
+async function declare(dir: string, key: string, said: Record<string, number>): Promise<void> {
   const file = join(dir, 'pack.json');
   let all: Record<string, unknown> = {};
   try {
@@ -42,20 +42,21 @@ async function declare(dir: string, key: string, said: { across: number; down: n
   } catch {
     all = {};
   }
-  all[key] = said;
+  all[key] = { ...(all[key] as object), ...said };
   await writeFile(file, `${JSON.stringify(all, undefined, 2)}\n`);
 }
 
 export const addTexture: Verb = {
   name: 'add-texture',
   summary: 'put a generated picture into a style pack, named and declared so the build reads it',
-  usage: 'add-texture <finish> [file] [--emissive file] [--across 8 --down 4] [--metres 1.6] [--style cyber] [--as 2]',
+  usage: 'add-texture <finish> [file] [--emissive file] [--across 8 --down 4] [--metres 1.6] [--dim 0.45] [--style cyber] [--as 2]',
   async run(args, { projects }) {
     const { positionals, values } = parse(args, {
       emissive: { type: 'string' },
       across: { type: 'string' },
       down: { type: 'string' },
       metres: { type: 'string' },
+      dim: { type: 'string' },
       style: { type: 'string' },
       as: { type: 'string' },
     });
@@ -88,9 +89,12 @@ export const addTexture: Verb = {
     const across = count(values.across, 'across');
     const down = count(values.down, 'down');
     const metres = text(values.metres) ? Number(text(values.metres)) : undefined;
-    let declared: { across: number; down: number } | { metres: number } | undefined;
+    // How far to drop this one picture, where it came back brighter than the rest of its family.
+    const dim = text(values.dim) ? Number(text(values.dim)) : undefined;
+    let declared: Record<string, number> | undefined;
     if (across && down) declared = { across, down };
     else if (metres && metres > 0) declared = { metres };
+    if (dim !== undefined && dim > 0 && dim <= 1) declared = { ...declared, dim };
 
     if (!picture && (asked === undefined || !declared)) {
       throw new BuildingError(
