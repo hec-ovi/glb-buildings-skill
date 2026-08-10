@@ -24,6 +24,12 @@ In this order. Each one only works because the ones around it are dark.
 
 Do not do all five on every building. A city is mostly towers with one or two of them.
 
+**The mass is simple and smooth.** One clean move reads at city scale: a taper across the whole
+rise, a shear (every section shifted the same way), a twist on the top section alone, or two hard
+setbacks. Busy walls and greebles do not read at night; the silhouette and the windows do the
+work. Vary footprint and floor count from building to building, because a street reads when no
+two silhouettes match.
+
 **Then the way in.** Every tower somebody walks up to needs one door at street level, and it is the
 thing that gets forgotten on this style because everything above it is so much louder:
 

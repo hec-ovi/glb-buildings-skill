@@ -841,9 +841,23 @@ Build from the colour map: keep only lit pane/glow pixels, fill the rest with pu
 
 ### `cyber/facade_2.jpg`
 
-**Description:** the quiet one, plus its `-emissive.png`
+**Description:** dense office curtain wall, 12 bays by 12 floors, three small windows a bay, one in ten lit in mixed whites; `pack.json` declares its grid and `dim: 1` because it is authored at night levels.
 
-**Prompt:** (variant of the family finish; see related `_1` entry and PROMPTS.md sections 7–9.)
+**Prompt:**
+
+```
+A perfectly flat-on night texture of a cyberpunk office tower curtain wall, for tiling on a 3D
+building. A strict regular grid of 12 window bays across and 16 floors down fills the whole frame.
+The wall is simple smooth near-black composite panel, very dark charcoal, with fine recessed
+joints between panels. Every bay holds three small vertical rectangular windows per floor. Most
+windows are unlit: dark blue-grey glass, barely lighter than the wall but readable as glass.
+Roughly one window in ten is lit from inside: flat even light, mostly warm white and cool white, a
+couple of amber and pale teal ones, some windows half covered by blinds. Lit windows are crisp
+with hard edges, no glow, no bloom, no light bleed past the frame. Dead flat orthographic view, no
+perspective, no ground, no sky, no roof, no people. The picture starts and ends in the middle of a
+solid panel on all four edges so it tiles seamlessly horizontally and vertically. Hyper realistic,
+photographic, extreme realism.
+```
 
 ### `cyber/facade_2-emissive.png`
 
@@ -857,9 +871,22 @@ Build from the colour map: keep only lit pane/glow pixels, fill the rest with pu
 
 ### `cyber/facade_3.jpg`
 
-**Description:** one lit column, plus its `-emissive.png`
+**Description:** dense residential wall, 12 bays by 16 floors, two wider windows a bay, one in twelve lit in tungsten and amber with curtains and blinds; `pack.json` declares its grid and `dim: 1` because it is authored at night levels.
 
-**Prompt:** (variant of the family finish; see related `_1` entry and PROMPTS.md sections 7–9.)
+**Prompt:**
+
+```
+A perfectly flat-on night texture of a dense cyberpunk residential tower wall, for tiling on a 3D
+building. A strict regular grid of 12 window bays across and 16 floors down fills the whole frame.
+The wall is smooth near-black concrete composite panel with fine recessed joints. Every bay holds
+two wider rectangular windows per floor. Most windows are unlit: very dark warm-grey glass, barely
+lighter than the wall but readable. Roughly one window in twelve is lit from inside: mostly warm
+tungsten white and soft amber, one or two pale cool white, several half covered by curtains or
+blinds so only a strip glows. Lit windows are crisp with hard edges, no glow, no bloom, no bleed.
+Dead flat orthographic view, no perspective, no ground, no sky, no roof, no people, no balconies.
+The picture starts and ends in the middle of a solid panel on all four edges so it tiles
+seamlessly horizontally and vertically. Hyper realistic, photographic, extreme realism.
+```
 
 ### `cyber/facade_3-emissive.png`
 
