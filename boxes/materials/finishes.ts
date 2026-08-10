@@ -100,6 +100,12 @@ export type Finish = {
   /** How solid it is. Under 1 the file blends it, so what is behind shows through. */
   alpha: number;
   /**
+   * How much light it throws, where one is as bright as a surface can be without saying so. A
+   * screen and a neon tube are sources, not surfaces catching the sun, and at one they sit level
+   * with a white wall in daylight instead of lighting the air around them.
+   */
+  glow: number;
+  /**
    * How much of its picture's brightness this surface keeps, 0 to 1. A dead material is dropped
    * back so the lit ones read; anything that is itself a light keeps all of it.
    */
@@ -132,6 +138,8 @@ type Recipe = {
   alpha?: number;
   /** Keeps all of its picture's brightness: it is a light, not a surface lit by one. */
   bright?: boolean;
+  /** Past one, how much light it throws. */
+  glow?: number;
   /**
    * Drawn as a grid of window bays, so a wall lays it one bay across and one floor up. Everything
    * else is a material and tiles by the metre: brick laid on a bay grid comes out with every
@@ -191,6 +199,7 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.15,
     bright: true,
     emissive: () => WHITE,
+    glow: 1.8,
     tile: 3,
     grid: true,
     draws: { key: 'glass-band', draw: (style, seed) => drawGlassBand(look(style), seed) },
@@ -261,6 +270,7 @@ const RECIPES: Record<string, Recipe> = {
     lit: true,
     // A screen on a tower is a light hanging in the air, and the city shows through it a little.
     alpha: 0.88,
+    glow: 3.5,
     fit: true,
     draws: { key: 'screen', draw: (style, seed) => drawScreen(look(style), seed) },
   },
@@ -272,6 +282,7 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.3,
     emissive: (style) => look(style).neon,
     lit: true,
+    glow: 3,
     tile: 1,
   },
   'screen-glass': {
@@ -288,6 +299,7 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.3,
     emissive: () => [255, 70, 55],
     lit: true,
+    glow: 4,
     fit: true,
   },
 };
@@ -344,6 +356,7 @@ export function finish(name: string, at: Look): Finish | undefined {
     ...(emissive ? { emissive } : {}),
     lit: recipe.lit ?? false,
     alpha: recipe.alpha ?? 1,
+    glow: recipe.glow ?? 1,
     tint: shade,
     fit: recipe.fit ?? false,
     band: recipe.band ?? false,

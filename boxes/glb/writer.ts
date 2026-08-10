@@ -8,6 +8,7 @@
  * transform keeps a positive determinant and nothing is mirrored or scaled.
  */
 import { Document, NodeIO, type Material, type Mesh, type Texture } from '@gltf-transform/core';
+import { KHRMaterialsEmissiveStrength } from '@gltf-transform/extensions';
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
 import { dressFaces, type Element, type FacePlan } from '#facade';
@@ -160,6 +161,13 @@ function palette(document: Document, look: Look, screens: Map<string, (Bitmap & 
   const made = new Map<string, Material>();
   const drawn = new Map<string, Texture>();
 
+  /**
+   * How much light a source throws, past the one that is the most a plain material can say. It is
+   * an optional extension: a reader that knows it lights the air, one that does not sees the same
+   * material at one, so `extensionsRequired` stays empty and every engine still opens the file.
+   */
+  const strength = document.createExtension(KHRMaterialsEmissiveStrength);
+
   const textureOf = (key: string, bitmap: Bitmap): Texture => {
     const already = drawn.get(key);
     if (already) return already;
@@ -212,6 +220,12 @@ function palette(document: Document, look: Look, screens: Map<string, (Bitmap & 
     } else if (recipe.lit && recipe.emissive) {
       // Plain mode: a line still glows, because a flat colour is all a line ever was.
       material.setEmissiveFactor(recipe.emissive);
+    }
+
+    // A screen and a neon tube are sources. At one they sit level with a white wall in daylight;
+    // past it they read as what they are and the renderer's bloom has something to catch.
+    if (recipe.glow > 1 && (material.getEmissiveTexture() || recipe.emissive)) {
+      material.setExtension('KHR_materials_emissive_strength', strength.createEmissiveStrength().setEmissiveStrength(recipe.glow));
     }
 
     made.set(name, material);
@@ -423,7 +437,7 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
     triangles += total;
   });
 
-  const glb = await new NodeIO().writeBinary(document);
+  const glb = await new NodeIO().registerExtensions([KHRMaterialsEmissiveStrength]).writeBinary(document);
 
   return {
     glb,
