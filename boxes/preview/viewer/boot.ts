@@ -42,9 +42,12 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
   let showView: ((view: View) => void) | undefined;
 
   let focusSection: ((bandId: string | undefined) => void) | undefined;
+  let refresh: (() => void) | undefined;
   const bar = new Bar(options.bar, {
     onView: (view) => showView?.(view),
     onSection: (bandId) => focusSection?.(bandId),
+    // The list on the left is the only place a deleted building would linger, so it catches up.
+    onRemoved: () => refresh?.(),
   });
 
   // Opening another building shows it whole, rather than through the camera the last one left.
@@ -60,6 +63,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     const { projects, current } = await fetchProjects();
     models.show(projects, current);
   };
+  refresh = () => void listBuildings();
 
   /**
    * `?building=<name>` opens straight onto one, which is what makes a link worth sharing. It is

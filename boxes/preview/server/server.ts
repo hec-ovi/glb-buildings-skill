@@ -27,6 +27,8 @@ export type PreviewOptions = {
     use(name: string): Promise<void>;
     /** Where a named building lives, so the page can say what is in it. */
     dirOf(name: string): string;
+    /** Take one away. Absent, the page offers no delete at all. */
+    remove?(name: string): Promise<void>;
   };
 };
 
@@ -115,6 +117,7 @@ export class PreviewServer {
     if (path === '/api/model.glb') return this.#model(res);
     if (path === '/api/selection' && req.method === 'POST') return this.#putSelection(req, res);
     if (path === '/api/selection') return this.#json(res, 200, await (await this.#current()).readSelection());
+    if (path === '/api/projects' && req.method === 'DELETE') return this.#removeProject(req, res);
     if (path === '/api/projects' && req.method === 'POST') return this.#useProject(req, res);
     if (path === '/api/projects') return this.#listProjects(res);
     if (path === '/api/events') return this.#events(res);
@@ -233,6 +236,26 @@ export class PreviewServer {
     if (!name) return this.#send(res, 400, 'text/plain', 'name a building');
     await this.#projects.use(name);
     this.#json(res, 200, { current: name });
+  }
+
+  /**
+   * Take a building away. The page asks twice before it gets here, and this asks the store rather
+   * than touching the disk itself, so one place knows what a project is made of.
+   */
+  async #removeProject(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const store = this.#projects;
+    if (!store?.remove) return this.#send(res, 404, 'text/plain', 'this preview cannot remove buildings');
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const { name } = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as { name?: string };
+    if (!name) return this.#send(res, 400, 'text/plain', 'name a building');
+
+    await store.remove(name);
+    const left = await store.list();
+    // Whatever is left becomes the one on screen, so the page never points at a gap.
+    if (left[0]) await store.use(left[0]);
+    this.#json(res, 200, { removed: name, current: left[0] });
   }
 
   #events(res: ServerResponse): void {

@@ -22,6 +22,8 @@ export type BarHandlers = {
   onView: (view: View) => void;
   /** Which section the bar is showing, so the drawing can bring it forward. */
   onSection?: (bandId: string | undefined) => void;
+  /** A building was deleted, so whatever lists them can catch up. */
+  onRemoved?: (name: string) => void;
 };
 
 const m = (mm: number) => (mm / 1000).toFixed(2).replace(/\.?0+$/, '');
@@ -29,8 +31,8 @@ const hex = (colour: number) => `#${colour.toString(16).padStart(6, '0')}`;
 
 type Section = { id: string; kind: string; tier: string; floors: number; height: string };
 
-/** A tray out of a box: enough of a download to read at fourteen pixels. */
-function downloadIcon(): SVGSVGElement {
+/** One line drawing at fifteen pixels: enough to read, nothing to explain. */
+function icon(d: string): SVGSVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 16 16');
   svg.setAttribute('width', '15');
@@ -38,7 +40,7 @@ function downloadIcon(): SVGSVGElement {
   svg.setAttribute('aria-hidden', 'true');
 
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', 'M8 1.5v7.5M4.75 6.25L8 9.5l3.25-3.25M2 11.5v3h12v-3');
+  path.setAttribute('d', d);
   path.setAttribute('fill', 'none');
   path.setAttribute('stroke', 'currentColor');
   path.setAttribute('stroke-width', '1.6');
@@ -46,11 +48,18 @@ function downloadIcon(): SVGSVGElement {
   return svg;
 }
 
+/** A tray out of a box, and a bin with a lid. */
+const DOWNLOAD = 'M8 1.5v7.5M4.75 6.25L8 9.5l3.25-3.25M2 11.5v3h12v-3';
+const BIN = 'M2.5 4h11M6.5 4V2.5h3V4M4 4l.8 9.5h6.4L12 4M6.5 6.5v5M9.5 6.5v5';
+
 export class Bar {
   readonly #name = element('div', 'bar-name', 'no building yet');
   readonly #size = element('div', 'bar-size', 'starting the viewer');
   readonly #brief = element('div', 'bar-brief');
-  readonly #export = element('a', 'icon');
+  readonly #export = element('a', 'action');
+  readonly #remove = element('button', 'action danger');
+  #armed = false;
+  #building: string | undefined;
   readonly #section = element('div', 'one-section');
   readonly #of = element('div', 'of');
   readonly #selection = element('div', 'read', 'nothing selected');
@@ -66,14 +75,22 @@ export class Bar {
     this.#onSection = handlers.onSection;
 
     this.#export.dataset.testid = 'export';
-    this.#export.append(downloadIcon());
+    this.#export.append(element('span', 'action-text', 'download'), icon(DOWNLOAD));
     this.#offerExport(undefined, false);
 
-    const title = element('div', 'bar-title');
-    title.append(this.#name, this.#export);
+    this.#remove.dataset.testid = 'remove';
+    this.#remove.type = 'button';
+    this.#remove.append(element('span', 'action-text', 'delete'), icon(BIN));
+    this.#remove.addEventListener('click', () => void this.#askThenRemove(handlers));
+    this.#armRemove(false);
+
+    // One under the other, the icons in a line and the words right against them, so the two read
+    // as one column of actions rather than two loose buttons.
+    const actions = element('div', 'bar-actions');
+    actions.append(this.#export, this.#remove);
 
     const identity = element('div', 'bar-block identity');
-    identity.append(title, this.#size, this.#brief);
+    identity.append(this.#name, this.#size, this.#brief, actions);
 
     const step = (by: number) => {
       if (this.#sections.length === 0) return;
@@ -133,6 +150,40 @@ export class Bar {
     if (tell) handlers.onView(view);
   }
 
+  /**
+   * Deleting a building is not undoable, so the first click only arms it and says so. Clicking
+   * anything else, or the same button again after it has been armed, is the answer either way.
+   */
+  async #askThenRemove(handlers: BarHandlers): Promise<void> {
+    const name = this.#building;
+    if (!name) return;
+
+    if (!this.#armed) {
+      this.#armRemove(true);
+      return;
+    }
+
+    this.#armRemove(false);
+    const answer = await fetch('/api/projects', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!answer.ok) {
+      this.fail(`could not delete ${name}`);
+      return;
+    }
+    handlers.onRemoved?.(name);
+  }
+
+  #armRemove(armed: boolean): void {
+    this.#armed = armed;
+    this.#remove.classList.toggle('armed', armed);
+    const label = this.#remove.querySelector('.action-text');
+    if (label) label.textContent = armed ? 'sure?' : 'delete';
+    this.#remove.title = armed ? 'click again to delete this building for good' : 'delete this building';
+  }
+
   /** The file is only offered once there is one, so export never hands over a stale build. */
   #offerExport(name: string | undefined, built: boolean): void {
     const ready = built && name !== undefined;
@@ -176,6 +227,8 @@ export class Bar {
 
   describe(doc: BuildingDocument, scene: PlacedScene, hasModel: boolean): void {
     const floors = scene.bands.reduce((n, band) => n + band.floors.length, 0);
+    this.#building = doc.name;
+    this.#armRemove(false);
     this.#name.textContent = doc.name;
     this.#size.textContent =
       `${m(scene.size.width)} x ${m(scene.size.depth)} x ${m(scene.size.height)} m · ` +

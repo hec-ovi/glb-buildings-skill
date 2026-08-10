@@ -18,6 +18,7 @@
         --accent: #f2622e;
         --accent-ink: #140800;
         --figure: #3ddc84;
+        --warn: #e05252;
         --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
       }
@@ -144,20 +145,40 @@
       }
       .bar-brief:empty { display: none; }
 
-      .icon {
-        display: inline-flex;
+      /*
+       * The two actions on the building: download over delete, one under the other. The rows are
+       * a fixed width and each one is a right aligned word followed by its icon, so the icons sit
+       * in a line down the column and the words end flush against them.
+       */
+      .bar-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .action {
+        display: grid;
+        grid-template-columns: 1fr 15px;
         align-items: center;
-        justify-content: center;
-        flex: none;
-        width: 30px;
-        height: 26px;
+        gap: 9px;
+        width: 108px;
+        padding: 5px 9px;
         color: var(--muted);
         border: 1px solid var(--line);
         background: var(--raised);
+        font: inherit;
+        font-size: 11.5px;
+        text-align: right;
+        cursor: pointer;
       }
-      .icon:hover { color: var(--accent); border-color: var(--accent); }
-      .icon[aria-disabled='true'] { color: #3a3a42; cursor: not-allowed; }
-      .icon[aria-disabled='true']:hover { color: #3a3a42; border-color: var(--line); }
+      .action .action-text { text-align: right; letter-spacing: 0.01em; }
+      .action svg { display: block; }
+      .action:hover { color: var(--accent); border-color: var(--accent); }
+      .action.danger:hover { color: var(--warn); border-color: var(--warn); }
+      .action.danger.armed { color: var(--warn); border-color: var(--warn); }
+      .action[aria-disabled='true'] { color: #3a3a42; cursor: not-allowed; }
+      .action[aria-disabled='true']:hover { color: #3a3a42; border-color: var(--line); }
 
       .row-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
       .of { color: var(--muted); font-family: var(--mono); font-size: 10.5px; }

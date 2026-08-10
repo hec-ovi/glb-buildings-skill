@@ -3,7 +3,7 @@
  * "use tower-a" once and every later verb knows what it is editing.
  */
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Project } from '#preview';
@@ -95,6 +95,15 @@ export class Projects {
       throw new BuildingError('E_DOC_INVALID', detail, ['project', name]);
     }
     return new Project(this.path(name));
+  }
+
+  /** Take a building away, with everything in it: the document, the build, the last pick. */
+  async remove(name: string): Promise<void> {
+    if (!existsSync(this.path(name))) {
+      throw new BuildingError('E_DOC_INVALID', `no project named ${name}`, ['project', name]);
+    }
+    await rm(this.path(name), { recursive: true, force: true });
+    if ((await this.current()) === name) await rm(this.currentFile, { force: true });
   }
 
   /**

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { assemble } from '#assemble';
 import { newDocument, type Selection } from '#spec';
 import type { ProjectCard } from '#preview';
-import { Bar } from '../viewer/Bar.ts';
+import { Bar, type BarHandlers } from '../viewer/Bar.ts';
 import { Blueprint } from '../viewer/Blueprint.ts';
 import { Models } from '../viewer/Models.ts';
 import { Picker } from '../viewer/Picker.ts';
@@ -16,7 +16,7 @@ import { Fly } from '../viewer/Fly.ts';
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 6 });
 const scene = assemble(doc);
 
-const bar = () => new Bar(document.body, { onView: () => {} });
+const bar = (extra: Partial<BarHandlers> = {}) => new Bar(document.body, { onView: () => {}, ...extra });
 
 beforeEach(() => {
   document.body.replaceChildren();
@@ -83,6 +83,34 @@ describe('the building bar', () => {
     expect(link.getAttribute('aria-disabled')).toBe('false');
     expect(link.getAttribute('href')).toBe('/api/model.glb');
     expect(link.getAttribute('download')).toBe('tower-a.glb');
+  });
+
+  it('asks before it deletes a building, and only then calls for it', async () => {
+    const onRemoved = vi.fn();
+    const calls: { url: string; method?: string; body?: string }[] = [];
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      calls.push({ url, method: init?.method, body: init?.body as string });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response);
+    });
+
+    const panel = bar({ onRemoved });
+    panel.describe(doc, scene, true);
+    const remove = screen.getByTestId('remove');
+    expect(remove.textContent).toContain('delete');
+
+    // The first click only arms it: deleting a building is not something to do by accident.
+    await userEvent.click(remove);
+    expect(calls).toEqual([]);
+    expect(remove.textContent).toContain('sure?');
+
+    await userEvent.click(remove);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ url: '/api/projects', method: 'DELETE' });
+    expect(JSON.parse(calls[0]!.body!)).toEqual({ name: 'tower-a' });
+    expect(onRemoved).toHaveBeenCalledWith('tower-a');
+    // And it goes back to asking, so the next click is a fresh decision.
+    expect(remove.textContent).toContain('delete');
+    vi.unstubAllGlobals();
   });
 
   it('reports the floors that are selected, one chip each', () => {

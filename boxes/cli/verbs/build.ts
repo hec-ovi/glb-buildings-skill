@@ -89,6 +89,7 @@ export const preview: Verb = {
               current: () => projects.current(),
               use: (chosen: string) => projects.use(chosen),
               dirOf: (chosen: string) => projects.path(chosen),
+              remove: (chosen: string) => projects.remove(chosen),
             },
           },
     );

@@ -8,6 +8,7 @@ The verbs an agent calls. Named projects on disk, one of them current, and one J
 | --- | --- | --- |
 | `run(argv, projects?)` | the words after `buildings` | `Answer`: `{ ok: true, verb, ...data }` or `{ ok: false, code, message, at }` |
 | `new Projects(root?)` | a projects root | the store |
+| `projects.remove(name)` | a name | takes that building away, with its build and its last pick |
 | `projects.open(name?)` | a name, or nothing for the current one | `{ name, project }` |
 | `home(cwd?)` | | the root the CLI would use from here |
 | `VERBS` | | every verb with its name, summary and usage |

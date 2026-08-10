@@ -20,7 +20,8 @@ rectangle lands in `selection.json`.
 
 `PreviewOptions` is `{ dir }` for one fixed project, or `{ resolve, watchRoot }` to follow whichever project
 is current: `resolve` runs per request, `watchRoot` is the tree whose changes trigger a reload. Add
-`projects` (`list`, `current`, `use`, `dirOf`) to let the page navigate between buildings. `port` defaults to
+`projects` (`list`, `current`, `use`, `dirOf`) to let the page navigate between buildings, and `remove` on
+top of those to let it delete one. `port` defaults to
 4321, `host` to 127.0.0.1, and `log` prints one line per request.
 
 ## The project folder
@@ -43,6 +44,7 @@ selection.json     what the human last picked
 | `GET /api/model.glb` | the built file, or 404 before the first build |
 | `GET /api/selection` | the current selection |
 | `POST /api/selection` | stores it, stamps `at`, gives it back |
+| `DELETE /api/projects` | takes a building away and moves to whatever is left. Only when the caller passed `remove` |
 | `GET /api/projects` | `{ projects, current }`, one `ProjectCard` per building (name, brief, floors, sections, height, what it reads as, whether it is built) |
 | `POST /api/projects` | `{ name }` makes that building current |
 | `GET /api/events` | server sent events, `changed` when the document or the build file changes |
