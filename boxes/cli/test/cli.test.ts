@@ -27,6 +27,16 @@ describe('projects', () => {
     expect(await call('show')).toMatchObject({ project: 'tower-a' });
   });
 
+  it('takes a building away with everything in it, and leaves nothing current', async () => {
+    await call('new', 'tower-a');
+    await call('new', 'tower-b');
+    await call('build', 'tower-b');
+    expect(await call('remove', 'tower-b')).toMatchObject({ ok: true, removed: 'tower-b', left: ['tower-a'] });
+    // Nothing is current afterwards: the next verb has to say which building it means.
+    expect(await call('list')).toMatchObject({ current: undefined, projects: [{ project: 'tower-a' }] });
+    expect(await call('remove', 'tower-b')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+  });
+
   it('says what to do when no project is chosen yet', async () => {
     expect(await call('show')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
   });

@@ -1,6 +1,5 @@
 /** The vocabulary every other box speaks: the document, the selection, units, errors. */
 export {
-  SCHEMA_VERSION,
   TIERS,
   BAND_KINDS,
   SIDES,
@@ -9,8 +8,6 @@ export {
   newDocument,
   bandFloorHeight,
   DECK_PARTS,
-  ELEMENT_KINDS,
-  ELEMENT_MATERIALS,
   type DeckPart,
   type DeckPlacement,
   type ElementKind,
@@ -39,6 +36,6 @@ export {
   type Selection,
 } from './selection.ts';
 
-export { METRE, toMetres, toMm, partition, bayCount, type Mm } from './units.ts';
+export { toMetres, toMm, partition, bayCount, type Mm } from './units.ts';
 
 export { ERRORS, BuildingError, type ErrorCode } from './errors.ts';

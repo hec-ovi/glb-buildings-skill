@@ -50,6 +50,7 @@ a session names the building once and every later verb knows what it means.
 | `brief ["what it should be"]` | what the building was asked for; kept in the document and shown in the preview |
 | `list` | every building, whether it is built, and which is current |
 | `use <name>` | switch the current building |
+| `remove <name>` | take a building away, with its build and its last pick. Named outright, never the current one by default |
 | `show [name]` | the stack section by section: sizes, plan, what each wears, what it rests on |
 | `templates` | the section templates the kit can build |
 | `add-band <id> [flags]` | put a section into the stack, `--after` or `--before` another |

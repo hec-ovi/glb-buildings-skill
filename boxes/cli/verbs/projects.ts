@@ -75,6 +75,26 @@ export const listProjects: Verb = {
   },
 };
 
+const removeProject: Verb = {
+  name: 'remove',
+  summary: 'take a building away, with its build and its last pick',
+  usage: 'remove <name>',
+  async run(args, { projects }) {
+    const { positionals } = parse(args, {});
+    // Named outright, never the current one by default: this one cannot be undone.
+    const name = need(positionals, 0, 'project name');
+    await projects.remove(name);
+
+    const left = await projects.list();
+    return {
+      removed: name,
+      left,
+      current: await projects.current(),
+      note: left.length === 0 ? 'nothing is left in this store' : 'say `buildings use <name>` to pick which one is current',
+    };
+  },
+};
+
 export const useProject: Verb = {
   name: 'use',
   summary: 'make a building the current one',
@@ -205,4 +225,4 @@ const listTemplates: Verb = {
   },
 };
 
-export const projectVerbs = [newProject, listProjects, useProject, show, setBrief, listTemplates];
+export const projectVerbs = [newProject, listProjects, useProject, removeProject, show, setBrief, listTemplates];

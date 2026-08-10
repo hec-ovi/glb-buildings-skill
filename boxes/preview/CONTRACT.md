@@ -61,14 +61,19 @@ it was asked for in the words it was asked in, and the line `describeBuilding` r
 open one carries the accent. Clicking a row makes that building current, for the page and for the CLI alike.
 The foot counts what the store holds.
 
-**Bar.** Three columns. The building's name, its size spoken, and the brief it was asked for; then **one**
-of its sections at a time with arrows to step through them; then the view and what is selected, which are the
-same question asked twice. The file out is one icon beside the name. The section on screen is brought forward in the drawing and the
-rest fade, so the name in the bar and the part of the building it means are obviously the same thing. That
-marking is off in `final`, which draws nothing over the building. A click selects the bay under the cursor; **shift and drag** marks a zone, taking every bay whose centre is
+**Bar.** Three columns. The building's name, its size spoken, the brief it was asked for, and under them the
+two things you can do to the whole building: **download** over **delete**, labels right against their icons.
+Delete arms on the first click and reads `sure?`, so the one action that cannot be undone takes two.
+Download hands over the built file as `<name>.glb` and is offered only once a build exists.
+
+Then **one** section at a time with arrows to step through them; then the view and what is selected, which
+are the same question asked twice. The section on screen is brought forward in the drawing and the rest
+fade, so the name in the bar and the part of the building it means are obviously the same thing. That
+marking is off in `final`, which draws nothing over the building.
+
+A click selects the bay under the cursor; **shift and drag** marks a zone, taking every bay whose centre is
 inside the rectangle and whose face turns toward the camera, so the far side is never caught. The gesture
-decides, so there is no mode to remember. `export` hands over the built file as `<name>.glb`, and is offered
-only once a build exists.
+decides, so there is no mode to remember.
 
 **View** is three ways to look at the same building:
 
@@ -85,7 +90,9 @@ Section outlines are coloured by kind, amber for `main`, cyan for `bulk`, pink f
 fall. A turn swings around whatever the camera is looking at, so panning first is how you choose what to
 orbit. Only the primary button picks, so driving the camera never changes the selection. The blueprint is
 instanced, one draw per section, so a 40 floor tower stays interactive. Evening light, so a dark facade stays
-dark and its lit windows are the brightest thing on it.
+dark and its lit windows are the brightest thing on it. Anything brighter than a lamp bleeds into the air
+around it: neon, lit windows and the highlights of a screen, and nothing else, which is what keeps the
+picture on a screen a picture rather than one glowing rectangle.
 
 `?building=<name>` opens the page straight onto one, which is what makes a link worth sharing. It is honoured
 once, on the first load, so switching afterwards is not fought by the address bar.

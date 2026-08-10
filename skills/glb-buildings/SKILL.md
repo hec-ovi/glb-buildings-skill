@@ -53,6 +53,7 @@ Run `buildings help` for the current list. Today:
 | `brief ["what it should be"]` | what this building was asked for, kept with it and shown in the preview |
 | `list` | every building, and which is current |
 | `use <name>` | switch the current building |
+| `remove <name>` | take a building away, with its build and its last pick. It cannot be undone, so name it outright |
 | `show [name]` | the stack band by band |
 | `style [modern\|cyber]` | which family of finishes the building wears. Says what a family looks like, and whether generated images are in play |
 | `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |

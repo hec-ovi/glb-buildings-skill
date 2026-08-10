@@ -1,5 +1,5 @@
 /** Faces as grids of cells: what stands where on a wall, and the geometry it becomes. */
-export { CELL, MARGIN, Face, Sheet, rectOf, describeRect, type Rect, type Side } from './grid.ts';
+export { CELL, MARGIN, Face, Sheet, rectOf, type Rect, type Side } from './grid.ts';
 export {
   MATERIALS,
   MATERIAL_NOTES,
@@ -7,7 +7,6 @@ export {
   KIND_NOTES,
   DEFAULT_MATERIAL,
   claims,
-  slabTop,
   type Element,
   type Kind,
   type Material,
