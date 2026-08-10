@@ -39,6 +39,8 @@ export function windowRow(
   y1: number,
   style: WindowStyle = WINDOW,
   grid: { across: number; down: number } = FACADE_STYLE,
+  /** The bay this edge's tile starts on, walked round the ring, the same as the wall behind. */
+  startBay = 0,
 ): void {
   const next = (edge + 1) % lowerRing.length;
   const lower: [Corner, Corner] = [lowerRing[edge]!, lowerRing[next]!];
@@ -72,8 +74,8 @@ export function windowRow(
     // The front face carries the window it stands on, read off the tile exactly where the wall
     // behind it reads: the same bay across, and the same row up.
     const patch = {
-      u0: (bay + glass.left) / across,
-      u1: (bay + glass.right) / across,
+      u0: (startBay + bay + glass.left) / across,
+      u1: (startBay + bay + glass.right) / across,
       v0: 1 - (floor + 1 - glass.top) / down,
       v1: 1 - (floor + 1 - glass.bottom) / down,
     };

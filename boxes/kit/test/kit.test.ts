@@ -197,10 +197,11 @@ describe('one window, drawn and built', () => {
     const us = uvs.filter((_, i) => i % 2 === 0);
     const vs = uvs.filter((_, i) => i % 2 === 1);
 
-    // A 24 m face is exactly one tile across. The bottom floor lands on the bottom row of the
-    // tile and each floor above walks up one row, so six floors cover one and a half tiles and
-    // the sampler repeats past the top.
-    expect(Math.max(...us)).toBeCloseTo(1, 5);
+    // A 24 m face is exactly one tile across, and the bays walk on round the ring, so four faces
+    // span four tiles. The bottom floor lands on the bottom row of the tile and each floor above
+    // walks up one row, so six floors cover one and a half tiles and the sampler repeats past
+    // the top.
+    expect(Math.max(...us)).toBeCloseTo(4, 5);
     expect(Math.max(...vs)).toBeCloseTo(1, 5);
     expect(Math.min(...vs)).toBeCloseTo(1 - 6 / FACADE_STYLE.down, 5);
     expect(new Set(vs.map((v) => Math.round(v * 1000))).size).toBe(7);
@@ -217,8 +218,29 @@ describe('one window, drawn and built', () => {
       walls(skin, { bottom: ring, top: ring, height: 3.2, floors: 1 });
 
       const us = skin.data().uvs.filter((_, i) => i % 2 === 0);
-      expect(Math.max(...us) * FACADE_STYLE.across, `${width} m face`).toBeCloseTo(bays, 5);
+      // Four faces walked round: every u sits on a whole bay, and the walk ends on the ring total.
+      expect(Math.max(...us) * FACADE_STYLE.across, `${width} m face`).toBeCloseTo(bays * 4, 5);
+      for (const u of us) {
+        const at = u * FACADE_STYLE.across;
+        expect(Math.abs(at - Math.round(at)), `${width} m face lands mid-bay`).toBeLessThan(1e-5);
+      }
     }
+  });
+
+  it('wears the whole picture round a round section instead of one bay per segment', () => {
+    // Sixteen short edges, each one bay wide. Restarting the tile at every edge would show the
+    // picture's first bay sixteen times and none of the rest, which on a facade whose lights sit
+    // mid-picture is a tower with every window off.
+    const ring: [number, number][] = [];
+    for (let i = 0; i < 16; i++) {
+      const angle = (i / 16) * Math.PI * 2;
+      ring.push([Math.cos(angle) * 11, Math.sin(angle) * 11]);
+    }
+    const skin = new Surface('facade');
+    walls(skin, { bottom: ring, top: ring, height: 3.2, floors: 1 });
+
+    const us = skin.data().uvs.filter((_, i) => i % 2 === 0);
+    expect(Math.max(...us) * FACADE_STYLE.across).toBeCloseTo(16, 5);
   });
 
   it('puts the cut pane on the window the wall draws, on a face that is not a whole tile', () => {
@@ -235,10 +257,14 @@ describe('one window, drawn and built', () => {
     const paneU = front.filter((_, i) => i % 2 === 0);
     const bays = wallU * FACADE_STYLE.across;
 
-    expect(bays).toBeCloseTo(9, 5);
+    // Nine bays a face, four faces walked round.
+    expect(bays).toBeCloseTo(36, 5);
     // The first pane sits in the first bay of the tile, wherever the face ends.
     expect(Math.min(...paneU)).toBeCloseTo(FACADE_STYLE.pane.left / FACADE_STYLE.across, 5);
     expect(Math.max(...paneU)).toBeCloseTo(FACADE_STYLE.pane.right / FACADE_STYLE.across, 5);
+    // And the last pane of the walk reads the bay its own wall lays there, not bay one again.
+    const allPaneU = pane.data().uvs.filter((_, i) => i % 2 === 0);
+    expect(Math.max(...allPaneU)).toBeCloseTo((27 + 8 + FACADE_STYLE.pane.right) / FACADE_STYLE.across, 5);
   });
 });
 

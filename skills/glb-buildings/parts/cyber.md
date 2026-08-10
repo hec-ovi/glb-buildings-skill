@@ -64,6 +64,14 @@ buildings line body --side W --count 2 --spacing 6 --colour amber --from 12 --to
 - `--colours` cycles a list, one per line. `--colour` gives them all the same.
 - Colours: `cyan`, `teal`, `green`, `blue`, `magenta`, `pink`, `red`, `orange`, `amber`, `yellow`, `white`,
   or any `#rrggbb`.
+- `--thickness` is metres across the tube. The default 0.12 reads on a low block seen from the
+  street; on a tower past twenty floors it is thinner than the distance hides, so use 0.25 to 0.4
+  there, and let a low block keep the thin one.
+
+**Pick the building's own colours.** The commands above are one scheme, not the scheme: a street
+where every tower answers `cyan,magenta` reads as one building copied. Choose a family for this
+building and stay in it: amber and red, teal and green, blue and white, orange and pink, or one
+colour alone. Two colours from one family beat five from all of them.
 
 **Lines want a plain wall.** Leave the face they climb with nothing composed on it: no windows, no panels,
 no balconies. The wall texture already has windows in it, and that is the background a line reads against.
@@ -96,6 +104,10 @@ buildings place dish A1 B4 --section crown
 
 `crown` runs a lit line round the top edge of a section. Put it on the roof, or on a section that steps in,
 where the edge is seen.
+
+A horizontal lit run belongs to `crown`, and the section's `--colour` picks its light. `run` is for
+services, a pipe or a duct along a wall, and its `neon` is the plain white tube with no colour to
+give it: use it to dress, not to draw.
 
 **Every cyber roof gets a lit mast, whether you ask or not.** A tower of this kind is read against the sky
 and the beacon on the tip is what puts it there, so the toolkit stands one as near the middle of the deck as

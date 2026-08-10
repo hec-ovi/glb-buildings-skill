@@ -78,8 +78,26 @@ function rowsPerFloor(shape: SectionShape): number {
  * The tile runs up the building the way it was drawn, so its bottom row lands on the bottom
  * floor. Beyond the tile's own height it repeats, which is what the sampler does with a UV past 1.
  */
+/**
+ * Where each edge's tile starts, in bays walked round the ring from its first corner. The bays
+ * walk round rather than restarting at every edge: on a box that just carries the picture across
+ * the corner, but on a round section, whose ring is many short edges, restarting would hand every
+ * segment the same first bay and the rest of the picture would never be seen.
+ */
+function bayOffsets(ring: Corner[]): number[] {
+  const offsets: number[] = [];
+  let bays = 0;
+  for (let i = 0; i < ring.length; i++) {
+    offsets.push(bays);
+    const next = ring[(i + 1) % ring.length]!;
+    bays += baysOn(Math.hypot(next[0] - ring[i]![0], next[1] - ring[i]![1]), FACADE_STYLE.bay);
+  }
+  return offsets;
+}
+
 function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1: number, floor: number | undefined, rows: number, grid: { across: number; down: number }): void {
   const { across, down } = grid;
+  const offsets = bayOffsets(lower);
 
   for (let i = 0; i < lower.length; i++) {
     const next = (i + 1) % lower.length;
@@ -89,8 +107,8 @@ function band(surface: Surface, lower: Corner[], upper: Corner[], y0: number, y1
       floor === undefined
         ? undefined
         : {
-            u0: 0,
-            u1: baysOn(Math.hypot(b[0] - a[0], b[1] - a[1]), FACADE_STYLE.bay) / across,
+            u0: offsets[i]! / across,
+            u1: (offsets[i]! + baysOn(Math.hypot(b[0] - a[0], b[1] - a[1]), FACADE_STYLE.bay)) / across,
             v0: 1 - ((floor + 1) * rows) / down,
             v1: 1 - (floor * rows) / down,
           };
@@ -129,8 +147,10 @@ export function walls(surface: Surface, shape: SectionShape, pane?: Surface): vo
     band(surface, lower, upper, y0, y1, asBays ? row : undefined, perFloor, grid);
     if (!shape.windows || !pane) continue;
 
-    // A floor with windows: every face is cut into bays and each bay gets a pane.
-    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, row, y0, y1, shape.windows, grid);
+    // A floor with windows: every face is cut into bays and each bay gets a pane, reading the
+    // tile from the same bay the wall behind it does.
+    const offsets = bayOffsets(lower);
+    for (let i = 0; i < lower.length; i++) windowRow(pane, lower, upper, i, row, y0, y1, shape.windows, grid, offsets[i]!);
   }
 
   if (chamfer > 0) band(surface, ringAt(shape, high / shape.height), capRing(shape, 1), high, shape.height, undefined, 1, grid);
