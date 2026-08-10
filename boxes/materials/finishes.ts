@@ -202,10 +202,10 @@ const RECIPES: Record<string, Recipe> = {
     // the picture drops to the family's tint like any other surface and the emissive map does the
     // lighting, which is what the map is for.
     //
-    // Just over one: a lit office is brighter than the wall around it and dimmer than a screen,
-    // and the lit panes of a wall picture are large. Past this they bleed into each other and the
-    // band stops being floors and becomes a cloud.
-    glow: 1.25,
+    // Where a lit office sits: brighter than the wall around it, dimmer than a screen. Under this
+    // the band is a slightly pale wall rather than floors with the lights on; much past it the lit
+    // panes bleed into each other and the band becomes a cloud.
+    glow: 1.6,
     tile: 3,
     grid: true,
     draws: { key: 'glass-band', draw: (style, seed) => drawGlassBand(look(style), seed) },

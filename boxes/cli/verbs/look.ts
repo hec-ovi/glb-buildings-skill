@@ -12,10 +12,23 @@ async function packOf(root: string, style: string) {
   // A picture of a light is never read, so listing one as in play would be a lie.
   const used = pack.finishes.filter((finish) => pictured(finish));
   const ignored = pack.finishes.filter((finish) => !pictured(finish));
+  // Which pictures would leave a building unlit, named, because it is the least obvious thing a
+  // pack can be wrong about: every file is there and the tower still comes out dead.
+  const dark = used
+    .filter((finish) => pack.lit[finish]! < pack.variants[finish]! && pack.lit[finish]! >= 0 && ['facade', 'glass-band', 'door', 'screen'].includes(finish))
+    .map((finish) => `${finish}: ${pack.variants[finish]! - pack.lit[finish]!} of ${pack.variants[finish]} carry no lights`);
   return {
     dir: pack.dir,
-    has: used.map((finish) => (pack.variants[finish]! > 1 ? `${finish} x${pack.variants[finish]}` : finish)),
+    has: used.map((finish) => {
+      const many = pack.variants[finish]!;
+      const lit = pack.lit[finish]!;
+      const count = many > 1 ? `${finish} x${many}` : finish;
+      // A wall with no emissive map is a building with every light off. How many of a finish's
+      // pictures are like that decides how much of a street comes out dark, so it is said here.
+      return lit === 0 || lit === many ? count : `${count} (${lit} lit)`;
+    }),
     ...(ignored.length === 0 ? {} : { ignored, why: 'a light is a flat colour emitting that colour, so no picture of one is read' }),
+    ...(dark.length === 0 ? {} : { dark, why_dark: 'these have no emissive map, so a building that picks one comes out with every window off. Generate more lit pictures, or emissive maps for these, to change the balance' }),
     note:
       used.length === 0
         ? `no generated images here yet, so every finish is drawn from code. Put JPEGs named after the finish in ${pack.dir} to override them: facade_1.jpg to facade_4.jpg for a building to pick between, and facade_1-emissive.png for what glows`

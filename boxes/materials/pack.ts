@@ -55,6 +55,8 @@ export type Pack = {
   /** What it carries, and how many pictures each one has. */
   finishes: string[];
   variants: Record<string, number>;
+  /** How many of those pictures carry an emissive map, so a wall with no lights is countable. */
+  lit: Record<string, number>;
   /**
    * What the pack says about its own pictures, under whatever key it said it: `facade` for every
    * picture of the facade, `facade_2` for that one alone. Two pictures of one finish need not hold
@@ -62,6 +64,11 @@ export type Pack = {
    */
   grids: Record<string, Grid>;
   metres: Record<string, number>;
+  /**
+   * The pictures in the folder's `ads/`, in name order. They are not finishes: one is given to one
+   * screen, by path, so a tower carries an advertisement rather than a repeated tile.
+   */
+  ads: string[];
   /** One finish, picking between its pictures with the building's own seed. */
   get(finish: string, seed?: number): Maps | undefined;
   /** The grid the picture this seed picks actually holds, where the pack says so. */
@@ -74,12 +81,27 @@ export const EMPTY_PACK: Pack = {
   dir: '',
   finishes: [],
   variants: {},
+  lit: {},
   grids: {},
   metres: {},
+  ads: [],
   get: () => undefined,
   gridOf: () => undefined,
   metresOf: () => undefined,
 };
+
+/** The pictures in `<style>/ads/`, which are given to screens one at a time rather than tiled. */
+async function readAds(dir: string): Promise<string[]> {
+  try {
+    const names = await readdir(join(dir, 'ads'));
+    return names
+      .filter((name) => MIME[extname(name).toLowerCase()] !== undefined)
+      .sort()
+      .map((name) => join(dir, 'ads', name));
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Read every image in a style's folder. glTF carries PNG and JPEG and nothing else without an
@@ -98,6 +120,7 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
   const colour = new Map<string, Map<number, Bitmap>>();
   const glow = new Map<string, Map<number, Bitmap>>();
   const declared = await readDeclared(dir);
+  const ads = await readAds(dir);
 
   const keep = (into: Map<string, Map<number, Bitmap>>, stem: string, bitmap: Bitmap) => {
     const { finish, variant } = split(stem);
@@ -134,7 +157,9 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
   return {
     dir,
     finishes: [...colour.keys()].sort(),
+    ads,
     variants: Object.fromEntries([...colour].map(([finish, set]) => [finish, set.size])),
+    lit: Object.fromEntries([...colour].map(([finish, set]) => [finish, [...set.keys()].filter((n) => glow.get(finish)?.has(n)).length])),
     grids: declared.grids,
     metres: declared.metres,
     get(finish, seed = 0) {

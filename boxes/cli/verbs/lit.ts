@@ -6,8 +6,8 @@
  * it, and which floors.
  */
 import { assemble } from '#assemble';
-import { edgeFacing } from '#kit';
-import { COLOUR_NAMES, loadImage } from '#materials';
+import { edgeFacing, seedOf } from '#kit';
+import { COLOUR_NAMES, loadImage, loadPack } from '#materials';
 import { BuildingError, SIDES, bandFloorHeight, toMetres, toMm, type Band, type BandLine, type BandScreen, type BuildingDocument, type Side } from '#spec';
 import type { Verb } from './verb.ts';
 import { count, oneOf, parse, size, text } from './args.ts';
@@ -138,7 +138,16 @@ export const screen: Verb = {
     });
 
     const side = oneOf(text(values.side), SIDES, 'side', 'S');
-    const picture = text(values.image) ?? '';
+
+    // A screen with no picture wears one of the family's ads. The alternative is the `screen`
+    // finish, which is a small sign panel: stretched over ten floors it reads as noise, and every
+    // screen in the city reads as the same noise. Which ad comes from the building's own name and
+    // how many screens it already carries, so a tower with two of them carries two different ones.
+    const found = await projects.open();
+    const document = await found.project.readDocument();
+    const wearing = document.bands.reduce((sum, band) => sum + band.screens.length, 0);
+    const pack = await loadPack(projects.textures, document.style);
+    const picture = text(values.image) ?? pack.ads[(Math.abs(seedOf(document.name)) + wearing) % Math.max(1, pack.ads.length)] ?? '';
 
     // Read it now: a path that is wrong is worth saying here, not three verbs later at the build.
     // Its shape is worth having too, because a panel is fitted to the picture it carries.
@@ -197,7 +206,7 @@ export const screen: Verb = {
       screen: band.screens.length,
       spans: `floors ${made!.from} to ${made!.to}`,
       size: { width: toMetres(made!.width), stand: toMetres(made!.stand) },
-      image: picture === '' ? 'the generated screen' : picture,
+      image: picture === '' ? 'the drawn screen tile: this family carries no ads' : picture,
       ...(fitted === '' ? {} : { fitted }),
       ...(aspect === undefined ? {} : { picture: `${Math.round(aspect * 100) / 100} wide to tall, and the panel is fitted to it inside the space above` }),
       note: 'it carries its own picture across its whole front, and hangs on brackets back to the wall',

@@ -391,7 +391,11 @@ describe('a picture generated for a pack', () => {
     // A second picture of the same finish is the next variant, and the build picks between them.
     // It holds its own grid, so one wall picture never forces the shape of another.
     expect(await call('add-texture', 'facade', wall, '--across', '6', '--down', '5')).toMatchObject({ variant: 2, pack: 2 });
-    expect(await call('style')).toMatchObject({ pack: { has: ['facade x2'] } });
+    // One of the two carries an emissive map, and the pack says so: a wall with none is a
+    // building with every light off, which is the least obvious way a pack can be wrong.
+    expect(await call('style')).toMatchObject({
+      pack: { has: ['facade x2 (1 lit)'], dark: ['facade: 1 of 2 carry no lights'] },
+    });
 
     const declared = JSON.parse(await readFile(join(projects.textures, 'cyber', 'pack.json'), 'utf8')) as Record<string, unknown>;
     expect(declared).toEqual({ facade_1: { across: 10, down: 3 }, facade_2: { across: 6, down: 5 } });
@@ -477,6 +481,22 @@ describe('the lit parts', () => {
     expect(put.size.width).toBe(16);
     expect(put.fitted).toContain('comes from the picture');
     expect(put.picture).toContain('0.5');
+    expect(await call('build')).toMatchObject({ ok: true, validator: { errors: 0 } });
+  });
+
+  it('wears one of the family ads when no picture is named, so no two screens are the same tile', async () => {
+    const ads = join(projects.textures, 'cyber', 'ads');
+    await mkdir(ads, { recursive: true });
+    // Two ads of different shapes, so which one a screen took is visible in the panel it built.
+    await writeFile(join(ads, 'a.png'), png({ width: 64, height: 128, rgba: new Uint8Array(64 * 128 * 4) }));
+    await writeFile(join(ads, 'b.png'), png({ width: 128, height: 64, rgba: new Uint8Array(128 * 64 * 4) }));
+
+    await call('new', 'tower-a', '--style', 'cyber', '--floors', '24', '--width', '30');
+    const first = (await call('screen', 'body', '--side', 'S', '--along', '2', '--from', '2', '--to', '7')) as unknown as { image: string };
+    const second = (await call('screen', 'body', '--side', 'E', '--along', '2', '--from', '2', '--to', '7')) as unknown as { image: string };
+
+    expect(first.image.startsWith(ads)).toBe(true);
+    expect(second.image).not.toBe(first.image);
     expect(await call('build')).toMatchObject({ ok: true, validator: { errors: 0 } });
   });
 

@@ -12,6 +12,7 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | Installing the CLI and the skill | [INSTALL.md](INSTALL.md) |
 | Generating the texture sets with an image model | [textures/PROMPTS.md](textures/PROMPTS.md), and `skills/glb-buildings/parts/textures.md` for an agent with its own image tool |
 | Generating the ads that go on the screens | [textures/ADS.md](textures/ADS.md) |
+| What is wrong with the pack today, file by file, with the prompts to fix it | [textures/DEFECTS.md](textures/DEFECTS.md) |
 | Glossary of every texture file, description and prompt | [textures/GLOSSARY.md](textures/GLOSSARY.md) |
 
 ## Boxes
