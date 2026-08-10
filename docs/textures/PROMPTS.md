@@ -131,6 +131,9 @@ The rest:
 
 1. Say **seamless** and **tileable**, and say what it is a texture *of*, never a scene.
 2. **Even detail across the frame.** Anything the model centres becomes a polka dot when it tiles.
+2b. **Nothing that belongs at one height.** A hazard band low down, a stencilled number, a stone band at
+   the top: a tile has no top and no bottom, so each of those repeats up the whole wall. Anything that
+   belongs at a particular place on a building belongs in the geometry, not in the tile.
 3. **State the scale**: "a 3 metre square of", "eight window bays across".
 4. **1:1 tiles best.** The wall tile is 2:1 and worth the extra work, because the bays stay square.
 5. **Never upscale a tile.** Upscalers repaint the edges and the seam comes back.
@@ -169,6 +172,12 @@ composition. Darker low-key exposure. High quality photographic grain of the mat
 perfectly uniform grid, identical repeated windows, symmetrical, perspective, camera angle, horizon, sky,
 ground, street, people, cars, trees, vignette, border, frame, watermark, text, signature, blur, bokeh,
 lens flare, bloom, cast shadow, tilted, fisheye, collage, visible seam
+```
+
+For a tiling material, add the things that cannot repeat:
+
+```
+hazard stripes, chevrons, stencilled text, numbers, signage, graffiti, a band across the picture
 ```
 
 ---
@@ -958,7 +967,114 @@ finish stays dark.
 
 ---
 
-## 9. After generating
+## 9. Regenerate, and the variants worth having
+
+### A tiling picture has no top and no bottom
+
+`cyber/base_1.jpg` came back with a black and yellow hazard band across it and a stencilled unit number.
+Both are things that belong at **one height on a building**, and a tile has no height: it repeats every three
+metres, so the band stripes the whole ground floor and the number is printed up the wall a dozen times.
+
+That was my prompt's fault, and the rule is now in every one below: **anything that belongs at a particular
+place belongs in the geometry, not in the tile.** A tiling picture is a material, evenly the same all over.
+
+**`cyber/base_1.jpg`** regenerate, no band, no text
+**From:** nothing. Generate fresh.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the armoured base panelling of a futuristic megastructure at night,
+dead flat-on with a long telephoto. Heavy dark gunmetal plates with recessed hex bolts at their corners,
+deep shadow joints between them, scuffs and impact dents, grime collected in the joints, condensation and a
+wet sheen. Evenly the same all over. NO hazard stripes, NO chevrons, NO yellow, NO text, NO numbers, NO
+stencils, NO graffiti, NO window, NO opening: every one of those belongs at one place on a building and this
+picture repeats every three metres. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+### The brick has to be the same brick
+
+`fifties/wall_1.jpg` is the plain wall for a floor you compose on, and it came back **buff yellow** while
+`fifties/facade_1.jpg` is **red**. They sit on the same building, one directly above the other.
+
+**`fifties/wall_1.jpg`** regenerate to match
+**From:** `fifties/facade_1.jpg` as the image reference. Take the brick out of it: same bond, same colour,
+same mortar, same weathering, with the windows removed.
+
+```
+Hyper realistic, extreme realism, photographic. The same brickwork as the reference image and nothing else: identical red brick, identical bond,
+identical mortar colour and joint, identical weathering and soot, photographed dead flat-on with a long
+telephoto in flat overcast daylight. A 1.6 metre square of it, about 21 courses. Every brick a slightly
+different shade the way the reference has them, chips at the arrises, a patched repointed area. NO window,
+NO glass, NO opening, NO frame, NO sill, NO stone band: this is the blank brick between the windows, with
+the windows taken away. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+**Declare its scale.** A brick picture is not three metres of wall. Count the courses and put it in
+`pack.json` beside the images, or every course comes out the depth of a door:
+
+```json
+{ "wall": { "metres": 1.6 } }
+```
+
+21 courses at 75 mm is 1.6 m. The kit reads that and a course measures 76 mm on the building.
+
+### Variants worth having
+
+A finish can carry four pictures and a building picks one from its own name, so these are free variety
+rather than more work per building. The cyber door is the one asking for it: `door_1` came back as an
+industrial hatch, which is right for a service entrance and wrong for everything else.
+
+**`cyber/door_2.jpg`** the sci-fi entrance
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of one futuristic building entrance door seen dead-on, filling the frame edge to edge. A tall
+slab of dark smoked glass in a seamless brushed titanium frame, split down the middle by a hairline joint,
+with a thin band of cold white light let into the frame down each side and a soft pool of light on the floor
+inside showing through the glass. Clean, precise, expensive, no bolts and no hazard marking. The subject
+fills the frame edge to edge, its own frame running right to the edge of the picture: nothing cropped, no
+background and no margin around it. Hyper realistic, hyper realism, extreme realist.
+```
+
+*Emissive:* black, with the two side bands and the glow behind the glass lit.
+
+**`cyber/door_3.jpg`** the lobby door of a tower
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of one futuristic lobby entrance seen dead-on, filling the frame edge to edge. A pair of
+glass doors in a matte black frame, a faint cyan line tracing the meeting stile, warm light spilling from a
+lobby behind them with the silhouette of a desk and a column, a small illuminated panel at waist height on
+the right. Reflections of a wet street on the lower glass. The subject fills the frame edge to edge, its own
+frame running right to the edge of the picture: nothing cropped, no background and no margin around it. Hyper realistic, hyper realism, extreme realist.
+```
+
+*Emissive:* black, the lobby glow and the cyan line lit.
+
+**`cyber/wall_2.jpg`** the black glass monolith
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of a black glass curtain wall with NO WINDOWS in it, at night, dead
+flat-on with a long telephoto. Large panes of near-black obscured glass in a matte black frame with fine
+joints, the glass showing only a dim smeared reflection of distant city light and a faint vertical rain
+streak. Almost featureless, very dark, sitting at 10 to 16 out of 255. Evenly the same all over. NO window,
+NO opening, NO light behind it, NO text, NO hazard marking. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+**`cyber/wall_3.jpg`** the ribbed megastructure
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of a ribbed concrete megastructure wall at night, dead flat-on with a long
+telephoto. Deep vertical fins cast into dark grey concrete, evenly spaced, catching a little cold light down
+one side of each and dropping to black between them, water staining down the flutes, a hairline crack.
+Evenly the same all over. NO window, NO opening, NO text, NO hazard marking, NO light of its own. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+**`modern/wall_2.jpg`** and **`fifties/wall_2.jpg`** are worth having for the same reason: a second wall so
+two buildings of one family are not the same building. Take the `wall_1` prompt for that family and change
+the material: `modern` to dark grey-green granite panels, `fifties` to painted render over brick, chalky and
+patched.
+
+---
+
+## 10. After generating
 
 1. **Lay it out 3 by 3** before anything else. A seam, or a feature that reads as a polka dot, means
    regenerate rather than retouch.
