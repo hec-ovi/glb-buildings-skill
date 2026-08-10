@@ -2,22 +2,25 @@
 import { assemble } from '#assemble';
 import { supports } from '#check';
 import { templates } from '#kit';
+import { STYLES } from '#materials';
 import { BuildingError, bandFloorHeight, newDocument, toMetres, type Band } from '#spec';
 import { join } from 'node:path';
 import { LOCAL, Projects } from '../projects.ts';
 import type { Verb } from './verb.ts';
-import { count, need, parse, text } from './args.ts';
+import { count, need, oneOf, parse, text } from './args.ts';
 
 export const newProject: Verb = {
   name: 'new',
   summary: 'start a building and make it the current one',
-  usage: 'new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14] [--here]',
+  usage: 'new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14] [--style modern|fifties|cyber] [--textures off] [--here]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, {
       width: { type: 'string' },
       depth: { type: 'string' },
       floors: { type: 'string' },
       brief: { type: 'string' },
+      style: { type: 'string' },
+      textures: { type: 'string' },
       here: { type: 'boolean' },
     });
     const name = need(positionals, 0, 'project name');
@@ -41,10 +44,20 @@ export const newProject: Verb = {
       depth: depth ? Number(depth) : undefined,
       floors: count(values.floors, 'floors'),
       brief: text(values.brief),
+      style: oneOf(text(values.style), STYLES, 'style', 'modern'),
+      textures: oneOf(text(values.textures), ['on', 'off'] as const, 'textures', 'on') === 'on',
     });
     await project.writeDocument(doc);
     await projects.use(name);
-    return { project: name, path: project.dir, home: projects.root, brief: doc.brief, bands: doc.bands.map((b) => b.id) };
+    return {
+      project: name,
+      path: project.dir,
+      home: projects.root,
+      brief: doc.brief,
+      style: doc.style,
+      textures: doc.textures ? 'on' : 'off',
+      bands: doc.bands.map((b) => b.id),
+    };
   },
 };
 
@@ -100,6 +113,9 @@ function wornBy(band: Band): string[] {
   if (band.wires !== 'none') worn.push(`wires up ${band.wires}`);
   if (band.clutter > 0) worn.push(`deck clutter ${band.clutter}`);
   if (band.deck.length > 0) worn.push(`${band.deck.length} parts placed on the deck`);
+  if (band.lines.length > 0) worn.push(`${band.lines.length} lit lines up the ${band.lines[0]!.side} face`);
+  if (band.screens.length > 0) worn.push(`${band.screens.length} screens standing off it`);
+  if (band.crown !== '') worn.push(`a ${band.crown} crown round its top`);
   return worn;
 }
 
@@ -145,6 +161,8 @@ export const show: Verb = {
       project: name,
       home: projects.root,
       brief: doc.brief,
+      style: doc.style,
+      textures: doc.textures ? 'on' : 'off',
       size: {
         width: toMetres(placed.size.width),
         depth: toMetres(placed.size.depth),

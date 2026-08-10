@@ -1,0 +1,14 @@
+/**
+ * The finishes the kit's own parts are drawn in. What each one looks like lives in `#materials`;
+ * here they are only names, so a part says what it is made of and nothing more.
+ */
+export const FACADE = 'facade';
+export const GLASS = 'glass';
+export const GLASS_BAND = 'glass-band';
+export const ROOF = 'roof';
+export const CONCRETE = 'concrete';
+export const METAL = 'metal';
+export const PIPE = 'pipe';
+export const ANTENNA = 'antenna';
+export const BEACON = 'beacon';
+export const NEON = 'neon';

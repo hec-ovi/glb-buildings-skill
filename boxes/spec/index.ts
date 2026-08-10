@@ -18,6 +18,8 @@ export {
   type FaceElement,
   type BandFace,
   type BandRun,
+  type BandLine,
+  type BandScreen,
   type Tier,
   type BandKind,
   type Side,

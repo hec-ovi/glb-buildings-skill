@@ -59,17 +59,28 @@ before the build whether the tier can carry what you are composing.
 
 | Kind | What it is | Default material |
 | --- | --- | --- |
-| `window` | a pane set in the face | `crystal` |
-| `door` | a pane reaching a floor, a way in or out | `crystal` |
+| `window` | a pane set in the face | `window` |
+| `door` | a pane reaching a floor, a way in or out | `door` |
 | `panel` | a flat plate: cladding, a sign, a shutter | `concrete` |
-| `balcony` | a slab standing out with a solid balustrade round its three open sides | `concrete` |
+| `balcony` | a slab standing out with a solid balustrade round its three open sides | `balcony` |
+
+A balcony always builds its slab in `concrete`, whatever its balustrade is made of, because it is a slab.
 
 | Material | What it looks like |
 | --- | --- |
-| `crystal` | glazing, bright and a little reflective |
-| `concrete` | flat dead panel, the colour of the wall but standing off it |
-| `screen` | a lit screen, for signs and the video walls of a busy street |
-| `metal` | dull grey plate, for shutters, louvres and plant |
+| `window` | glazing: a framed pane with a mullion |
+| `door` | a door leaf, glazed over a solid panel, lit from the lobby behind it |
+| `balcony` | a balustrade: a rail and the balusters under it |
+| `concrete` | a flat cast panel: cladding, a slab, a dead wall |
+| `metal` | plate: shutters, louvres, housings |
+| `screen` | a lit screen, for signs and video walls |
+| `pipe` | painted service pipe, with a flange and a marking band |
+| `antenna` | galvanised steel with an aviation band |
+| `neon` | a lit tube in a housing. Give it a colour: `neon:cyan`, `neon:#ff2f88` |
+
+What each one actually looks like depends on the building's `style`: the same `concrete` is pale precast on
+a `modern` tower and stained board-formed concrete on a `fifties` one. Run `buildings style` to see which
+family this building wears.
 
 ## Sizes in cells
 

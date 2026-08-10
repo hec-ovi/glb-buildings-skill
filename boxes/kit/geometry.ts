@@ -40,6 +40,8 @@ export type Patch = { u0: number; u1: number; v0: number; v1: number };
 /** Accumulates one material's triangles. Quads go in counter-clockwise seen from outside. */
 export class Surface {
   readonly material: string;
+  /** Metres of surface one tile of this material covers. */
+  readonly tile: number;
   readonly #positions: number[] = [];
   readonly #normals: number[] = [];
   readonly #uvs: number[] = [];
@@ -47,9 +49,10 @@ export class Surface {
   /** Where quads land on the texture when they do not place themselves. */
   readonly #patch?: Patch;
 
-  constructor(material: string, patch?: Patch) {
+  constructor(material: string, patch?: Patch, tile = TILE) {
     this.material = material;
     this.#patch = patch;
+    this.tile = tile;
   }
 
   get empty(): boolean {
@@ -73,9 +76,9 @@ export class Surface {
         ]
       : [
           [0, 0],
-          [width / TILE, 0],
-          [width / TILE, height / TILE],
-          [0, height / TILE],
+          [width / this.tile, 0],
+          [width / this.tile, height / this.tile],
+          [0, height / this.tile],
         ];
 
     // Two triangles, each with its own normal. A corner that collapses (a collar where two

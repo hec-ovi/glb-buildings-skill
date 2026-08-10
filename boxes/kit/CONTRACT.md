@@ -24,7 +24,11 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `template(id)` | template id | the `Template`, or `E_UNKNOWN_TEMPLATE` |
 | `templates()` | | every template with its tier and one-line purpose |
 | `Template.build(shape)` | `SectionShape` | one `MeshData` per material, closed |
-| `dress(shape, options)` | shape, what it wears | cables, columns, greebles, deck parts, as one mesh |
+| `dress(shape, options)` | shape, what it wears | cables, columns, greebles, deck parts, lines, screens, a crown |
+| `line(surface, shape, style)` | a side, how far along it, which floors | a lit run climbing that face |
+| `crown(surface, shape, thickness)` | a section | a lit run round the top edge of it |
+| `screen(kit, shape, style)` | a side, how far along, how wide, which floors | a panel standing off the face on brackets |
+| `new Surfaces()` | | one surface per material, made on demand at that material's own tile scale |
 | `segment(surface, points, style)` | a path in metres, a profile and a thickness | one closed run of tube, mitred at every corner |
 | `walls` / `cap` / `capRing` / `ringAt` | shape or rings | the pieces templates are made of |
 | `outwardAt(ring, edge)` | footprint, edge | the way out at that edge |
@@ -44,10 +48,13 @@ into one row of quads per floor, so a texture tiles once per floor.
 | id | tier | what it is |
 | --- | --- | --- |
 | `bulk-flat` | flat | a plain section: four textured walls, windows live in the image |
+| `bulk-glass` | flat | a band of nothing but lit glazing, four or five floors of it |
 | `main-plain` | full | the base: taller walls, and the underside that closes the building |
 | `roof-parapet` | light | the crown: a parapet and the roof deck |
 
-Materials are named, not built here: `facade`, `glass` and `roof`.
+Materials are named, not built here: a part says what it is made of (`facade`, `glass`, `glass-band`,
+`roof`, `concrete`, `metal`, `pipe`, `antenna`, `beacon`, `neon`) and `#materials` says what that looks
+like. A mast is galvanised steel with a lit tip, a deck pipe is a pipe, plant is plate metal.
 
 ## Runs
 
@@ -61,6 +68,23 @@ corner is the same ring rather than two parts overlapping, and the cross section
 along the way. Points that carry straight on are dropped, so a cable up twenty identical floors
 is one length rather than twenty. A turn sharper than `MAX_MITRE` allows is a fold, not a bend,
 and is refused with the point named.
+
+A run lays its own UVs: across the tile wraps once around the profile, down the tile is one tile's
+worth of run. That is what puts a flange every metre on a pipe and keeps a neon line the same width
+whatever thickness it is drawn at.
+
+## Lines, screens and the crown
+
+A **line** is a run placed on a face rather than in the building's coordinates: a side, how far along it,
+and the floors it spans. One point per floor, so a straight face comes out as one length and a twisting one
+bends at each floor.
+
+A **screen** is a panel standing off a face, spanning many floors, with its picture across its whole front
+and brackets back to the wall. It is not composed on the face grid, because the grid repeats its design on
+every floor and a screen must not.
+
+The **crown** is a run round the top edge of a section, drawn edge by edge, each reaching a little past both
+corners so consecutive runs overlap instead of butting onto the same plane.
 
 ## Invariants
 

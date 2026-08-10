@@ -235,23 +235,25 @@ describe('everything a section wears is on the outside of it', () => {
 describe('the crown', () => {
   const deck: SectionShape = { ...plain, floors: 1, height: 3 };
 
+  const drawn = (parts: { positions: number[] }[]) => parts.flatMap((part) => part.positions);
+  const cost = (parts: Parameters<typeof triangleCount>[0][]) => parts.reduce((sum, part) => sum + triangleCount(part), 0);
+
   it('stands a mast, a tank, units and a railing on the deck, all closed', () => {
     const parts = dress(deck, { clutter: 0.7, seed: 11 });
-    expect(parts).toHaveLength(1);
-    expect(windingProblems(parts[0]!)).toEqual([]);
+    // One mesh per material now: plate metal, pipe, galvanised steel, the lit tip.
+    expect(parts.length).toBeGreaterThan(1);
+    for (const part of parts) expect(windingProblems(part)).toEqual([]);
     expect(shellProblems(parts)).toEqual([]);
   });
 
   it('gives the same crown for the same seed and a different one otherwise', () => {
-    expect(dress(deck, { clutter: 0.6, seed: 3 })[0]!.positions).toEqual(dress(deck, { clutter: 0.6, seed: 3 })[0]!.positions);
-    expect(dress(deck, { clutter: 0.6, seed: 3 })[0]!.positions).not.toEqual(dress(deck, { clutter: 0.6, seed: 4 })[0]!.positions);
+    expect(drawn(dress(deck, { clutter: 0.6, seed: 3 }))).toEqual(drawn(dress(deck, { clutter: 0.6, seed: 3 })));
+    expect(drawn(dress(deck, { clutter: 0.6, seed: 3 }))).not.toEqual(drawn(dress(deck, { clutter: 0.6, seed: 4 })));
   });
 
   it('puts more on a busier deck, and nothing at zero', () => {
     expect(dress(deck, { clutter: 0 })).toEqual([]);
-    expect(triangleCount(dress(deck, { clutter: 0.9, seed: 2 })[0]!)).toBeGreaterThan(
-      triangleCount(dress(deck, { clutter: 0.3, seed: 2 })[0]!),
-    );
+    expect(cost(dress(deck, { clutter: 0.9, seed: 2 }))).toBeGreaterThan(cost(dress(deck, { clutter: 0.3, seed: 2 })));
   });
 });
 

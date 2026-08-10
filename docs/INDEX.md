@@ -10,20 +10,21 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | What it is built on and why | [DECISIONS.md](DECISIONS.md) |
 | Build order and what is left | [PLAN.md](PLAN.md) |
 | Installing the CLI and the skill | [INSTALL.md](INSTALL.md) |
+| Generating the texture sets with an image model | [textures/PROMPTS.md](textures/PROMPTS.md) |
 
 ## Boxes
 
 | Box | Purpose | Depends on |
 |---|---|---|
-| [`spec`](../boxes/spec/CONTRACT.md) | The building document: sections, floors, bays, the selection, integer millimetres, the closed error set | none |
+| [`spec`](../boxes/spec/CONTRACT.md) | The building document: sections, floors, bays, the selection, integer millimetres, the closed error set | `materials` |
 | [`assemble`](../boxes/assemble/CONTRACT.md) | Document to placed scene: footprints, transforms, bays | `spec` |
 | [`kit`](../boxes/kit/CONTRACT.md) | The parts. Section templates build geometry in metres, with the winding and normals engines expect | `spec`, `materials` |
 | [`glb`](../boxes/glb/CONTRACT.md) | Placed scene to GLB, then the geometry proofs, the budget and the Khronos validator | `spec`, `assemble`, `kit`, `check`, `facade`, `materials` |
 | [`preview`](../boxes/preview/CONTRACT.md) | three.js blueprint, click picking, drag zones, and the server that carries a selection back | `spec`, `assemble` |
 | [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |
-| [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and seven fat parts. `SKILL.md` is its contract | `cli` |
-| [`facade`](../boxes/facade/CONTRACT.md) | Faces as grids of 10 cm cells: what stands where on a wall, and the geometry it becomes | `spec`, `kit` |
-| [`materials`](../boxes/materials/CONTRACT.md) | Textures written from code: the window grid a facade carries, colour and emissive | none |
+| [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and eight fat parts. `SKILL.md` is its contract | `cli` |
+| [`facade`](../boxes/facade/CONTRACT.md) | Faces as grids of 10 cm cells: what stands where on a wall, and the geometry it becomes | `spec`, `kit`, `materials` |
+| [`materials`](../boxes/materials/CONTRACT.md) | The finish library: what every named surface looks like, in three families, drawn from code or read from a pack | none |
 | [`check`](../boxes/check/CONTRACT.md) | The proofs on the document: what rests on what, and by how much | `spec`, `assemble` |
 
 Edges run one way. `cli` is the only box that touches several: it is the agent's face onto all of them. A box
@@ -44,6 +45,8 @@ npm link && buildings new tower-a && buildings build && buildings preview
 | The closed error set | `boxes/spec/errors.ts` |
 | Units, grid and rounding rules | `boxes/spec/units.ts` |
 | Triangle budgets per tier | `boxes/glb/writer.ts` |
+| The finishes, the three families, and the two modes | `boxes/materials/finishes.ts`, `boxes/materials/styles.ts` |
+| Where generated image packs live | `boxes/cli/projects.ts` (`textures`), `BUILDINGS_TEXTURES` |
 | Where projects live on disk | `boxes/cli/projects.ts` |
 | The CLI entry point | `boxes/cli/bin/buildings.ts` |
 | The preview entry point | `boxes/preview/bin/preview.ts` |

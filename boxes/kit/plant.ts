@@ -5,8 +5,10 @@
  * rather than a box standing in for one: panels tilted on a frame in rows, a tank on its legs
  * with a cap, a ladder and the pipe that leaves it.
  */
-import { Surface, type Vec } from './geometry.ts';
+import { type Vec } from './geometry.ts';
+import { METAL, PIPE } from './names.ts';
 import { segment } from './segment.ts';
+import type { Surfaces } from './surfaces.ts';
 import type { Corner } from './plan.ts';
 
 const point = (at: Corner, y: number, dx = 0, dz = 0): Vec => [at[0] + dx, y, at[1] + dz];
@@ -16,7 +18,8 @@ const point = (at: Corner, y: number, dx = 0, dz = 0): Vec => [at[0] + dx, y, at
  * what makes it read as solar rather than as a table, so the frame is short at the front and
  * tall at the back and the panel bridges the two.
  */
-export function solar(surface: Surface, at: Corner, y: number, turn: number, random: () => number): void {
+export function solar(kit: Surfaces, at: Corner, y: number, turn: number, random: () => number): void {
+  const surface = kit.get(METAL);
   const rows = 2 + Math.round(random());
   const span = 1.7 + random() * 0.5;
   const run = 1.5;
@@ -69,7 +72,8 @@ export function solar(surface: Surface, at: Corner, y: number, turn: number, ran
  * A water tank: a drum standing on a frame of legs, with a domed cap, a ladder up one side and
  * the outlet dropping to the deck. The legs are what make it read as a tank and not a silo.
  */
-export function tank(surface: Surface, at: Corner, y: number, random: () => number): void {
+export function tank(kit: Surfaces, at: Corner, y: number, random: () => number): void {
+  const surface = kit.get(METAL);
   const stand = 2.6 + random() * 1.6;
   const radius = 1 + random() * 0.45;
   const body = 1.7 + random() * 0.9;
@@ -111,7 +115,7 @@ export function tank(surface: Surface, at: Corner, y: number, random: () => numb
 
   const drop: Corner = [at[0] - radius * 0.6, at[1] - radius * 0.6];
   segment(
-    surface,
+    kit.get(PIPE),
     [point(at, y + stand + 0.2), point(drop, y + stand + 0.2), point(drop, y + 0.05)],
     { profile: 'round', thickness: 0.16, sides: 8 },
   );

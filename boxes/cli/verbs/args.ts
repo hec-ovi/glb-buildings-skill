@@ -83,6 +83,23 @@ export function fraction(value: string | boolean | undefined, what: string): num
   return parsed;
 }
 
+/** One of a set of words. With nothing given and no fallback, it says what the choices are. */
+export function oneOf<T extends readonly string[]>(value: string | undefined, allowed: T, what: string, fallback?: T[number]): T[number] {
+  if (value === undefined) {
+    if (fallback !== undefined) return fallback;
+    throw new BuildingError('E_DOC_INVALID', `name a ${what}: ${allowed.join(', ')}`, [what]);
+  }
+  if (!allowed.includes(value)) {
+    throw new BuildingError('E_DOC_INVALID', `${what} must be one of ${allowed.join(', ')}`, [what]);
+  }
+  return value;
+}
+
+/** The same, where leaving the flag out means "keep whatever was there". */
+export function maybeOneOf<T extends readonly string[]>(value: string | undefined, allowed: T, what: string): T[number] | undefined {
+  return value === undefined ? undefined : oneOf(value, allowed, what);
+}
+
 export function degrees(value: string | boolean | undefined): number | undefined {
   value = text(value);
   if (value === undefined) return undefined;

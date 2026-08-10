@@ -9,13 +9,17 @@
  *
  * Everything is metres, in the section's own frame: world X and Z, y=0 at its underside.
  */
-import { FACADE_WALL } from '#materials';
+import { FACADE_WALL, tileOf } from '#materials';
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData, type Patch } from './geometry.ts';
-import { cap, capRing, edgeFacing, walls, wires, type SectionShape } from './section.ts';
+import { FACADE, GLASS, GLASS_BAND, PIPE, ROOF } from './names.ts';
+import { cap, capRing, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
 import { columns, type ColumnStyle } from './columns.ts';
+import { crown, line, type LineStyle } from './lines.ts';
 import { rooftop } from './rooftop.ts';
+import { screen, type ScreenStyle } from './screens.ts';
+import { Surfaces } from './surfaces.ts';
 
 export type Template = {
   id: string;
@@ -28,9 +32,7 @@ export type Template = {
 /** One point of plain wall. Everything that is not a window takes its colour from there. */
 export const WALL_PATCH: Patch = { u0: FACADE_WALL.u, u1: FACADE_WALL.u, v0: FACADE_WALL.v, v1: FACADE_WALL.v };
 
-export const FACADE = 'facade';
-export const ROOF = 'roof';
-export const GLASS = 'glass';
+export { FACADE, GLASS, GLASS_BAND, ROOF, CONCRETE, METAL, PIPE, ANTENNA, BEACON, NEON } from './names.ts';
 
 function surfaces(...list: Surface[]): MeshData[] {
   return list.filter((surface) => !surface.empty).map((surface) => surface.data());
@@ -64,6 +66,18 @@ const TEMPLATES: Template[] = [
     },
   },
   {
+    id: 'bulk-glass',
+    tier: 'flat',
+    purpose: 'a band of nothing but lit glazing, four or five floors of it in an otherwise dark tower',
+    build: (shape) => {
+      const skin = new Surface(GLASS_BAND, WALL_PATCH, tileOf(GLASS_BAND));
+      walls(skin, shape);
+      cap(skin, capRing(shape, 0), 0, false);
+      cap(skin, capRing(shape, 1), shape.height, true);
+      return surfaces(skin);
+    },
+  },
+  {
     id: 'roof-parapet',
     tier: 'light',
     purpose: 'the crown: a parapet and the roof deck that closes the building',
@@ -94,6 +108,9 @@ export function templates(): Template[] {
   return [...TEMPLATES];
 }
 
+/** A line climbing a face, in whatever colour it was given. */
+export type LineSpec = LineStyle & { material: string };
+
 export type Dressing = {
   wires?: 'none' | 'N' | 'E' | 'S' | 'W';
   columns?: ColumnStyle;
@@ -102,23 +119,36 @@ export type Dressing = {
   deck?: { cell: string; part: string; turn?: number }[];
   covered?: [number, number][];
   seed?: number;
+  /** Lit runs climbing a face, several of them across it. */
+  lines?: LineSpec[];
+  /** A lit run round the top of the section. */
+  crown?: { material: string; thickness: number };
+  /** Panels standing off a face, each with its own picture. */
+  screens?: ScreenStyle[];
 };
 
-/** Everything a section can wear on top of its skin: cables, balconies, columns, fake parts. */
+/**
+ * Everything a section can wear on top of its skin. Each part lands on the surface of whatever it
+ * is made of, so a mast is galvanised steel, a pipe is a pipe, and a line is lit.
+ */
 export function dress(shape: SectionShape, options: Dressing): MeshData[] {
-  const surface = new Surface(FACADE, WALL_PATCH);
+  const kit = new Surfaces();
+  const skin = kit.get(FACADE, WALL_PATCH);
 
-  if (options.wires && options.wires !== 'none') wires(surface, shape, options.wires);
-  if (options.columns && options.columns !== 'none') columns(surface, shape, options.columns, options.seed ?? 1);
-  if (options.greebles) greebles(surface, shape, { density: options.greebles, seed: options.seed ?? 1 });
+  if (options.wires && options.wires !== 'none') wires(kit.get(PIPE), shape, options.wires);
+  if (options.columns && options.columns !== 'none') columns(skin, shape, options.columns, options.seed ?? 1);
+  if (options.greebles) greebles(skin, shape, { density: options.greebles, seed: options.seed ?? 1 });
   if (options.clutter || options.deck?.length) {
-    rooftop(surface, shape, {
+    rooftop(kit, shape, {
       clutter: options.clutter,
       placements: (options.deck ?? []) as never,
       covered: options.covered,
       seed: (options.seed ?? 1) ^ 0x9e37,
     });
   }
+  for (const one of options.lines ?? []) line(kit.get(one.material), shape, one);
+  if (options.crown) crown(kit.get(options.crown.material), shape, options.crown.thickness);
+  for (const one of options.screens ?? []) screen(kit, shape, one);
 
-  return surfaces(surface);
+  return kit.data();
 }

@@ -5,12 +5,18 @@
  * rather than boxes pushed through each other, and a mast leaning or a dish tilting is the same
  * call as one standing straight.
  */
-import { Surface, type Vec } from './geometry.ts';
+import { type Vec } from './geometry.ts';
 import { MAX_ABOVE } from './invariants.ts';
+import { ANTENNA, BEACON } from './names.ts';
 import { segment } from './segment.ts';
+import type { Surfaces } from './surfaces.ts';
 import type { Corner } from './plan.ts';
 
 const point = (at: Corner, y: number, dx = 0, dz = 0): Vec => [at[0] + dx, y, at[1] + dz];
+
+/** The lens on the tip of a mast: the one part of an antenna that is lit, and how far it rises. */
+const TIP_LIGHT = `${BEACON}:red`;
+const TIP_RISE = 0.22;
 
 /** The three legs of a lattice mast, on a triangle of this reach about its middle. */
 function triangle(at: Corner, reach: number, turn: number): Corner[] {
@@ -24,12 +30,13 @@ function triangle(at: Corner, reach: number, turn: number): Corner[] {
  * A lattice mast: three legs braced level by level, drawn in to a spire at the top, with guys
  * running down to the deck. This is the tall thing on a skyline, so it earns its triangles.
  */
-export function mast(surface: Surface, at: Corner, y: number, random: () => number): void {
+export function mast(kit: Surfaces, at: Corner, y: number, random: () => number): void {
+  const surface = kit.get(ANTENNA);
   const tip = 0.8 + random();
   // A mast may not out-reach the proof that keeps parts on the building. Drawing one taller than
   // that and letting the build refuse it puts a composer in front of a failure it cannot fix:
   // nothing it chose decides how tall a mast is.
-  const height = Math.min(6 + random() * 5, MAX_ABOVE - tip - 0.2);
+  const height = Math.min(6 + random() * 5, MAX_ABOVE - tip - TIP_RISE - 0.2);
   const reach = 0.35 + random() * 0.2;
   const turn = random() * Math.PI;
   const legs = triangle(at, reach, turn);
@@ -60,13 +67,21 @@ export function mast(surface: Surface, at: Corner, y: number, random: () => numb
   for (const leg of triangle(at, 1.6 + random() * 0.5, turn + 0.5)) {
     segment(surface, [point(at, y + waist), point(leg, y + 0.05)], { profile: 'square', thickness: 0.035 });
   }
+
+  // And the beacon on top of it, which is the whole reason a mast is drawn at this height.
+  segment(kit.get(TIP_LIGHT), [point(at, y + height + tip - 0.05), point(at, y + height + tip + TIP_RISE)], {
+    profile: 'round',
+    thickness: 0.2,
+    sides: 8,
+  });
 }
 
 /**
  * A dish on its mount: a short post, an arm out of it, and the drum of the dish itself tilted at
  * the sky. Drawn as a shallow round segment, which is what a dish is at this size.
  */
-export function dish(surface: Surface, at: Corner, y: number, turn: number, random: () => number): void {
+export function dish(kit: Surfaces, at: Corner, y: number, turn: number, random: () => number): void {
+  const surface = kit.get(ANTENNA);
   const radius = 0.55 + random() * 0.35;
   const stand = 0.8 + random() * 0.7;
   const lean = 0.5 + random() * 0.35;
@@ -94,7 +109,8 @@ export function dish(surface: Surface, at: Corner, y: number, turn: number, rand
  * A sector array: the pole with three flat panels facing out at a third of a turn each, which is
  * what every cell site on every roof looks like.
  */
-export function sector(surface: Surface, at: Corner, y: number, turn: number, random: () => number): void {
+export function sector(kit: Surfaces, at: Corner, y: number, turn: number, random: () => number): void {
+  const surface = kit.get(ANTENNA);
   const height = 2.6 + random() * 1.6;
   const reach = 0.42;
   const panel = 1.0 + random() * 0.5;
@@ -114,7 +130,8 @@ export function sector(surface: Surface, at: Corner, y: number, turn: number, ra
 }
 
 /** A cluster of whips of different heights, the cheap scatter that says somebody lives here. */
-export function whips(surface: Surface, at: Corner, y: number, random: () => number): void {
+export function whips(kit: Surfaces, at: Corner, y: number, random: () => number): void {
+  const surface = kit.get(ANTENNA);
   const count = 3 + Math.round(random() * 2);
   const base = 0.28;
 

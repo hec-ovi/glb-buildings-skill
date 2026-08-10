@@ -154,7 +154,7 @@ page to find out.
 ## The skill
 
 The portable unit is [`skills/glb-buildings/`](skills/glb-buildings/): one `SKILL.md` resolver that routes an
-intent to one of seven fat parts. An agent holds the resolver plus one part, never all of it.
+intent to one of eight fat parts. An agent holds the resolver plus one part, never all of it.
 
 Copy the folder wherever your agent loads skills from. It talks to the CLI by running it, so the host needs
 a subprocess and a JSON parser, not an MCP client. A test keeps `SKILL.md` naming every verb the CLI has.
@@ -179,6 +179,36 @@ Ribs and cable runs hold their cells too, so nothing gets composed through an up
 Ducts, pipes and cables are one builder: a path of points carrying a ring, mitred at every corner. The cross
 section holds the whole way, and a turn too sharp to mitre is refused with the point named.
 
+## Finishes, and two modes
+
+Every named surface has a finish, and a building wears one of three families: `modern`, `fifties` or
+`cyber`. A family is a sheet of colours and a wear number, and one set of texture templates draws all three,
+so the same `concrete` is pale precast on a curtain wall tower and stained board-formed concrete on a 1950s
+block. Textures are written from code, seeded from the building's name, and stay under 40 kB a tile.
+
+```bash
+buildings style cyber      # dark mass, hard little windows in cyan, amber and red
+buildings textures off     # no images at all: named flat colour slots for your own materials
+```
+
+A folder of generated images per family stands in for the drawn tiles, one file per finish, and anything the
+folder lacks stays drawn. [docs/textures/PROMPTS.md](docs/textures/PROMPTS.md) is how those get generated.
+
+## A night city
+
+Three parts span floors rather than repeating on each one, which is what a lit tower needs.
+
+```bash
+buildings line body --side S --count 5 --spacing 3.5 --colours cyan,magenta,red
+buildings screen body --side E --along 3 --width 8 --from 6 --to 18 --image screen1.png
+buildings crown crown --colour red
+```
+
+A `line` is a lit run climbing a face, several across it, each tinted from one white tile. A `screen` stands
+off a face on brackets, carries its own picture, and gets its own material slot so an engine can bind a video
+to it. A `crown` runs round the top edge. A `bulk-glass` section is four or five floors of nothing but lit
+glazing in an otherwise dark tower, and a mast lights its own tip.
+
 ## Nothing is written until it is proved
 
 Every section is measured before the file exists. It has to land on the one below, close into a solid with
@@ -194,7 +224,7 @@ at [docs/INDEX.md](docs/INDEX.md).
 
 `spec` holds the document and the closed error set, in whole millimetres so every comparison is exact.
 `assemble` lays it out. `kit` builds the geometry, the runs and the roof parts. `facade` is the cell grid on
-every face. `materials` writes the textures. `check` proves the stack. `glb` writes and proves the file.
+every face. `materials` is the finish library. `check` proves the stack. `glb` writes and proves the file.
 `preview` is the service. `cli` is the toolkit.
 
 ```bash

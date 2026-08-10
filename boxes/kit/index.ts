@@ -8,13 +8,24 @@ export {
   templates,
   dress,
   type Dressing,
+  type LineSpec,
   TEMPLATE_IDS,
   FACADE,
-  ROOF,
   GLASS,
+  GLASS_BAND,
+  ROOF,
+  CONCRETE,
+  METAL,
+  PIPE,
+  ANTENNA,
+  BEACON,
+  NEON,
   type Template,
   WALL_PATCH,
 } from './templates.ts';
+export { Surfaces } from './surfaces.ts';
+export { line, crown, LINE_STAND, type LineStyle } from './lines.ts';
+export { screen, type ScreenStyle } from './screens.ts';
 export { segment, MAX_MITRE, type Profile, type SegmentStyle } from './segment.ts';
 export { greebles, seedOf } from './greebles.ts';
 export { mast, dish, sector, whips } from './antenna.ts';

@@ -3,31 +3,13 @@
  * cells, and the tool builds the geometry. Nothing here takes a size or a position in metres.
  */
 import { assemble, type PlacedBand } from '#assemble';
-import { CELL, MARGIN, KIND_NOTES, KINDS, MATERIAL_NOTES, MATERIALS, dressFaces, readFace, type Element } from '#facade';
+import { CELL, MARGIN, DEFAULT_MATERIAL, KIND_NOTES, KINDS, MATERIAL_NOTES, MATERIALS, dressFaces, readFace, type Element } from '#facade';
 import { BUDGET, ROOF_BUDGET } from '#glb';
 import { Surface, segment, sunkProblems } from '#kit';
 import { BuildingError, SIDES, toMetres, toMm, type Band, type BandFace, type BuildingDocument, type FaceElement, type Side } from '#spec';
 import type { Verb } from './verb.ts';
-import { need, parse, size, text } from './args.ts';
+import { need, oneOf, parse, size, text } from './args.ts';
 import { sectionShape } from './shape.ts';
-
-const DEFAULT_MATERIAL: Record<string, FaceElement['material']> = {
-  window: 'crystal',
-  door: 'crystal',
-  panel: 'concrete',
-  balcony: 'concrete',
-};
-
-function oneOf<T extends readonly string[]>(value: string | undefined, allowed: T, what: string, fallback?: T[number]): T[number] {
-  if (value === undefined) {
-    if (fallback !== undefined) return fallback;
-    throw new BuildingError('E_DOC_INVALID', `name a ${what}: ${allowed.join(', ')}`, [what]);
-  }
-  if (!allowed.includes(value)) {
-    throw new BuildingError('E_DOC_INVALID', `${what} must be one of ${allowed.join(', ')}`, [what]);
-  }
-  return value;
-}
 
 /** `12,8` is a cell: column across the face, row up from the floor. */
 function readCell(value: string, what: string): [number, number] {
@@ -114,7 +96,7 @@ export const put: Verb = {
   name: 'put',
   summary: 'put a window, door, panel or balcony on a face, in cells',
   usage:
-    'put <window|door|panel|balcony> <from cell> <to cell> [--section id] [--side S] [--material crystal] [--depth 1.5] [--every 3]\n' +
+    'put <window|door|panel|balcony> <from cell> <to cell> [--section id] [--side S] [--material window] [--depth 1.5] [--every 3]\n' +
     '  or: put <kind> --row 9 --wide 1.4 --tall 1.5 --every 3   (the face works out the columns and skips what is taken)',
   async run(args, { projects }) {
     const { positionals, values } = parse(args, {

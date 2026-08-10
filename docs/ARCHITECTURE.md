@@ -83,15 +83,40 @@ A roof is judged as a whole section rather than per floor, at 4500. A building m
 with no real floor in it at all. That is a supported product, not a degraded one, and it is what fills the far
 half of a city. Going over the budget fails the build with the section named, so bloat never reaches a scene.
 
-Two more things keep the cost down: one mesh per section however many floors it repeats, and one texture per
-building, generated from its name, carried by both the facade and the glass material.
+Two more things keep the cost down: one mesh per section however many floors it repeats, and one set of
+textures per building, generated from its name, with the wall picture carried by both the facade and the
+glass material rather than copied.
+
+## How a building is dressed
+
+Two settings on the building, not on a section.
+
+**Style** is the family every finish comes from: `modern`, `fifties`, `cyber`. A style is a sheet of colours
+and a wear number, and every texture template reads what it needs from it, so one set of templates draws a
+curtain wall tower, a 1950s block and a near black megastructure without a branch anywhere.
+
+**Textures** is whether the file carries pictures at all. On, every part carries its own: windows, cast
+concrete, painted pipe, galvanised steel, a lit screen. Off, the file holds no images and every part is a
+named flat colour slot, which is what a team applying its own materials in the engine wants.
+
+A **pack** is a folder of generated images per style that stands in for the drawn tiles. Anything the folder
+lacks stays drawn, so a set can be generated one texture at a time and the build never stops working.
+
+## The lit parts
+
+A **line** is a run climbing a face across many floors, several across one face, each tinted. A **screen**
+stands off a face by about a metre, spans many floors and carries a picture of its own. A **crown** is a run
+round the top edge of a section. All three are section-level rather than composed on the face grid, because
+the grid repeats its design on every floor and these span floors on purpose.
 
 ## The file
 
 Plain glTF 2.0: metres, Y up, right handed, one UV set, PBR metallic roughness, no Draco, no meshopt, no
-texture transform, `extensionsRequired` empty. Three materials: `facade` and `glass` share the generated
-window grid (colour and emissive), `roof` is plain grey. Nothing is scaled and nothing is mirrored, so every
-node keeps a positive determinant and the only handedness flip is the one each importer does for itself.
+texture transform, `extensionsRequired` empty. Materials are made on demand and named after what they dress
+(`facade`, `glass`, `window`, `door`, `balcony`, `concrete`, `metal`, `pipe`, `antenna`, `screen`, `neon`,
+`beacon`, `roof`), so a plain tower carries two and a dressed one carries what it asked for. Nothing is
+scaled and nothing is mirrored, so every node keeps a positive determinant and the only handedness flip is
+the one each importer does for itself.
 
 Every written file passes, in this order: the stack ends in a base and a roof, every section lands on the one
 below, every stored normal agrees with its triangle's winding, every section closes into a solid with positive

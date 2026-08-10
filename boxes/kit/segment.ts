@@ -163,12 +163,20 @@ export function segment(surface: Surface, points: Vec[], style: SegmentStyle): v
   const last = rings.at(-1)!;
   const sides = shape.length;
 
+  // The run lays its own UVs: across the tile wraps once around the profile, down the tile is one
+  // tile's worth of run. That is what puts a flange every metre on a pipe and keeps a neon line
+  // the same width whatever it is drawn at, instead of sampling a thumbnail of the texture.
+  const along: number[] = [0];
+  for (let i = 1; i < line.length; i++) along.push(along[i - 1]! + length(sub(line[i]!, line[i - 1]!)));
+
   for (let i = 0; i < rings.length - 1; i++) {
     const a = rings[i]!;
     const b = rings[i + 1]!;
+    const v1 = along[i]! / surface.tile;
+    const v0 = along[i + 1]! / surface.tile;
     for (let k = 0; k < sides; k++) {
       const next = (k + 1) % sides;
-      surface.quad(a[k]!, a[next]!, b[next]!, b[k]!);
+      surface.quad(a[k]!, a[next]!, b[next]!, b[k]!, { u0: k / sides, u1: (k + 1) / sides, v0, v1 });
     }
   }
 

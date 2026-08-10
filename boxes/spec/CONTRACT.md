@@ -15,7 +15,7 @@ Axes: X east, Y up, Z south. Side `S` faces +Z and is the front of the building.
 | Call | Takes | Gives |
 | --- | --- | --- |
 | `parseDocument(value)` | anything parsed from JSON | `BuildingDocument`, normalised, defaults filled |
-| `newDocument(name, {width, depth, floors})` | metres, floor count | a three section starting document |
+| `newDocument(name, {width, depth, floors, style, textures})` | metres, floor count, how it is dressed | a three section starting document |
 | `bandFloorHeight(doc, band)` | document, band | the floor to floor height that band uses, mm |
 | `describeBuilding(doc)` | document | one line: how big it is and what makes it itself |
 | `parseSelection(value)` | anything parsed from JSON | `Selection` |
@@ -40,16 +40,21 @@ type is `Band`, and the verbs are `add-band`, `set-band`, `remove-band`. Same th
   "version": 1,
   "name": "tower-a",
   "brief": "a corner cafe with flats above it",
+  "style": "modern",
+  "textures": true,
   "footprint": { "kind": "rect", "width": 18000, "depth": 14000 },
   "grid": { "bay": 3000, "floorHeight": 3200 },
   "bands": [
     { "id": "ground", "kind": "main", "tier": "full",  "floors": 1,  "floorHeight": 4500, "template": "main-plain",   "windows": true },
     { "id": "body",   "kind": "bulk", "tier": "light", "floors": 12,                      "template": "bulk-flat",    "greebles": 0.4,
-      "faces": [{ "side": "S", "elements": [{ "kind": "window", "col": 12, "row": 9, "cols": 8, "rows": 14, "material": "crystal" }] }] },
+      "faces": [{ "side": "S", "elements": [{ "kind": "window", "col": 12, "row": 9, "cols": 8, "rows": 14, "material": "window" }] }] },
     { "id": "crown",  "kind": "roof", "tier": "light", "floors": 1,  "floorHeight": 900,  "template": "roof-parapet", "deck": [{ "cell": "B3", "part": "tank", "turn": 0 }] }
   ]
 }
 ```
+
+`style` is the family every finish comes from (`modern`, `fifties`, `cyber`) and `textures` is whether the
+file carries pictures at all. Both belong to the building, not to a section.
 
 Sections are listed bottom to top, and every field below `template` has a default, so the three lines above
 are a whole building. `kind` says what the section is for (`main`, `bulk`, `custom`, `roof`), `tier` says how
@@ -64,6 +69,7 @@ shallow relief, `full` carries real openings and parts). A building may be `flat
 | `windows`, `greebles`, `columns`, `wires` | what it wears in bulk |
 | `faces` | what is composed on each face, cell by cell (see the `facade` box) |
 | `runs` | ducts, pipes and cables standing off it, each a path of points |
+| `lines`, `screens`, `crown` | the lit parts: runs climbing a face, panels standing off one, a run round the top |
 | `clutter`, `deck` | what stands on it, when it is the roof |
 
 A section's plan is `shape` (`box` or `round`) plus one way of rounding it: `corner` fillets a box's uprights,
@@ -90,4 +96,5 @@ Each carries `code`, a plain sentence, and `at`, the path where it happened.
 
 ## Depends on
 
-Nothing.
+`#materials`, for the list of finishes a part may be given and the families a building may wear. Nothing
+else.

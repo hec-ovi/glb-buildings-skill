@@ -7,7 +7,7 @@ set, PBR metallic roughness, no extensions, so one file serves Unreal, Unity and
 
 | Call | Takes | Gives |
 | --- | --- | --- |
-| `buildGlb(document)` | `BuildingDocument` | `{ glb, scene, supports, stats }` |
+| `buildGlb(document, { packs })` | `BuildingDocument`, and where generated image packs live | `{ glb, scene, supports, stats }` |
 | `validateGlb(bytes)` | GLB bytes | `{ errors, warnings, infos }` from the Khronos validator |
 
 `stats` is `{ meshes, nodes, triangles, materials, bytes }`, the numbers worth watching in CI. `supports` is
@@ -22,11 +22,16 @@ is a separate call: `buildGlb` builds and proves the bytes, the caller decides w
 - Nodes only translate up. Nothing is scaled, nothing is mirrored, so every transform keeps a positive
   determinant and no importer has to guess about winding.
 - Materials are made on demand, so a file carries only what its parts are actually made of: a plain tower
-  is two, a composed facade is as many as it asked for. `facade`, `glass` and `crystal` share the generated
-  facade texture (colour and emissive) from `#materials`, so a drawn window and a cut one are the same
-  window; `roof`, `concrete` and `metal` are plain; `screen` is lit. The texture is seeded from the
-  building's name, so every building gets its own and the same name rebuilds the same one.
-- A section's composed faces and its runs are built alongside what it wears, and held to the same proofs.
+  is two, a composed facade is as many as it asked for. What each one looks like comes from the finish
+  library in `#materials`, under the building's own `style`, seeded from its name, so every building gets
+  its own picture and the same name rebuilds the same one. `facade` and `glass` point at one texture rather
+  than two copies of it, so a drawn window and a cut one are the same window.
+- A building built with `textures` off carries no images at all: every material is a named flat colour an
+  engine can drop its own material onto.
+- A screen is its own material, named `screen-<section>-<n>`, carrying the picture it was given. An engine
+  can bind a video to that slot; the file holds the still.
+- A section's composed faces, its runs and its lit parts are built alongside what it wears, and held to the
+  same proofs.
 - `extensionsRequired` is empty. A file that requires an extension Unreal lacks does not load at all.
 
 ## Proofs before the write

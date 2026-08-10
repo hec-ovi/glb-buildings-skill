@@ -90,9 +90,10 @@ Three rules for choosing what to compose:
 | mega, tower, skyscraper | 30 to 60 floors across four or five sections, a taller base |
 | apartment, residential | floor height 2.8 to 3.0, base 3.5, footprint 15 to 25 m, few sections, balconies on the sunny face |
 | office, corporate | floor height 4.0, base 4.5, deeper footprint, clean steps, a rhythm of windows and nothing else |
-| cyberpunk, futuristic, high tech | more sections, a twist, a cantilevered platform, cables on one face, `screen` panels low down, a turned crown |
+| cyberpunk, futuristic, high tech | `--style cyber`, and read `parts/cyber.md`: a black mass, neon lines, a lit band of floors, one screen, a lit crown |
+| 1950s, mid century, old block | `--style fifties`, punched windows, brick, a plain parapet, no twist |
 | industrial, brutalist | wide base, heavy overhangs, one or two sections, no twist, `metal` panels |
-| shop, retail, street level | a taller ground section, doors and big `crystal` panels on the front, apartments above |
+| shop, retail, street level | a taller ground section, doors and big `window` panels on the front, apartments above |
 | far away, background city, fill | one bulk section, `flat` tier, small crown, no facade pass at all |
 
 ## Report honestly

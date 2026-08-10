@@ -11,9 +11,29 @@ import { Document, NodeIO, type Material, type Mesh, type Texture } from '@gltf-
 import { assemble, type Corner, type PlacedBand, type PlacedScene } from '#assemble';
 import { checkSupport, type Support } from '#check';
 import { dressFaces, type Element, type FacePlan } from '#facade';
-import { FACADE, GLASS, ROOF, WINDOW, Surface, dress, proudProblems, seedOf, segment, shellProblems, sunkProblems, template, triangleCount, windingProblems, type MeshData, type SectionShape, type Vec } from '#kit';
-import { facadeTexture } from '#materials';
-import { BuildingError, type BandFace, type BandRun, type BuildingDocument } from '#spec';
+import {
+  NEON,
+  WINDOW,
+  Surface,
+  Surfaces,
+  dress,
+  edgeFacing,
+  proudProblems,
+  seedOf,
+  segment,
+  shellProblems,
+  sunkProblems,
+  template,
+  triangleCount,
+  windingProblems,
+  type LineSpec,
+  type MeshData,
+  type ScreenStyle,
+  type SectionShape,
+  type Vec,
+} from '#kit';
+import { finish, loadImage, loadPack, type Bitmap, type Look, type Mode } from '#materials';
+import { BuildingError, type BandRun, type BuildingDocument } from '#spec';
 
 const MM = 0.001;
 
@@ -30,6 +50,11 @@ export type BuildResult = {
   stats: BuildStats;
   scene: PlacedScene;
   supports: Support[];
+};
+
+export type BuildOptions = {
+  /** Where the generated image packs live, one folder per style. Absent means the drawn tiles. */
+  packs?: string;
 };
 
 function metres(corners: Corner[]): [number, number][] {
@@ -75,21 +100,25 @@ function facePlans(band: PlacedBand): FacePlan[] {
 
 /** Runs standing off a section: written in the building's own frame, drawn where they are. */
 function runsOf(runs: BandRun[], y: number): MeshData[] {
-  const surfaces = new Map<string, Surface>();
+  const kit = new Surfaces();
 
   for (const run of runs) {
-    const surface = surfaces.get(run.material) ?? new Surface(run.material);
-    surfaces.set(run.material, surface);
     const points = run.points.map(([x, up, z]): Vec => [x * MM, up * MM - y, z * MM]);
-    segment(surface, points, { profile: run.profile, thickness: run.thickness * MM });
+    segment(kit.get(run.material), points, { profile: run.profile, thickness: run.thickness * MM });
   }
 
-  return [...surfaces.values()].filter((surface) => !surface.empty).map((surface) => surface.data());
+  return kit.data();
 }
 
-/** Whether a section carries real detail: anything composed, cut or run on it. */
-export function detailed(band: Pick<PlacedBand, 'windows' | 'faces' | 'runs'>): boolean {
-  return band.windows || band.faces.some((face) => face.elements.length > 0) || band.runs.length > 0;
+/** Whether a section carries real detail: anything composed, cut, run or lit on it. */
+export function detailed(band: Pick<PlacedBand, 'windows' | 'faces' | 'runs' | 'lines' | 'screens'>): boolean {
+  return (
+    band.windows ||
+    band.faces.some((face) => face.elements.length > 0) ||
+    band.runs.length > 0 ||
+    band.lines.length > 0 ||
+    band.screens.length > 0
+  );
 }
 
 /** The stack rules that have nothing to do with geometry. */
@@ -108,87 +137,125 @@ function checkEnds(placed: PlacedScene): void {
 /**
  * The materials, made on demand. A file carries only what its parts actually use, so a plain
  * tower is two materials and a composed facade is as many as it asked for.
+ *
+ * What each one looks like comes from the finish library: in `textured` mode it carries a picture,
+ * in `plain` mode it is a named flat colour and the file holds no images at all. Two materials
+ * over one picture (the wall and its glass) point at one texture rather than two copies of it.
  */
-function palette(document: Document, seed: number): (name: string) => Material {
+function palette(document: Document, look: Look, screens: Map<string, Bitmap | undefined>): (name: string) => Material {
   const made = new Map<string, Material>();
-  const build = makers(document, seed);
+  const drawn = new Map<string, Texture>();
+
+  const textureOf = (key: string, bitmap: Bitmap): Texture => {
+    const already = drawn.get(key);
+    if (already) return already;
+    const texture = document.createTexture(key).setImage(bitmap.bytes).setMimeType(bitmap.mime);
+    drawn.set(key, texture);
+    return texture;
+  };
 
   return (name: string): Material => {
     const already = made.get(name);
     if (already) return already;
 
-    const maker = build[name];
-    if (!maker) throw new BuildingError('E_GLB_INVALID', `no material named ${name}`, [name]);
-    const material = maker();
+    // A screen is the screen finish under its own name, carrying its own picture when it was
+    // given one and the generated screen when it was not.
+    const shown = screens.get(name);
+    const recipe = finish(screens.has(name) ? 'screen' : name, look);
+    if (!recipe) throw new BuildingError('E_GLB_INVALID', `no material named ${name}`, [name]);
+
+    const material = document
+      .createMaterial(name)
+      .setBaseColorFactor([...recipe.colour, 1])
+      .setMetallicFactor(recipe.metallic)
+      .setRoughnessFactor(recipe.roughness);
+    if (recipe.emissive) material.setEmissiveFactor(recipe.emissive);
+
+    const image = shown ? { key: name, load: () => ({ colour: shown, emissive: shown }) } : recipe.image;
+    if (image) {
+      const maps = image.load();
+      material.setBaseColorFactor([1, 1, 1, 1]).setBaseColorTexture(textureOf(`${image.key}-colour`, maps.colour));
+      if (maps.emissive) {
+        // A supplied picture lights itself; a drawn one is tinted by the finish's own colour.
+        material.setEmissiveFactor(shown ? [1, 1, 1] : (recipe.emissive ?? [1, 1, 1]));
+        material.setEmissiveTexture(textureOf(`${image.key}-emissive`, maps.emissive));
+      }
+    }
+
     made.set(name, material);
     return material;
   };
 }
 
-function makers(document: Document, seed: number): Record<string, () => Material> {
-  // The facade carries its windows in the texture: one tile is a floor tall and a bay wide, and
-  // the same grid glows, so a flat section reads as a lit building for eight triangles a floor.
-  // Drawn once and shared by every material that wants it: two materials pointing at one picture,
-  // not two copies of it in the file.
-  let skin: { colour: Texture; glow: Texture } | undefined;
-  const drawn = () => {
-    if (!skin) {
-      const drawing = facadeTexture({ seed });
-      skin = {
-        colour: document.createTexture('facade-colour').setImage(drawing.colour).setMimeType('image/png'),
-        glow: document.createTexture('facade-emissive').setImage(drawing.emissive).setMimeType('image/png'),
-      };
+/** The material a screen is drawn in: one per screen, so each carries its own picture. */
+function screenMaterial(bandId: string, index: number): string {
+  return `screen-${bandId}-${index + 1}`;
+}
+
+/**
+ * Every screen in the building, with the picture it was given. One entry per screen even when it
+ * carries none, since that is what makes it its own material. A path that is not there stops the
+ * build with the screen named, rather than writing a file with a blank panel in it.
+ */
+async function screenPictures(doc: BuildingDocument): Promise<Map<string, Bitmap | undefined>> {
+  const found = new Map<string, Bitmap | undefined>();
+
+  for (const band of doc.bands) {
+    for (const [index, screen] of band.screens.entries()) {
+      const material = screenMaterial(band.id, index);
+      if (screen.image === '') {
+        found.set(material, undefined);
+        continue;
+      }
+      try {
+        found.set(material, await loadImage(screen.image));
+      } catch (error) {
+        throw new BuildingError(
+          'E_DOC_INVALID',
+          `screen ${index + 1} on ${band.id} carries ${screen.image}, which cannot be read: ${(error as Error).message}`,
+          ['bands', band.id, 'screens'],
+        );
+      }
     }
-    return skin;
-  };
+  }
+  return found;
+}
 
-  // Glass is the same picture with a sheen on it: a pane covers the window it is built over, so
-  // the building never carries two window systems that disagree. Crystal is that glass, by the
-  // name a composed face calls it.
-  const glazing = (name: string) => () => {
-    const { colour, glow } = drawn();
-    return document
-      .createMaterial(name)
-      .setBaseColorFactor([1, 1, 1, 1])
-      .setBaseColorTexture(colour)
-      .setEmissiveFactor([1, 1, 1])
-      .setEmissiveTexture(glow)
-      .setMetallicFactor(0.25)
-      .setRoughnessFactor(0.12);
-  };
+/** How wide one face of a section is, in metres, so a line placed along it lands where it was put. */
+function faceWidth(shape: SectionShape, side: 'N' | 'E' | 'S' | 'W'): number {
+  const ring = shape.bottom;
+  const edge = edgeFacing(ring, side);
+  const a = ring[edge]!;
+  const b = ring[(edge + 1) % ring.length]!;
+  return Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+}
 
-  const plain = (name: string, colour: [number, number, number], metallic: number, rough: number) => () =>
-    document
-      .createMaterial(name)
-      .setBaseColorFactor([...colour, 1])
-      .setMetallicFactor(metallic)
-      .setRoughnessFactor(rough);
+/** The lit runs climbing this section's faces, in the kit's own terms. */
+function linesOf(band: PlacedBand, shape: SectionShape): LineSpec[] {
+  return band.lines.map((line) => ({
+    side: line.side,
+    along: Math.max(0, Math.min(1, (line.along * MM) / faceWidth(shape, line.side))),
+    from: line.from,
+    to: line.to,
+    thickness: line.thickness * MM,
+    material: `${line.material}:${line.colour}`,
+  }));
+}
 
-  return {
-    [FACADE]: () => {
-      const { colour, glow } = drawn();
-      return document
-        .createMaterial(FACADE)
-        .setBaseColorFactor([1, 1, 1, 1])
-        .setBaseColorTexture(colour)
-        .setEmissiveFactor([1, 1, 1])
-        .setEmissiveTexture(glow)
-        .setMetallicFactor(0)
-        .setRoughnessFactor(0.85);
-    },
-    [GLASS]: glazing(GLASS),
-    crystal: glazing('crystal'),
-    [ROOF]: plain(ROOF, [0.24, 0.25, 0.27], 0, 0.95),
-    concrete: plain('concrete', [0.3, 0.3, 0.31], 0, 0.9),
-    metal: plain('metal', [0.42, 0.44, 0.47], 0.6, 0.45),
-    screen: () =>
-      document
-        .createMaterial('screen')
-        .setBaseColorFactor([0.06, 0.07, 0.1, 1])
-        .setEmissiveFactor([0.9, 0.35, 0.7])
-        .setMetallicFactor(0)
-        .setRoughnessFactor(0.35),
-  };
+/** The panels standing off this section's faces. */
+function screensOf(band: PlacedBand, shape: SectionShape): ScreenStyle[] {
+  return band.screens.map((screen, index) => {
+    const width = faceWidth(shape, screen.side);
+    return {
+      side: screen.side,
+      along: Math.max(0, Math.min(1, (screen.along * MM) / width)),
+      wide: Math.max(0.02, Math.min(1, (screen.width * MM) / width)),
+      from: screen.from,
+      to: screen.to,
+      stand: screen.stand * MM,
+      material: screenMaterial(band.id, index),
+    };
+  });
 }
 
 function meshOf(document: Document, name: string, parts: MeshData[], material: (name: string) => Material): Mesh {
@@ -214,7 +281,7 @@ function meshOf(document: Document, name: string, parts: MeshData[], material: (
   return mesh;
 }
 
-export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
+export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}): Promise<BuildResult> {
   const placed = assemble(doc);
   checkEnds(placed);
   const supports = checkSupport(placed);
@@ -223,7 +290,12 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
   document.createBuffer();
   document.getRoot().getAsset().generator = 'glb-buildings';
 
-  const materials = palette(document, seedOf(doc.name));
+  const mode: Mode = doc.textures ? 'textured' : 'plain';
+  // A pack only matters when the file is going to carry pictures at all.
+  const pack = mode === 'textured' && options.packs ? await loadPack(options.packs, doc.style) : undefined;
+  const look: Look = { mode, style: doc.style, seed: seedOf(doc.name), ...(pack ? { pack } : {}) };
+
+  const materials = palette(document, look, await screenPictures(doc));
   const scene = document.createScene(doc.name);
 
   let triangles = 0;
@@ -245,6 +317,9 @@ export async function buildGlb(doc: BuildingDocument): Promise<BuildResult> {
       deck: band.deck,
       covered: above ? metres(above.bottom) : undefined,
       seed: seedOf(`${doc.name}/${band.id}`),
+      lines: linesOf(band, shape),
+      screens: screensOf(band, shape),
+      ...(band.crown === '' ? {} : { crown: { material: `${NEON}:${band.crown}`, thickness: 0.16 } }),
     });
     // Composed faces and runs stand on the section the same way the dressing does, and are
     // held to the same proofs: seen from outside, not drifted off, inside the tier's budget.

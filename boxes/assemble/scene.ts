@@ -1,5 +1,5 @@
 /** What a placed scene is made of. Building coordinates, Y up, millimetres. */
-import type { BandFace, BandKind, BandRun, Mm, Side, Tier } from '#spec';
+import type { BandFace, BandKind, BandLine, BandRun, BandScreen, Mm, Side, Tier } from '#spec';
 
 export type Vec3 = [Mm, Mm, Mm];
 
@@ -50,6 +50,10 @@ export type PlacedBand = {
   /** What is composed on each face, and the runs standing off the section. */
   faces: BandFace[];
   runs: BandRun[];
+  /** Lit runs climbing a face, panels standing off one, and a lit run round the top. */
+  lines: BandLine[];
+  screens: BandScreen[];
+  crown: string;
   inset: Mm;
   /** Where this band's footprint actually sits, after its step and shift. */
   rect: Rect;

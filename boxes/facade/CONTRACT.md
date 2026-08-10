@@ -38,8 +38,11 @@ times and still costs one mesh.
 | `panel` | a flat plate: cladding, a sign, a shutter, a screen | 12 a floor |
 | `balcony` | a slab standing out of the face with a rail round it | 48 a floor |
 
-Materials are `crystal` (glazing), `concrete` (flat dead panel), `screen` (lit, for signs and
-video walls) and `metal` (shutters, louvres, plant).
+Materials are the finishes `#materials` carries: `window`, `door`, `balcony`, `concrete`, `metal`,
+`screen`, `pipe`, `antenna` and `neon`. Each kind has its own default, and a finish that fills one
+element (a window, a door, a balcony, a screen) puts its whole picture across the element's front
+instead of tiling by the metre. A balcony always builds its slab in `concrete`, whatever its
+balustrade is made of.
 
 ## Balconies and the door onto them
 
@@ -84,4 +87,4 @@ floating in the middle of a wall, a balcony deeper than the kit allows, a rectan
 
 ## Depends on
 
-`#spec`, `#kit`.
+`#spec`, `#kit`, `#materials` (for the material list, and how each one lands on an element).

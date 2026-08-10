@@ -1,5 +1,5 @@
 /** A section's faces, composed. Grids in, one mesh per material out. */
-import { Surface, WIRE_RUNS, uprightsOn, type ColumnStyle, type MeshData, type SectionShape } from '#kit';
+import { Surfaces, WIRE_RUNS, uprightsOn, type ColumnStyle, type MeshData, type SectionShape } from '#kit';
 import { CELL, Face, Sheet, type Rect, type Side } from './grid.ts';
 import { build as buildElement, checkKind, claims, type Element } from './elements.ts';
 
@@ -47,7 +47,7 @@ function sheetFor(face: Face, wears: Wears | undefined): Sheet {
  * against the little it has to obey.
  */
 export function dressFaces(shape: SectionShape, plans: FacePlan[]): MeshData[] {
-  const surfaces = new Map<string, Surface>();
+  const kit = new Surfaces();
 
   for (const plan of plans) {
     const face = new Face(shape, plan.side);
@@ -56,14 +56,11 @@ export function dressFaces(shape: SectionShape, plans: FacePlan[]): MeshData[] {
     plan.elements.forEach((element, index) => {
       sheet.claim(claims(element), `${element.kind} ${index + 1} on ${plan.side}`);
       checkKind(element, plan.elements);
-
-      const surface = surfaces.get(element.material) ?? new Surface(element.material);
-      surfaces.set(element.material, surface);
-      buildElement(surface, face, element);
+      buildElement(kit, face, element);
     });
   }
 
-  return [...surfaces.values()].filter((surface) => !surface.empty).map((surface) => surface.data());
+  return kit.data();
 }
 
 /** The face as it stands, for printing back to whoever is composing it. */

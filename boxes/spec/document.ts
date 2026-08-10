@@ -3,6 +3,7 @@
  * Every length is whole millimetres.
  */
 import { z } from 'zod';
+import { PAINTS, STYLES, type Style } from '#materials';
 import { BuildingError } from './errors.ts';
 import { METRE } from './units.ts';
 
@@ -55,7 +56,8 @@ export type DeckPlacement = z.infer<typeof deckPartSchema>;
 export const ELEMENT_KINDS = ['window', 'door', 'panel', 'balcony'] as const;
 export type ElementKind = (typeof ELEMENT_KINDS)[number];
 
-export const ELEMENT_MATERIALS = ['crystal', 'concrete', 'screen', 'metal'] as const;
+/** What a part can be made of. The finish library owns the list, and what each one looks like. */
+export const ELEMENT_MATERIALS = PAINTS;
 export type ElementMaterial = (typeof ELEMENT_MATERIALS)[number];
 
 const cell = z.number().int().nonnegative();
@@ -87,10 +89,48 @@ const runSchema = z.object({
   points: z.array(z.tuple([mm, mm, mm])).min(2),
   profile: z.enum(['square', 'round']).default('round'),
   thickness: positiveMm.default(200),
-  material: z.enum(ELEMENT_MATERIALS).default('metal'),
+  material: z.enum(ELEMENT_MATERIALS).default('pipe'),
 });
 
 export type BandRun = z.infer<typeof runSchema>;
+
+/**
+ * A lit run climbing a face across many floors, and several of them across one face is what draws
+ * a tower at night. Placed on the face rather than in the building's coordinates.
+ */
+const lineSchema = z.object({
+  side: z.enum(SIDES),
+  /** From the left end of the face seen from outside, in millimetres. */
+  along: mm.nonnegative(),
+  /** The floors it spans, both included, counted from the section's own bottom. */
+  from: z.number().int().nonnegative().default(0),
+  to: z.number().int().nonnegative(),
+  thickness: positiveMm.default(120),
+  /** A colour name or `#rrggbb`. The tile is white and the colour tints it. */
+  colour: z.string().min(1).default('cyan'),
+  material: z.enum(ELEMENT_MATERIALS).default('neon'),
+});
+
+export type BandLine = z.infer<typeof lineSchema>;
+
+/**
+ * A panel standing off a face, spanning many floors. Not composed on the face grid, because the
+ * grid repeats its design on every floor and a screen must not repeat.
+ */
+const screenSchema = z.object({
+  side: z.enum(SIDES),
+  /** Its left edge, from the left end of the face seen from outside, in millimetres. */
+  along: mm.nonnegative(),
+  width: positiveMm,
+  from: z.number().int().nonnegative().default(0),
+  to: z.number().int().nonnegative(),
+  /** How far off the wall its face stands. */
+  stand: positiveMm.default(1000),
+  /** A PNG or JPEG to carry. Empty means the generated screen. */
+  image: z.string().default(''),
+});
+
+export type BandScreen = z.infer<typeof screenSchema>;
 
 const bandSchema = z.object({
   id: z.string().min(1),
@@ -152,6 +192,12 @@ const bandSchema = z.object({
   faces: z.array(faceSchema).default([]),
   /** Runs of tube standing off this section: ducts, pipes, cables. */
   runs: z.array(runSchema).default([]),
+  /** Lit runs climbing one face across many floors. */
+  lines: z.array(lineSchema).default([]),
+  /** Panels standing off a face, spanning many floors, each with its own picture. */
+  screens: z.array(screenSchema).default([]),
+  /** A lit run round the top of this section. A colour name, or empty for none. */
+  crown: z.string().default(''),
 });
 
 /** Shapes that read as two ways of rounding the same plan are refused rather than resolved. */
@@ -177,6 +223,10 @@ export const documentSchema = z.object({
   name: z.string().min(1),
   /** What this building was asked for, in the words it was asked in. */
   brief: z.string().default(''),
+  /** Whether the file carries its pictures, or flat colours an engine can replace. */
+  textures: z.boolean().default(true),
+  /** Which family of finishes it is dressed in. */
+  style: z.enum(STYLES).default('modern'),
   footprint: footprintSchema,
   grid: gridSchema.default({ bay: 3000, floorHeight: 3200 }),
   bands: z.array(bandShape).min(1),
@@ -215,7 +265,10 @@ export function parseDocument(value: unknown): BuildingDocument {
 }
 
 /** A plain tower, the starting point every walk edits. Sizes are in metres here for the caller's sake. */
-export function newDocument(name: string, options: { width?: number; depth?: number; floors?: number; brief?: string } = {}): BuildingDocument {
+export function newDocument(
+  name: string,
+  options: { width?: number; depth?: number; floors?: number; brief?: string; style?: Style; textures?: boolean } = {},
+): BuildingDocument {
   const width = Math.round((options.width ?? 18) * METRE);
   const depth = Math.round((options.depth ?? 14) * METRE);
   const bulkFloors = Math.max(1, (options.floors ?? 12) - 2);
@@ -224,6 +277,8 @@ export function newDocument(name: string, options: { width?: number; depth?: num
     version: SCHEMA_VERSION,
     name,
     brief: options.brief ?? '',
+    style: options.style ?? 'modern',
+    textures: options.textures ?? true,
     footprint: { kind: 'rect', width, depth },
     grid: { bay: 3000, floorHeight: 3200 },
     bands: [

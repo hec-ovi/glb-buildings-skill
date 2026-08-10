@@ -35,7 +35,7 @@ const twisted: SectionShape = {
 const window = (col: number, row: number, cols: number, rows: number): Element => ({
   kind: 'window',
   rect: { col, row, cols, rows },
-  material: 'crystal',
+  material: 'window',
 });
 
 describe('the grid on a face', () => {
@@ -88,7 +88,7 @@ describe('what the elements build', () => {
   it('closes every kind into a solid on every floor, on a straight face and a twisted one', () => {
     const kinds: Element[] = [
       window(10, 12, 8, 12),
-      { kind: 'door', rect: { col: 30, row: MARGIN, cols: 10, rows: 21 }, material: 'crystal' },
+      { kind: 'door', rect: { col: 30, row: MARGIN, cols: 10, rows: 21 }, material: 'window' },
       { kind: 'panel', rect: { col: 50, row: 8, cols: 12, rows: 6 }, material: 'screen' },
       { kind: 'balcony', rect: { col: 66, row: 2, cols: 16, rows: 12 }, material: 'concrete', depth: 1.4 },
     ];
@@ -115,20 +115,20 @@ describe('what the elements build', () => {
   });
 
   it('refuses a door that floats above the floor it opens onto', () => {
-    const floating: Element = { kind: 'door', rect: { col: 10, row: 12, cols: 8, rows: 10 }, material: 'crystal' };
+    const floating: Element = { kind: 'door', rect: { col: 10, row: 12, cols: 8, rows: 10 }, material: 'window' };
     expect(() => dressFaces(plain, [{ side: 'S', elements: [floating] }])).toThrow(/floats/);
   });
 
   it('lets a balcony and the door onto it share a face, because the slab is what the door stands on', () => {
     const balcony: Element = { kind: 'balcony', rect: { col: 20, row: 2, cols: 26, rows: 13 }, material: 'concrete', depth: 1.4 };
     // The balcony keeps its slab and its two rails; the middle is left open for the way out.
-    const door: Element = { kind: 'door', rect: { col: 28, row: 4, cols: 10, rows: 18 }, material: 'crystal' };
+    const door: Element = { kind: 'door', rect: { col: 28, row: 4, cols: 10, rows: 18 }, material: 'window' };
 
     const meshes = dressFaces(plain, [{ side: 'S', elements: [balcony, door] }]);
     for (const mesh of meshes) expect(shellProblems([mesh]), mesh.material).toEqual([]);
 
     // A window over the rail is still refused: only the open middle is free.
-    const onTheRail: Element = { kind: 'window', rect: { col: 20, row: 6, cols: 4, rows: 6 }, material: 'crystal' };
+    const onTheRail: Element = { kind: 'window', rect: { col: 20, row: 6, cols: 4, rows: 6 }, material: 'window' };
     expect(() => dressFaces(plain, [{ side: 'S', elements: [balcony, onTheRail] }])).toThrow(/already has/);
   });
 

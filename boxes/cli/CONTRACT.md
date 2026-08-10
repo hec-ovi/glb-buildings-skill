@@ -19,6 +19,7 @@ The binary is `boxes/cli/bin/buildings.ts`. It prints the answer as JSON and exi
 ```
 <home>/
   current                   the name of the building being edited
+  textures/<style>/          generated images that stand in for the drawn tiles
   projects/<name>/
     building.json           the document
     build/model.glb         the built file
@@ -26,7 +27,8 @@ The binary is `boxes/cli/bin/buildings.ts`. It prints the answer as JSON and exi
 ```
 
 The home is the first of these that applies: `BUILDINGS_HOME`, a `.buildings` folder in the current directory,
-then `~/.glb-buildings`. `new <name> --here` makes that middle one, which is what an agent that cannot write
+then `~/.glb-buildings`. Image packs live in `textures/<style>/` under that home, or wherever
+`BUILDINGS_TEXTURES` points. `new <name> --here` makes that middle one, which is what an agent that cannot write
 outside its workspace uses: it says `--here` once and every later verb finds the folder on its own. Every verb
 that opens a project reports the `home` it used.
 
@@ -39,7 +41,9 @@ a session names the building once and every later verb knows what it means.
 | --- | --- |
 | `doctor [--port]` | whether this machine can build and preview: node, the home, the bundler, the service. Every failing check carries the command that fixes it |
 | `link [name] [--port]` | the address that opens one building in the preview |
-| `new <name> [--brief] [--width] [--depth] [--floors] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
+| `new <name> [--brief] [--width] [--depth] [--floors] [--style] [--textures] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
+| `style [modern\|fifties\|cyber]` | which family of finishes the building wears, and what the pack for it holds |
+| `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
 | `brief ["what it should be"]` | what the building was asked for; kept in the document and shown in the preview |
 | `list` | every building, whether it is built, and which is current |
 | `use <name>` | switch the current building |
@@ -54,6 +58,10 @@ a session names the building once and every later verb knows what it means.
 | `put <kind> --row 9 --wide 1.4 --tall 1.5 [--every 3]` | the same from a shape: the face works out the columns, steps across on the pitch, and skips what is taken |
 | `clear [n ...] [--section] [--side] [--all]` | take elements off a face |
 | `run <x,y,z> <x,y,z> [more ...] [--section] [--profile] [--thickness] [--material]` | a duct, pipe or cable along a path, mitred at every corner |
+| `line <section> [--side] [--count] [--spacing] [--along] [--from] [--to] [--colours]` | lit lines climbing one face across many floors |
+| `screen <section> [--side] --along --width [--from] [--to] [--stand] [--image]` | a screen standing off a face, spanning many floors, with its own picture |
+| `crown [section] [--colour] [--off]` | a lit run round the top of a section |
+| `unlight <section> [--lines] [--screens] [--all]` | take the lit parts off a section |
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts available |
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more deck cells |
 | `unplace <cell ...> [--section id]` | clear deck cells |

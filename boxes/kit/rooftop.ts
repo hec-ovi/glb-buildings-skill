@@ -3,8 +3,9 @@
  * two metre cells; each cell holds one part, and the caller says which. A quick pass can fill
  * whatever is left, seeded, so a roof is never bare and never the same twice.
  */
-import { Surface } from './geometry.ts';
+import { METAL, PIPE } from './names.ts';
 import { ringAt, type Corner, type SectionShape } from './section.ts';
+import type { Surfaces } from './surfaces.ts';
 import { block, cells, cylinder, pipe, rng, turbine, type Cell } from './deck.ts';
 import { dish, mast, sector, whips } from './antenna.ts';
 import { solar, tank } from './plant.ts';
@@ -90,36 +91,38 @@ export type RooftopOptions = {
   seed: number;
 };
 
-function one(surface: Surface, part: DeckPart, at: Corner, y: number, turn: number, random: () => number, ring: Corner[]): void {
+/** Each part in what it is actually made of: plant in plate metal, aerials in galvanised steel. */
+function one(kit: Surfaces, part: DeckPart, at: Corner, y: number, turn: number, random: () => number, ring: Corner[]): void {
   switch (part) {
     case 'unit':
-      return block(surface, at, 1.3 + random() * 0.6, 0.9 + random() * 0.5, y, 0.7 + random() * 0.5, turn);
+      return block(kit.get(METAL), at, 1.3 + random() * 0.6, 0.9 + random() * 0.5, y, 0.7 + random() * 0.5, turn);
     case 'turbine':
-      return turbine(surface, at, y, random);
+      return turbine(kit.get(METAL), at, y, random);
     case 'pipe':
       // The pipe finds the edge for itself: dropped anywhere else it would run inside the wall.
-      return pipe(surface, at, ring, y, random);
+      return pipe(kit.get(PIPE), at, ring, y, random);
     case 'vent':
-      return cylinder(surface, at, 0.35 + random() * 0.25, y, 1 + random() * 1.4, 8);
+      return cylinder(kit.get(PIPE), at, 0.35 + random() * 0.25, y, 1 + random() * 1.4, 8);
     case 'solar':
-      return solar(surface, at, y, turn, random);
+      return solar(kit, at, y, turn, random);
     case 'tank':
-      return tank(surface, at, y, random);
+      return tank(kit, at, y, random);
     case 'mast':
-      return mast(surface, at, y, random);
+      return mast(kit, at, y, random);
     case 'dish':
-      return dish(surface, at, y, turn, random);
+      return dish(kit, at, y, turn, random);
     case 'array':
-      return sector(surface, at, y, turn, random);
+      return sector(kit, at, y, turn, random);
     case 'whip':
-      return whips(surface, at, y, random);
+      return whips(kit, at, y, random);
     case 'tower':
-      return block(surface, at, 2.4 + random() * 1.2, 2.4 + random() * 1.2, y, 4 + random() * 5, turn);
+      return block(kit.get(METAL), at, 2.4 + random() * 1.2, 2.4 + random() * 1.2, y, 4 + random() * 5, turn);
   }
 }
 
 /** A run of thin bars around the deck edge, with a rail across the top. */
-function railing(surface: Surface, ring: Corner[], y: number, height: number): void {
+function railing(kit: Surfaces, ring: Corner[], y: number, height: number): void {
+  const surface = kit.get(METAL);
   y -= SINK;
   for (let i = 0; i < ring.length; i++) {
     const a = ring[i]!;
@@ -144,7 +147,7 @@ export function deckCells(shape: SectionShape, covered?: Corner[]): Cell[] {
   return cells(ringAt(shape, 1), 0.6, covered);
 }
 
-export function rooftop(surface: Surface, shape: SectionShape, options: RooftopOptions): void {
+export function rooftop(kit: Surfaces, shape: SectionShape, options: RooftopOptions): void {
   const random = rng(options.seed);
   const deck = ringAt(shape, 1);
   const y = shape.height;
@@ -155,22 +158,22 @@ export function rooftop(surface: Surface, shape: SectionShape, options: RooftopO
     const block = claim(grid, placement.cell, PART_SIZE[placement.part] ?? 1);
     if (!block) continue;
     for (const cell of block) taken.add(cell.name);
-    one(surface, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random, deck);
+    one(kit, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random, deck);
   }
 
   const clutter = Math.max(0, Math.min(1, options.clutter ?? 0));
   if (clutter === 0) {
-    if (taken.size > 0) railing(surface, deck, y, 1.1);
+    if (taken.size > 0) railing(kit, deck, y, 1.1);
     return;
   }
 
-  railing(surface, deck, y, 1.1);
+  railing(kit, deck, y, 1.1);
   const free = grid.filter((cell) => !taken.has(cell.name));
   const wanted = Math.round(free.length * clutter * 0.5);
   for (let i = 0; i < wanted && i < free.length; i++) {
     const cell = free[Math.floor(random() * free.length)]!;
     if (taken.has(cell.name)) continue;
     taken.add(cell.name);
-    one(surface, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y - SINK, random() * Math.PI, random, deck);
+    one(kit, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y - SINK, random() * Math.PI, random, deck);
   }
 }

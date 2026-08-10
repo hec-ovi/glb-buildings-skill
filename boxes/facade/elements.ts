@@ -5,20 +5,16 @@
  * Everything bites a little into the wall behind it and reaches further out in front, so no
  * surface shares a plane with the wall and every part is seen from outside the section.
  */
+import { fits, PAINTS, PAINT_NOTES, type PaintName } from '#materials';
 import { BuildingError } from '#spec';
-import { Surface, type Vec } from '#kit';
+import { CONCRETE, Surface, type Patch, type Surfaces, type Vec } from '#kit';
 import { MARGIN, describeRect, type Face, type Rect } from './grid.ts';
 
 /** What an element is made of. The wall itself is not in here: it is the section's own skin. */
-export const MATERIALS = ['crystal', 'concrete', 'screen', 'metal'] as const;
-export type Material = (typeof MATERIALS)[number];
+export const MATERIALS = PAINTS;
+export type Material = PaintName;
 
-export const MATERIAL_NOTES: Record<Material, string> = {
-  crystal: 'glazing: bright, a little reflective, what a window is made of',
-  concrete: 'flat dead panel, the colour of the wall but standing off it',
-  screen: 'a lit screen, for signs and the video walls of a busy street',
-  metal: 'a dull grey plate, for shutters, louvres and plant',
-};
+export const MATERIAL_NOTES: Record<Material, string> = PAINT_NOTES;
 
 export const KINDS = ['window', 'door', 'panel', 'balcony'] as const;
 export type Kind = (typeof KINDS)[number];
@@ -31,10 +27,10 @@ export const KIND_NOTES: Record<Kind, string> = {
 };
 
 export const DEFAULT_MATERIAL: Record<Kind, Material> = {
-  window: 'crystal',
-  door: 'crystal',
+  window: 'window',
+  door: 'door',
   panel: 'concrete',
-  balcony: 'concrete',
+  balcony: 'balcony',
 };
 
 export type Element = {
@@ -68,17 +64,26 @@ export function claims(element: Element): Rect[] {
   ];
 }
 
+/**
+ * The whole picture across the front of an element, and a strip of its edge down the sides. A
+ * window texture is one window and a door texture is one door, so they fill what they are built
+ * on rather than tiling across it.
+ */
+const FULL: Patch = { u0: 0, u1: 1, v0: 0, v1: 1 };
+const EDGE: Patch = { u0: 0, u1: 0.04, v0: 0, v1: 1 };
+
 /** A box between two rectangles of the face: `near` behind, `far` in front. */
 function plate(surface: Surface, face: Face, floor: number, rect: Rect, near: number, far: number): void {
   const a = face.corners(floor, rect, near);
   const b = face.corners(floor, rect, far);
+  const fit = fits(surface.material);
 
-  surface.quad(b[0], b[1], b[2], b[3]);
-  surface.quad(a[3], a[2], a[1], a[0]);
-  surface.quad(a[0], a[1], b[1], b[0]);
-  surface.quad(a[1], a[2], b[2], b[1]);
-  surface.quad(a[2], a[3], b[3], b[2]);
-  surface.quad(a[3], a[0], b[0], b[3]);
+  surface.quad(b[0], b[1], b[2], b[3], fit ? FULL : undefined);
+  surface.quad(a[3], a[2], a[1], a[0], fit ? FULL : undefined);
+  surface.quad(a[0], a[1], b[1], b[0], fit ? EDGE : undefined);
+  surface.quad(a[1], a[2], b[2], b[1], fit ? EDGE : undefined);
+  surface.quad(a[2], a[3], b[3], b[2], fit ? EDGE : undefined);
+  surface.quad(a[3], a[0], b[0], b[3], fit ? EDGE : undefined);
 }
 
 /** Shrink a rectangle by one cell all round, which is the wall a pane shows against. */
@@ -90,7 +95,9 @@ function reveal(rect: Rect): Rect {
  * Build one element on every floor of the section. The design belongs to the face, so a section
  * of eighteen floors carries it eighteen times and still costs one mesh.
  */
-export function build(surface: Surface, face: Face, element: Element): void {
+export function build(kit: Surfaces, face: Face, element: Element): void {
+  const surface = kit.get(element.material);
+
   for (let floor = 0; floor < face.floors; floor++) {
     switch (element.kind) {
       case 'window':
@@ -101,7 +108,7 @@ export function build(surface: Surface, face: Face, element: Element): void {
         plate(surface, face, floor, element.rect, -BITE, 0.08);
         break;
       case 'balcony':
-        balcony(surface, face, floor, element);
+        balcony(kit, face, floor, element);
         break;
     }
   }
@@ -115,7 +122,7 @@ export function build(surface: Surface, face: Face, element: Element): void {
  * The front is a panel, not a bar on posts. A rail with an open gap under it reads as a hollow
  * box from any distance, which is not what a balcony looks like.
  */
-function balcony(surface: Surface, face: Face, floor: number, element: Element): void {
+function balcony(kit: Surfaces, face: Face, floor: number, element: Element): void {
   const depth = element.depth ?? 1.5;
   const rect = element.rect;
   const slab = 0.15;
@@ -125,7 +132,8 @@ function balcony(surface: Surface, face: Face, floor: number, element: Element):
   const step = (point: Vec, by: number): Vec => [point[0] + out[0] * by, point[1] + out[1] * by, point[2] + out[2] * by];
 
   /** A box standing on the face: `from`..`to` across, `base`..`top` up, `back`..`front` out. */
-  const solid = (from: number, to: number, base: number, top: number, back: number, front: number) => {
+  const solid = (surface: Surface, from: number, to: number, base: number, top: number, back: number, front: number) => {
+    const fit = fits(surface.material);
     const a: Vec[] = [
       face.point(floor, from, base, back),
       face.point(floor, to, base, back),
@@ -133,12 +141,12 @@ function balcony(surface: Surface, face: Face, floor: number, element: Element):
       face.point(floor, from, top, back),
     ];
     const b = a.map((corner) => step(corner, front - back));
-    surface.quad(b[0]!, b[1]!, b[2]!, b[3]!);
-    surface.quad(a[3]!, a[2]!, a[1]!, a[0]!);
-    surface.quad(a[0]!, a[1]!, b[1]!, b[0]!);
-    surface.quad(a[1]!, a[2]!, b[2]!, b[1]!);
-    surface.quad(a[2]!, a[3]!, b[3]!, b[2]!);
-    surface.quad(a[3]!, a[0]!, b[0]!, b[3]!);
+    surface.quad(b[0]!, b[1]!, b[2]!, b[3]!, fit ? FULL : undefined);
+    surface.quad(a[3]!, a[2]!, a[1]!, a[0]!, fit ? FULL : undefined);
+    surface.quad(a[0]!, a[1]!, b[1]!, b[0]!, fit ? EDGE : undefined);
+    surface.quad(a[1]!, a[2]!, b[2]!, b[1]!, fit ? EDGE : undefined);
+    surface.quad(a[2]!, a[3]!, b[3]!, b[2]!, fit ? EDGE : undefined);
+    surface.quad(a[3]!, a[0]!, b[0]!, b[3]!, fit ? EDGE : undefined);
   };
 
   const left = rect.col;
@@ -148,10 +156,13 @@ function balcony(surface: Surface, face: Face, floor: number, element: Element):
   const up = (metres: number) => base + metres / cell;
   const top = rect.row + rect.rows;
 
-  solid(left, right, base, up(slab), -BITE, depth);
-  solid(left, right, up(slab), top, depth - rail, depth);
-  solid(left, left + RAIL_CELLS, up(slab), top, -BITE, depth);
-  solid(right - RAIL_CELLS, right, up(slab), top, -BITE, depth);
+  // The slab is concrete whatever the balustrade is made of, because it is a slab. That is also
+  // what keeps a balustrade texture on the balustrade, where the balusters are.
+  const guard = kit.get(element.material);
+  solid(kit.get(CONCRETE), left, right, base, up(slab), -BITE, depth);
+  solid(guard, left, right, up(slab), top, depth - rail, depth);
+  solid(guard, left, left + RAIL_CELLS, up(slab), top, -BITE, depth);
+  solid(guard, right - RAIL_CELLS, right, up(slab), top, -BITE, depth);
 }
 
 /** The row a balcony's slab reaches, which is the floor anything on it stands on. */

@@ -2,6 +2,33 @@
 
 Present-state entries: each version says what the project is at that point.
 
+## 0.4.0
+
+Every named surface has a finish, and a building wears one of three families: `modern` (dark glass,
+aluminium, pale precast, cool white offices), `fifties` (buff brick, painted steel windows, tungsten light,
+weathered) and `cyber` (a near black mass drawn by its lights). A style is a sheet of colours and a wear
+number, and one set of texture templates draws all three: the wall and its windows, a band of full glazing,
+a window, a door, a balustrade, cast concrete, plate metal, painted pipe, galvanised antenna steel, a roof
+membrane, a lit screen, a neon tube and a beacon lens. No two lit windows are alike: colour, brightness and
+how much of the pane is lit are drawn per window.
+
+A building is built `textured` or `plain`. Plain carries no images at all: every part is a named flat colour
+slot an engine drops its own materials onto. `buildings style` and `buildings textures` set both, and `show`
+reads them back.
+
+A folder of generated images per style stands in for the drawn tiles, one file per finish, and anything the
+folder lacks stays drawn. `docs/textures/PROMPTS.md` is how those are generated.
+
+Parts are made of what they look like: a mast is galvanised steel with a lit tip, a deck pipe is a pipe,
+plant is plate metal, a balcony slab is concrete under whatever its balustrade is. A run lays its own UVs, so
+a flange lands once a metre round a pipe.
+
+Three lit parts for a night city: `line` runs lit tubes up a face across many floors, several across one
+face in a list of colours; `screen` stands a panel off a face spanning many floors, carrying its own picture
+and hanging on brackets; `crown` runs a lit line round the top of a section. A `bulk-glass` section is four
+or five floors of nothing but lit glazing in an otherwise dark tower. The skill carries a cyberpunk part
+that puts them together.
+
 ## 0.3.0
 
 A face is a grid of 10 cm cells. `face` prints it, `put` places a window, door, panel or balcony on a

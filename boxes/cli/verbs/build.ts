@@ -11,7 +11,9 @@ async function buildOne(projects: Parameters<Verb['run']>[1]['projects'], named:
     const { name, project } = await projects.open(named);
     const doc = await project.readDocument();
 
-    const result = await buildGlb(doc);
+    // Generated image packs live beside the projects, so a building picks up whatever its style
+    // has been given without anybody naming a path.
+    const result = await buildGlb(doc, { packs: projects.textures });
     const report = await validateGlb(result.glb);
     if (report.errors.length > 0) {
       const first = report.errors[0]!;
@@ -24,6 +26,8 @@ async function buildOne(projects: Parameters<Verb['run']>[1]['projects'], named:
     return {
       project: name,
       file: project.modelPath,
+      style: doc.style,
+      textures: doc.textures ? 'on' : 'off',
       size: {
         width: toMetres(result.scene.size.width),
         depth: toMetres(result.scene.size.depth),

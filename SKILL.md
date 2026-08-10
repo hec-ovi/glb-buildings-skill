@@ -13,6 +13,7 @@ Match the request to a row, open the file it names (next to this one), then run 
 | The user wants | Read |
 | --- | --- |
 | a building from a description, start to finish | `parts/auto.md` |
+| a cyberpunk tower: a black mass, neon lines, screens, lit floors | `parts/cyber.md` |
 | to shape the stack: floors, heights, setbacks, the roof | `parts/stack.md` |
 | windows, doors, balconies, screens, pipes on a wall | `parts/facade.md` |
 | to change what is already there, using what they clicked in the preview | `parts/editing.md` |
@@ -48,11 +49,13 @@ Run `buildings help` for the current list. Today:
 | --- | --- |
 | `doctor [--port 4321]` | is this machine able to build and preview: node, the home, the bundler, the service. Every failure names the command that fixes it |
 | `link [name] [--port 4321]` | the address that opens one building in the preview, for sharing |
-| `new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14]` | start a building, in metres, and make it current |
+| `new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14] [--style cyber] [--textures off]` | start a building, in metres, and make it current |
 | `brief ["what it should be"]` | what this building was asked for, kept with it and shown in the preview |
 | `list` | every building, and which is current |
 | `use <name>` | switch the current building |
 | `show [name]` | the stack band by band |
+| `style [modern\|fifties\|cyber]` | which family of finishes the building wears. Says what a family looks like, and whether generated images are in play |
+| `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
 | `templates` | the floor templates the kit can build |
 | `add-band <id> --kind --tier --template --floors [shape and dressing flags] [--after id\|--before id]` | put a section into the stack |
 | `set-band <id> [same flags]` | change a section; omitted flags keep what was there |
@@ -62,6 +65,10 @@ Run `buildings help` for the current list. Today:
 | `put <window\|door\|panel\|balcony> <from> <to> [--section id] [--side S] [--material] [--depth] [--every 3]` | put something on a face, in cells |
 | `clear [n ...] [--section id] [--side S] [--all]` | take elements off a face |
 | `run <x,y,z> <x,y,z> [more ...] [--section id] [--profile] [--thickness] [--material]` | a duct, pipe or cable along a path, mitred at every corner |
+| `line <section> [--side S] [--count 5] [--spacing 3] [--along 2] [--from 0] [--to 19] [--colours cyan,red]` | lit lines climbing one face across many floors |
+| `screen <section> [--side S] --along 3 --width 8 [--from] [--to] [--stand 1] [--image file]` | a screen standing off a face, spanning many floors, carrying its own picture |
+| `crown [section] [--colour red] [--off]` | a lit run round the top of a section |
+| `unlight <section> [--lines] [--screens] [--all]` | take the lit parts off a section |
 | `deck [section]` | the roof as a grid of cells, what stands in each, and the parts you can use |
 | `place <part> <cell ...> [--section id] [--turn 45]` | put a part in one or more cells |
 | `unplace <cell ...> [--section id]` | clear cells |
@@ -96,6 +103,22 @@ The verbs spell a section `band`: `add-band`, `set-band`, `remove-band`. Same th
   refused instead of shipped. See `parts/facade.md`.
 - A whole building may be `flat` top to bottom. That is a real product, not a degraded one, and it is what
   fills a city.
+
+## How it is dressed
+
+Two settings on the building, not on a section.
+
+- **`style`** is the family every finish comes from: `modern` (dark glass, aluminium, pale precast, cool
+  white offices), `fifties` (buff brick, painted steel windows, tungsten light, weathered), `cyber` (a near
+  black mass drawn by its lights). Set it with `buildings style cyber`, or `--style` when you start one.
+- **`textures`** is whether the file carries pictures at all. `on` is the default. `off` writes no images:
+  every part is a named flat colour slot (`facade`, `window`, `concrete`, `pipe`, `antenna`, `door`,
+  `balcony`, `screen`, `neon`, `roof`), which is what a team that applies its own materials in the engine
+  wants. In `plain` mode a section with no cut windows reads as a plain mass, since the windows lived in
+  the picture.
+
+`buildings style` also says whether generated images are in play: a folder of PNGs or JPEGs named after the
+finishes overrides the drawn tiles for that family, and anything the folder lacks stays drawn.
 
 ## Rules that keep files openable
 

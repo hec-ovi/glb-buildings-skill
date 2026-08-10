@@ -306,6 +306,91 @@ describe('build', () => {
   });
 });
 
+describe('how a building is dressed', () => {
+  it('starts modern and textured, and says so', async () => {
+    await call('new', 'tower-a');
+    expect(await call('show')).toMatchObject({ style: 'modern', textures: 'on' });
+  });
+
+  it('switches family and mode, and reads them back', async () => {
+    await call('new', 'tower-a', '--style', 'cyber', '--textures', 'off');
+    expect(await call('show')).toMatchObject({ style: 'cyber', textures: 'off' });
+
+    expect(await call('style', 'fifties')).toMatchObject({ ok: true, style: 'fifties' });
+    expect(await call('textures', 'on')).toMatchObject({ ok: true, textures: 'on' });
+    expect(await call('show')).toMatchObject({ style: 'fifties', textures: 'on' });
+  });
+
+  it('says where generated images would go, and that there are none yet', async () => {
+    await call('new', 'tower-a');
+    const answer = (await call('style')) as unknown as { pack: { dir: string; has: string[] } };
+    expect(answer.pack.dir).toContain('textures');
+    expect(answer.pack.has).toEqual([]);
+  });
+
+  it('names the families it knows and refuses one it does not', async () => {
+    await call('new', 'tower-a');
+    expect(await call('style', 'baroque')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+  });
+});
+
+describe('the lit parts', () => {
+  it('runs several lines up a face at different places, cycling their colours', async () => {
+    await call('new', 'tower-a', '--style', 'cyber', '--floors', '14');
+    const answer = (await call('line', 'body', '--side', 'S', '--count', '4', '--spacing', '3', '--colours', 'cyan,magenta')) as unknown as {
+      put: number;
+      lines: { along: number; colour: string }[];
+    };
+    expect(answer.put).toBe(4);
+    expect(answer.lines.map((one) => one.colour)).toEqual(['cyan', 'magenta', 'cyan', 'magenta']);
+    expect(answer.lines.map((one) => one.along)).toEqual([1.5, 4.5, 7.5, 10.5]);
+
+    const shown = (await call('show')) as unknown as { bands: { id: string; wears: string[] }[] };
+    expect(shown.bands.find((one) => one.id === 'body')!.wears.join(' ')).toContain('4 lit lines');
+  });
+
+  it('refuses lines that would run off the end of the face', async () => {
+    await call('new', 'tower-a', '--width', '12');
+    expect(await call('line', 'body', '--side', 'S', '--count', '20', '--spacing', '3')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+  });
+
+  it('refuses floors the section does not have', async () => {
+    await call('new', 'tower-a', '--floors', '8');
+    const answer = (await call('line', 'body', '--from', '0', '--to', '40')) as unknown as { ok: boolean; message: string };
+    expect(answer.ok).toBe(false);
+    expect(answer.message).toContain('floors');
+  });
+
+  it('stands a screen off a face, spanning floors, and builds it', async () => {
+    await call('new', 'tower-a', '--style', 'cyber', '--floors', '14', '--width', '20');
+    expect(await call('screen', 'body', '--side', 'E', '--along', '2', '--width', '5', '--from', '2', '--to', '8')).toMatchObject({
+      ok: true,
+      spans: 'floors 2 to 8',
+    });
+    expect(await call('build')).toMatchObject({ ok: true, validator: { errors: 0 } });
+  });
+
+  it('says so when the picture a screen was given cannot be read', async () => {
+    await call('new', 'tower-a');
+    const answer = (await call('screen', 'body', '--width', '4', '--image', 'nowhere/screen.png')) as unknown as { ok: boolean; message: string };
+    expect(answer.ok).toBe(false);
+    expect(answer.message).toContain('cannot be read');
+  });
+
+  it('lights a crown and takes it off again', async () => {
+    await call('new', 'tower-a', '--style', 'cyber');
+    expect(await call('crown', 'crown', '--colour', 'red')).toMatchObject({ ok: true, crown: 'red' });
+    expect(await call('crown', 'crown', '--off')).toMatchObject({ ok: true, crown: 'off' });
+  });
+
+  it('takes the lit parts off a section', async () => {
+    await call('new', 'tower-a', '--style', 'cyber', '--floors', '12');
+    await call('line', 'body', '--count', '2');
+    await call('screen', 'body', '--side', 'E', '--width', '4');
+    expect(await call('unlight', 'body')).toMatchObject({ ok: true, lines: 0, screens: 0 });
+  });
+});
+
 describe('help', () => {
   it('lists every verb with its usage', async () => {
     const answer = (await call('help')) as unknown as { verbs: { verb: string }[] };

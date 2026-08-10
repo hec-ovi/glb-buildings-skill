@@ -6,7 +6,7 @@ const COLUMN_STYLES = ['none', 'corners', 'ribs', 'partial'] as const;
 const SHAPES = ['box', 'round'] as const;
 import { TEMPLATE_IDS } from '#kit';
 import type { Verb } from './verb.ts';
-import { count, degrees, fraction, metres, need, parse, size, text, type FlagSpec } from './args.ts';
+import { count, degrees, fraction, maybeOneOf, metres, need, parse, size, text, type FlagSpec } from './args.ts';
 
 const FLAGS: FlagSpec = {
   kind: { type: 'string' },
@@ -38,14 +38,6 @@ const FLAGS: FlagSpec = {
   after: { type: 'string' },
 };
 
-function oneOf<T extends readonly string[]>(value: string | undefined, allowed: T, what: string): T[number] | undefined {
-  if (value === undefined) return undefined;
-  if (!allowed.includes(value)) {
-    throw new BuildingError('E_DOC_INVALID', `${what} must be one of ${allowed.join(', ')}`, [what]);
-  }
-  return value;
-}
-
 function checkTemplate(id: string | undefined): string | undefined {
   if (id === undefined) return undefined;
   if (!TEMPLATE_IDS.includes(id)) {
@@ -75,8 +67,8 @@ export const addBand: Verb = {
 
     const band: Band = {
       id,
-      kind: oneOf(text(values.kind), BAND_KINDS, 'kind') ?? 'bulk',
-      tier: oneOf(text(values.tier), TIERS, 'tier') ?? 'flat',
+      kind: maybeOneOf(text(values.kind), BAND_KINDS, 'kind') ?? 'bulk',
+      tier: maybeOneOf(text(values.tier), TIERS, 'tier') ?? 'flat',
       template: checkTemplate(text(values.template)) ?? 'bulk-flat',
       floors: count(values.floors, 'floors') ?? 1,
       inset: metres(values.inset, 'inset') ?? 0,
@@ -85,9 +77,9 @@ export const addBand: Verb = {
       rotation: degrees(values.rotation) ?? 0,
       twist: degrees(values.twist) ?? 0,
       taper: size(values.taper, 'taper') ?? 0,
-      wires: oneOf(text(values.wires), WIRE_SIDES, 'wires') ?? 'none',
-      columns: oneOf(text(values.columns), COLUMN_STYLES, 'columns') ?? 'none',
-      shape: oneOf(text(values.shape), SHAPES, 'shape') ?? 'box',
+      wires: maybeOneOf(text(values.wires), WIRE_SIDES, 'wires') ?? 'none',
+      columns: maybeOneOf(text(values.columns), COLUMN_STYLES, 'columns') ?? 'none',
+      shape: maybeOneOf(text(values.shape), SHAPES, 'shape') ?? 'box',
       segments: count(values.segments, 'segments') ?? 16,
       arc: degrees(values.arc) ?? 360,
       bow: text(values.bow)?.toUpperCase() ?? '',
@@ -99,6 +91,9 @@ export const addBand: Verb = {
       deck: [],
       faces: [],
       runs: [],
+      lines: [],
+      screens: [],
+      crown: '',
       ...(values.width ? { width: size(values.width, 'width') } : {}),
       ...(values.depth ? { depth: size(values.depth, 'depth') } : {}),
       ...(values.height ? { floorHeight: size(values.height, 'height') } : {}),
@@ -137,8 +132,8 @@ export const setBand: Verb = {
       const bands = [...doc.bands];
       bands[at] = {
         ...band,
-        kind: oneOf(text(values.kind), BAND_KINDS, 'kind') ?? band.kind,
-        tier: oneOf(text(values.tier), TIERS, 'tier') ?? band.tier,
+        kind: maybeOneOf(text(values.kind), BAND_KINDS, 'kind') ?? band.kind,
+        tier: maybeOneOf(text(values.tier), TIERS, 'tier') ?? band.tier,
         template: checkTemplate(text(values.template)) ?? band.template,
         floors: count(values.floors, 'floors') ?? band.floors,
         inset: metres(values.inset, 'inset') ?? band.inset,
@@ -147,9 +142,9 @@ export const setBand: Verb = {
         rotation: degrees(values.rotation) ?? band.rotation,
         twist: degrees(values.twist) ?? band.twist,
         taper: size(values.taper, 'taper') ?? band.taper,
-        wires: oneOf(text(values.wires), WIRE_SIDES, 'wires') ?? band.wires,
-        columns: oneOf(text(values.columns), COLUMN_STYLES, 'columns') ?? band.columns,
-        shape: oneOf(text(values.shape), SHAPES, 'shape') ?? band.shape,
+        wires: maybeOneOf(text(values.wires), WIRE_SIDES, 'wires') ?? band.wires,
+        columns: maybeOneOf(text(values.columns), COLUMN_STYLES, 'columns') ?? band.columns,
+        shape: maybeOneOf(text(values.shape), SHAPES, 'shape') ?? band.shape,
         segments: count(values.segments, 'segments') ?? band.segments,
         arc: degrees(values.arc) ?? band.arc,
         bow: text(values.bow)?.toUpperCase() ?? band.bow,

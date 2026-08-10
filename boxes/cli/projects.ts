@@ -36,6 +36,14 @@ export class Projects {
     return join(this.root, 'projects');
   }
 
+  /**
+   * Where the generated image packs live: one folder per style, beside the projects, or wherever
+   * `BUILDINGS_TEXTURES` says. Anything a pack does not carry falls back to the drawn tile.
+   */
+  get textures(): string {
+    return process.env.BUILDINGS_TEXTURES ?? join(this.root, 'textures');
+  }
+
   get currentFile(): string {
     return join(this.root, 'current');
   }

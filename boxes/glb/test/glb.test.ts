@@ -34,7 +34,7 @@ describe('buildGlb', () => {
                 {
                   side: 'S',
                   elements: [
-                    { kind: 'window', col: 4, row: 8, cols: 10, rows: 14, material: 'crystal' },
+                    { kind: 'window', col: 4, row: 8, cols: 10, rows: 14, material: 'window' },
                     { kind: 'panel', col: 20, row: 10, cols: 12, rows: 8, material: 'screen' },
                   ],
                 },
@@ -43,14 +43,42 @@ describe('buildGlb', () => {
           : band,
       ),
     });
-    const { glb, stats } = await buildGlb(composed);
+    const { stats } = await buildGlb(composed);
     // Walls, roof, and the two the face asked for.
     expect(stats.materials).toBe(4);
+  });
 
-    // And the picture behind the glazing is one picture: two materials point at it, and the file
-    // carries a colour map and an emissive map, not a copy per material.
-    const written = await new NodeIO().readBinary(glb);
-    expect(written.getRoot().listTextures()).toHaveLength(2);
+  it('draws one picture for the wall and the glass in it, not one each', async () => {
+    const cut = parseDocument({
+      ...doc,
+      bands: doc.bands.map((band) => (band.id === 'body' ? { ...band, tier: 'light', windows: true } : band)),
+    });
+    const written = await new NodeIO().readBinary((await buildGlb(cut)).glb);
+    const materials = written.getRoot().listMaterials();
+    const wall = materials.find((one) => one.getName() === 'facade')!;
+    const glass = materials.find((one) => one.getName() === 'glass')!;
+
+    expect(glass.getBaseColorTexture()).toBe(wall.getBaseColorTexture());
+    expect(glass.getEmissiveTexture()).toBe(wall.getEmissiveTexture());
+  });
+
+  it('carries no pictures at all when the building is built plain', async () => {
+    const plain = parseDocument({ ...doc, textures: false });
+    const written = await new NodeIO().readBinary((await buildGlb(plain)).glb);
+
+    expect(written.getRoot().listTextures()).toEqual([]);
+    // The materials are still there and still named, so an engine can drop its own on them.
+    expect(written.getRoot().listMaterials().map((one) => one.getName()).sort()).toEqual(['facade', 'roof']);
+  });
+
+  it('dresses one building in three families, and each one differently', async () => {
+    const drawn = async (style: 'modern' | 'fifties' | 'cyber') => {
+      const written = await new NodeIO().readBinary((await buildGlb(parseDocument({ ...doc, style }))).glb);
+      const facade = written.getRoot().listTextures().find((one) => one.getName() === 'facade-colour')!;
+      return [...facade.getImage()!];
+    };
+    expect(await drawn('modern')).not.toEqual(await drawn('fifties'));
+    expect(await drawn('cyber')).not.toEqual(await drawn('fifties'));
   });
 
   it('steps a section in over the one below, and keeps every section closed', async () => {
@@ -122,6 +150,48 @@ describe('buildGlb', () => {
     const { glb, stats } = await buildGlb(shaped);
     expect(stats.meshes).toBe(4);
     expect((await validateGlb(glb)).errors).toEqual([]);
+  });
+
+  it('runs lit lines up a face, a screen off one, and a crown round the top', async () => {
+    const lit = parseDocument({
+      ...doc,
+      style: 'cyber',
+      bands: doc.bands.map((band) =>
+        band.id === 'body'
+          ? {
+              ...band,
+              lines: [
+                { side: 'S', along: 2000, from: 0, to: 9, colour: 'cyan' },
+                { side: 'S', along: 6000, from: 2, to: 9, colour: 'magenta' },
+              ],
+              screens: [{ side: 'E', along: 1500, width: 6000, from: 1, to: 6, stand: 1200 }],
+            }
+          : band.kind === 'roof'
+            ? { ...band, crown: 'red' }
+            : band,
+      ),
+    });
+
+    const { glb, stats } = await buildGlb(lit);
+    expect((await validateGlb(glb)).errors).toEqual([]);
+
+    const names = (await new NodeIO().readBinary(glb)).getRoot().listMaterials().map((one) => one.getName());
+    // Two colours of line are two materials over one picture, and the screen is its own.
+    expect(names).toContain('neon:cyan');
+    expect(names).toContain('neon:magenta');
+    expect(names).toContain('neon:red');
+    expect(names).toContain('screen-body-1');
+    expect(stats.triangles).toBeGreaterThan(0);
+  });
+
+  it('refuses a screen that would stand inside the wall it hangs on', async () => {
+    const buried = parseDocument({
+      ...doc,
+      bands: doc.bands.map((band) =>
+        band.id === 'body' ? { ...band, screens: [{ side: 'S', along: 1000, width: 4000, from: 0, to: 3, stand: 100 }] } : band,
+      ),
+    });
+    await expect(buildGlb(buried)).rejects.toThrow(BuildingError);
   });
 
   it('refuses a section that floats off the one below it', async () => {
