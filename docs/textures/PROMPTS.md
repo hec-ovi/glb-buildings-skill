@@ -709,7 +709,130 @@ teal-green.
 
 ---
 
-## 8. After generating
+## 8. Still missing from the packs
+
+What each family has today is `_1` of every finish, and nothing else. Two things are missing, and both
+show on a building.
+
+### The quiet walls, `_2` `_3` `_4`
+
+`facade_1` of every family came out with **every window lit and every window the same size**, so a tower
+reads as noise and the band of glass floors, the neon and the screen have nothing quiet to stand against.
+The fix is not to redo `_1`. It is to generate three quieter walls beside it, because a building picks a
+variant from its own name: a street then runs one busy tower to three calm ones on its own.
+
+Three rules carry all nine prompts below:
+
+- **Dark is the ground, light is the exception.** No more than one window in six shows anything at all.
+- **Break the 1 x 1.** A lit run is one bay, or three, or four together as one long ribbon. Never all singles.
+- **Leave whole zones dead.** Two or three large rectangles of the tile with nothing lit in them at all.
+
+The lit interiors also want to be *simpler*, not more detailed. At the distance a wall is seen, a lit office
+is a flat wash with a ceiling line and one or two silhouettes. Painting a full room in every pane is what
+made the first pass read as static.
+
+**`modern/facade_2.jpg`** the quiet one, and its `-emissive.png`
+
+```
+Hyper realistic, extreme realism, photographic. Night photograph of a modern office curtain wall, taken with
+a 400mm telephoto so the wall fills the frame dead flat-on. An exact grid of 8 window bays across and 4
+floors down. Almost the whole wall is dark: blue-green glass reading as near-black with only the dim
+reflection of the city in it, between slim champagne anodised aluminium mullions, with a matte charcoal
+spandrel below each row. Just three or four windows in the whole picture are lit, and they are not alike:
+one is a run of three bays lit together as a single unbroken ribbon of cool white with a ceiling line and
+two chair silhouettes, one is a single bay of warm lamp light, one shows only a sliver at the top where a
+blind is nearly closed. Everything else is dark, and one whole corner of the picture, three bays wide and
+two floors tall, has nothing lit in it at all. The lit interiors are simple washes of light, not detailed
+rooms. The picture starts and ends in the middle of a mullion, and in the middle of the solid band between
+two floors, so where it repeats the join makes one whole mullion and one whole floor band and never cuts a
+window in half. Hyper realistic, hyper realism, extreme realist.
+```
+
+**`modern/facade_3.jpg`** mostly closed, and its `-emissive.png`
+
+```
+Hyper realistic, extreme realism, photographic. Night photograph of a modern office curtain wall, 400mm
+telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. The building is closed for
+the night: every pane is dark blue-green glass holding a faint reflection, blinds fully down across two
+entire floors so those rows read as flat pale grey panels rather than glass, and only two windows lit in the
+whole picture, both on the same floor, side by side as one four-bay ribbon of dim cool white with a ceiling
+line and nothing else in it. Champagne anodised aluminium mullions, matte charcoal spandrels, dust in the
+frame corners, soft vertical rain smears. Overwhelmingly dark and even. The picture starts and ends in the
+middle of a mullion, and in the middle of the solid band between two floors, so where it repeats the join
+makes one whole mullion and one whole floor band and never cuts a window in half. Hyper realistic, hyper
+realism, extreme realist.
+```
+
+**`modern/facade_4.jpg`** all off, no emissive map at all
+
+```
+Hyper realistic, extreme realism, photographic. Night photograph of a modern office curtain wall with every
+light off, 400mm telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. Every
+pane is dark blue-green low-iron glass holding nothing but the dim reflection of the city opposite: faint
+charcoal shapes, a few tiny distant lights in the reflection only, soft vertical rain smears, dust collected
+in the frame corners. Slim champagne anodised aluminium mullions and matte charcoal spandrel panels catch a
+little ambient light. No interior visible anywhere, no window lit, no glow. The picture starts and ends in
+the middle of a mullion, and in the middle of the solid band between two floors, so where it repeats the
+join makes one whole mullion and one whole floor band and never cuts a window in half. Hyper realistic,
+hyper realism, extreme realist.
+```
+
+**`fifties/facade_2.jpg`**, **`_3`**, **`_4`** the same three, in brick
+
+```
+Hyper realistic, extreme realism, photographic. Night photograph of a 1950s apartment building facade, 400mm
+telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. Punched rectangular
+windows in buff yellow brick with pale lime mortar, cream painted steel casements divided into six small
+panes, cast stone sills with a weathering streak under each. Almost every window is dark and empty. Only
+three in the whole picture carry light, all warm tungsten and all different: one a full window glowing amber
+behind net curtains, one showing light in a single small pane of the six, one a dim brown wash behind a
+drawn curtain. Two whole zones, each three bays wide and two floors tall, are completely dark, and one of
+them is a run of sage green enamel spandrel panels instead of windows. Soot along the top, patched brick.
+The picture starts and ends in the middle of a mullion, and in the middle of the solid band between two
+floors, so where it repeats the join makes one whole mullion and one whole floor band and never cuts a
+window in half. Hyper realistic, hyper realism, extreme realist.
+```
+
+For `_3` drop it to one lit window and put curtains in the rest. For `_4` turn every light off and let the
+glass carry only a dull grey-green reflection, with no emissive map.
+
+**`cyber/facade_2.jpg`**, **`_3`**, **`_4`** the same three, near black
+
+```
+Hyper realistic, extreme realism, photographic. Night photograph of a futuristic megastructure facade, 600mm
+telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. The wall is near-black
+composite panel with fine joints, recessed service channels, bundled conduit and dim stencilled decals. Each
+cell holds a narrow horizontal window slit set deep behind a dark reveal. Almost all of them are dead black.
+Only a handful glow, and they are deliberately uneven: one run of four slits side by side lit as a single
+long unbroken bar of cold white, one lone amber slit far from it, one deep red sliver at the end of another.
+Two large zones of the picture, each four bays wide and two floors tall, are entirely dark with no light in
+them at all. The lit slits are flat hard-edged bars, not rooms. Extremely dark overall, the few lights doing
+all the work. The picture starts and ends in the middle of a mullion, and in the middle of the solid band
+between two floors, so where it repeats the join makes one whole mullion and one whole floor band and never
+cuts a window in half. Hyper realistic, hyper realism, extreme realist.
+```
+
+For `_3` use teal and magenta instead of white and amber, and light one vertical run of four slits stacked
+up the same bay. For `_4` turn everything off: pure black panel, no lit slit anywhere, no emissive map.
+
+### The emissive maps
+
+Every family is missing every `-emissive.png`, so **no window glows at night on any building**. The colour
+maps are right; what is missing is the map that says which part of them is a light.
+
+Build each one from the colour map it belongs to rather than generating it fresh, or the two will not line
+up: mask the colour map to the pane rectangles from section 2, keep only the lit ones, and fill everything
+else with black.
+
+| Needs one | Does not |
+| --- | --- |
+| `facade`, `glass-band`, `door`, `screen`, `neon`, `beacon` | `window`, `balcony`, `concrete`, `metal`, `pipe`, `antenna`, `roof` |
+
+`facade_4` and any other all-off variant needs no emissive map: nothing in it is lit.
+
+---
+
+## 9. After generating
 
 1. **Lay it out 3 by 3** before anything else. A seam, or a feature that reads as a polka dot, means
    regenerate rather than retouch.
