@@ -63,12 +63,19 @@ export function dressFaces(shape: SectionShape, plans: FacePlan[]): MeshData[] {
   return kit.data();
 }
 
-/** The face as it stands, for printing back to whoever is composing it. */
+/**
+ * The face as it stands, for printing back to whoever is composing it.
+ *
+ * It holds every element to the same rules the build does, cells and kinds both, so a caller
+ * trying a placement here learns now that it cannot stand rather than at the build. That is what
+ * lets a rhythm of doors step over the bays where no balcony carries one.
+ */
 export function readFace(shape: SectionShape, plan: FacePlan): { face: Face; sheet: Sheet } {
   const face = new Face(shape, plan.side);
   const sheet = sheetFor(face, plan.wears);
   plan.elements.forEach((element, index) => {
     sheet.claim(claims(element), `${element.kind} ${index + 1} on ${plan.side}`);
+    checkKind(element, plan.elements);
   });
   return { face, sheet };
 }
