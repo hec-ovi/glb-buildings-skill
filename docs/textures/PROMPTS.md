@@ -27,6 +27,10 @@ street of towers does not wear one wall.
 **Nothing is required.** A folder with one file in it overrides that one finish; everything else stays drawn
 from code. Generate a family a texture at a time and the build keeps working the whole way.
 
+**The ads that go on screens are not part of a pack.** A screen is given its picture by name, one at a time,
+and those are clean images with no screen effect baked into them. They have their own prompts in
+[ADS.md](ADS.md).
+
 ## 2. The wall tile has to land on a grid
 
 The wall lays its own UVs: **one row of the tile per floor, one bay per 3 m of face**, on a tile of
@@ -115,6 +119,18 @@ This is the rest, which is the same for all of them:
 seamless tileable texture, shot dead flat-on with a long telephoto lens so there is no perspective and no
 convergence, sharp across the whole frame, even detail edge to edge, no vignette, no depth of field,
 hyper realistic, extreme realism
+```
+
+### Material tiles only (concrete, metal, pipe, antenna, roof)
+
+These are **not** architecture photos. They are pure material fields for UV tiling. Also append:
+
+```
+Strictly monotonous seamless PBR albedo tile of material alone. The entire frame is one continuous surface
+with only fine, even micro-detail. No objects, no screws, no bolts, no rivets, no flanges, no labels, no text,
+no numbers, no warning stripes, no colour bands, no logos, no hardware, no puddles, no cracks as a hero
+feature, no centered marks, no borders, no frames, no vignette, no colour blocks, no gradient shapes, no
+composition. Darker low-key exposure. High quality photographic grain of the material, nothing else.
 ```
 
 ### The negative prompt
@@ -225,58 +241,46 @@ no background and no margin around it. Hyper realistic, hyper realism, extreme r
 ### `modern/concrete_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of smooth precast architectural
-concrete panel in flat overcast daylight, warm pale grey with a faint sandy cast, very fine aggregate,
-straight vertical form-board lines, small round tie holes in a regular grid, light even mottling from the
-pour, one hairline shrinkage crack. New and clean, almost no staining. Seamless and tileable. The picture
-starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where
-it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of smooth architectural concrete only,
+darker charcoal-grey with a faint warm cast, very fine aggregate, barely-there even pour mottling, no holes,
+no form-board grid, no crack, no stain blotches. Entire frame is one flat continuous wall of concrete.
+Seamless and tileable mid-material edges. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `modern/metal_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 1.5 metre square of brushed stainless steel
-cladding panel in flat overcast daylight, cool silver with fine horizontal brush lines, a straight recessed
-panel joint crossing it, a row of small countersunk fixings along the joint, faint fingerprints and a very
-slight blue cast from the sky. Seamless and tileable. The picture starts and ends mid-material, with no
-feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible.
-Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of brushed stainless steel only, darker
+cool graphite-silver, fine even horizontal brush grain filling the whole frame, no seam, no screws, no
+fixings, no fingerprints, no panel joint. Continuous metal field only. Seamless and tileable. Hyper
+realistic, hyper realism, extreme realist.
 ```
 
 ### `modern/pipe_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of the surface of a painted steel service pipe, one
-metre of pipe running from the top of the frame to the bottom and wrapping around from left to right, flat
-overcast daylight. Even mid blue-grey powder coat, a raised bolted flange collar crossing near the top, a
-painted royal blue identification band below it, faint circular tooling marks, and a soft shading gradient
-that is lighter down the middle and darker at both edges so it reads as round. Clean, new, no rust. Seamless
-top to bottom and left to right. The picture starts and ends midway between two collars, so where it repeats
-along the run the join is invisible and no fitting is cut in half. Hyper realistic, hyper realism, extreme
-realist.
+Hyper realistic, extreme realism, photographic. Pure seamless wrap of painted steel pipe surface only, darker
+blue-grey powder coat filling the whole frame, soft cylindrical shade lighter down the vertical centre and
+darker at left and right edges so it reads round when wrapped, no flange, no collar, no band, no label, no
+text, no bolts. Seamless top to bottom and left to right. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `modern/antenna_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 0.6 metre square of hot dip galvanised steel
-from a rooftop antenna mast, flat overcast daylight, bright cool grey with the crystalline spangle pattern of
-fresh galvanising, faint drip marks, weld spatter, a hex bolt and washer, and one narrow orange-red aviation
-warning band crossing the frame. Clean, no rust. Seamless and tileable. The picture starts and ends
-mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the
-join is invisible. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of hot-dip galvanised steel only, darker
+cool grey crystalline spangle grain filling the whole frame evenly, no bolt, no washer, no weld blob, no
+warning band, no stripe, no drip as a hero mark. Continuous metal field only. Seamless and tileable. Hyper
+realistic, hyper realism, extreme realist.
 ```
 
 ### `modern/roof_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph looking straight down at a 3 metre square of light
-grey PVC single-ply roofing membrane in flat overcast daylight, faintly textured surface, straight hot-welded
-seams crossing at wide even spacing with a slightly raised edge, a scatter of dirt specks, one shallow puddle
-stain ringed with silt. Seamless and tileable. The picture starts and ends mid-material, with no feature
-crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper
-realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless top-down tile of dark grey PVC roof membrane
+only, fine even grain filling the whole frame, no weld seams, no puddle ring, no dirt clump, no leaves, no
+markings. Continuous membrane field only. Seamless and tileable. Hyper realistic, hyper realism, extreme
+realist.
 ```
 
 ### `modern/screen_1.jpg` + `modern/screen_1-emissive.png`
@@ -405,60 +409,46 @@ and no margin around it. Hyper realistic, hyper realism, extreme realist.
 ### `fifties/concrete_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of weathered 1950s board-formed
-concrete in flat overcast daylight, warm grey going brown, the horizontal grain of the timber shuttering
-pressed into the surface, misaligned board lines, a line of tie holes with rust bleeding from some of them,
-patches of darker repair mortar, blown surface showing grey aggregate, green algae in the low areas, water
-streaks running down. Seamless and tileable. The picture starts and ends mid-material, with no feature
-crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper
-realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of weathered 1950s concrete only, darker
+warm brown-grey, soft even timber-grain impression barely visible, fine aggregate only, no tie holes, no
+repair patches, no algae blotches, no water streaks as stripes. Continuous concrete field only. Seamless and
+tileable. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `fifties/metal_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 1.5 metre square of old painted steel sheet in
-flat overcast daylight, chalky pale blue paint over red oxide primer, blistering and peeling in patches to
-orange rust, a riveted lap joint crossing the frame with round rivet heads, rust bleeding from every rivet, a
-dent. Seamless and tileable. The picture starts and ends mid-material, with no feature crossing an edge and no
-change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism,
+Hyper realistic, extreme realism, photographic. Pure seamless tile of old painted steel only, darker chalky
+blue-grey paint with fine even wear mottling, no rivets, no lap joint, no blister islands, no rust patches as
+shapes, no dents. Continuous painted metal field only. Seamless and tileable. Hyper realistic, hyper realism,
 extreme realist.
 ```
 
 ### `fifties/pipe_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of the surface of an old cast iron rainwater pipe,
-one metre of pipe from the top of the frame to the bottom, wrapping around from left to right, flat overcast
-daylight. Thick dark green paint applied over many years, blistered and peeling to red-brown rust, a raised
-socket joint crossing near the top with a lip of hardened lead caulking, rust streaks running down from it,
-pale limescale, and a soft shading gradient lighter in the middle and darker at both edges so it reads as
-round. Seamless top to bottom. The picture starts and ends midway between two collars, so where it repeats
-along the run the join is invisible and no fitting is cut in half. Hyper realistic, hyper realism, extreme
-realist.
+Hyper realistic, extreme realism, photographic. Pure seamless wrap of old cast-iron pipe surface only, darker
+bottle-green paint filling the frame, soft cylindrical shade lighter down the centre and darker at both
+edges, fine even age wear only, no socket joint, no flange, no caulking, no rust streaks, no scale blotches.
+Seamless top to bottom. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `fifties/antenna_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 0.6 metre square of old aluminium television
-aerial tubing in flat overcast daylight, dull chalky grey-white oxidised metal, fine longitudinal drawing
-lines, pitting and white powdery corrosion in patches, a rusted steel bolt and washer with a rust stain
-running from it, remnants of a faded red painted band. Seamless and tileable. The picture starts and ends
-mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the
-join is invisible. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of oxidised aluminium only, darker dull
+chalky grey, fine even drawing lines and light pitting spread evenly, no bolt, no washer, no rust stain mark,
+no painted band. Continuous metal field only. Seamless and tileable. Hyper realistic, hyper realism, extreme
+realist.
 ```
 
 ### `fifties/roof_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph looking straight down at a 3 metre square of old
-tar and gravel built-up roofing in flat overcast daylight, grey-brown chippings of uneven size pressed into
-black bitumen, bare patches where the chippings have washed away showing shiny tar, a rectangular patch of
-newer black repair felt with a brushed edge, small blisters, a puddle stain ringed with silt, a few dead
-leaves. Seamless and tileable. The picture starts and ends mid-material, with no feature crossing an edge and
-no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism,
-extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless top-down tile of old tar-and-gravel roofing only,
+darker grey-brown fine chippings pressed evenly into bitumen across the whole frame, no repair patch, no
+puddle ring, no leaves, no bare tar islands. Continuous roof field only. Seamless and tileable. Hyper
+realistic, hyper realism, extreme realist.
 ```
 
 ### `fifties/screen_1.jpg` + `fifties/screen_1-emissive.png`
@@ -597,58 +587,46 @@ nothing cropped, no background and no margin around it. Hyper realistic, hyper r
 ### `cyber/concrete_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of dark stained megastructure
-concrete at night under weak ambient light, cool near-black grey, coarse board-form lines, long vertical water
-streaks and chemical staining, patches of damp, drill holes and anchor stubs, a torn poster remnant, a faded
-spray tag in dull magenta, grit in the recesses, wet sheen in places. Seamless and tileable. The picture
-starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where
-it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of near-black megastructure concrete only
+at night, cool charcoal almost black, fine even damp grain and barely-there board texture, no drill holes, no
+anchor stubs, no poster, no graffiti, no water streaks as stripes. Continuous dark concrete field only.
+Seamless and tileable. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `cyber/metal_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 1.5 metre square of dark gunmetal armoured
-panel at night under weak ambient light, near black with fine machining lines, a recessed seam crossing the
-frame with hex bolts along it, a stencilled serial code in dim white, oil staining, condensation beading, a
-hazard chevron corner. Seamless and tileable. The picture starts and ends mid-material, with no feature
-crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper
+Hyper realistic, extreme realism, photographic. Pure seamless tile of near-black gunmetal armour plate only at
+night, fine even machining grain filling the frame, no seam, no bolts, no stencilled codes, no hazard
+chevrons, no condensation beads as hero marks. Continuous dark metal field only. Seamless and tileable. Hyper
 realistic, hyper realism, extreme realist.
 ```
 
 ### `cyber/pipe_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of the surface of an industrial conduit at night,
-one metre of run from the top of the frame to the bottom, wrapping around from left to right. Dark gunmetal
-armoured sheath with fine longitudinal ribbing, a heavy machined collar crossing near the top with hex bolts,
-a black and yellow hazard chevron band below it, a thin glowing cyan coolant line running the full length,
-stencilled serial codes in dim white, oil staining and condensation, and a soft shading gradient lighter in
-the middle and darker at both edges so it reads as round. Seamless top to bottom. The picture starts and ends
-midway between two collars, so where it repeats along the run the join is invisible and no fitting is cut in
-half. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless wrap of dark industrial conduit surface only at
+night, near-black gunmetal with fine even longitudinal grain, soft cylindrical shade lighter down the centre
+and darker at both edges, no collar, no bolts, no hazard band, no cyan line, no serial codes. Seamless top to
+bottom. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `cyber/antenna_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph of a 0.6 metre square of dark anodised steel from a
-rooftop antenna array at night, near-black matte metal with fine machining lines, a red-orange aviation
-warning band crossing the frame, stencilled white warning glyphs, hex bolts and welded gusset plates, a small
-recessed marker light housing glowing teal, condensation and thin rust bleed at the welds. Seamless and
-tileable. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone
-toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless tile of dark anodised steel only at night,
+near-black matte metal with fine even machining grain filling the frame, no warning band, no glyphs, no bolts,
+no gussets, no marker light. Continuous dark metal field only. Seamless and tileable. Hyper realistic, hyper
+realism, extreme realist.
 ```
 
 ### `cyber/roof_1.jpg`
 
 ```
-Hyper realistic, extreme realism, photographic. Photograph looking straight down at a 3 metre square of dark
-industrial roof membrane at night, near black with a fine grain, straight welded seams, standing water and
-condensate with an oily rainbow sheen, faded painted yellow deck markings and a stencilled number worn away,
-cable runs pinned flat, grit in the low areas. Seamless and tileable. The picture starts and ends
-mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the
-join is invisible. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. Pure seamless top-down tile of near-black industrial roof
+membrane only at night, fine even grain filling the whole frame, no weld seams, no standing water, no yellow
+deck markings, no numbers, no cables. Continuous dark membrane field only. Seamless and tileable. Hyper
+realistic, hyper realism, extreme realist.
 ```
 
 ### `cyber/screen_1.jpg` + `cyber/screen_1-emissive.png`

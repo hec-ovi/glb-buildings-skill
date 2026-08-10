@@ -11,6 +11,7 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | Build order and what is left | [PLAN.md](PLAN.md) |
 | Installing the CLI and the skill | [INSTALL.md](INSTALL.md) |
 | Generating the texture sets with an image model | [textures/PROMPTS.md](textures/PROMPTS.md) |
+| Generating the ads that go on the screens | [textures/ADS.md](textures/ADS.md) |
 
 ## Boxes
 
