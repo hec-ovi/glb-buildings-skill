@@ -154,7 +154,8 @@ page to find out.
 ## The skill
 
 The portable unit is [`skills/glb-buildings/`](skills/glb-buildings/): one `SKILL.md` resolver that routes an
-intent to one of eight fat parts. An agent holds the resolver plus one part, never all of it.
+intent to one of nine fat parts, one of which routes on to four batches of texture prompts. An agent
+holds the resolver plus one part, never all of it.
 
 Copy the folder wherever your agent loads skills from. It talks to the CLI by running it, so the host needs
 a subprocess and a JSON parser, not an MCP client. A test keeps `SKILL.md` naming every verb the CLI has.
@@ -194,7 +195,16 @@ buildings textures off     # no images at all: named flat colour slots for your 
 A folder of generated images per family stands in for the drawn tiles, and anything the folder lacks stays
 drawn. A finish can hold several pictures (`facade_1` to `facade_4`) and a building picks one from its own
 seed, so a street of towers does not wear one wall.
-[docs/textures/PROMPTS.md](docs/textures/PROMPTS.md) is how those get generated.
+
+```bash
+buildings add-texture facade ~/out/wall.png --emissive ~/out/lit.png --across 8 --down 4
+```
+
+`add-texture` copies the picture in under the name the loader reads, pairs its emissive map and records what
+grid it holds, so nothing has to be named by hand. An agent that can generate images fills a family this way:
+the prompts are `skills/glb-buildings/parts/textures.md` and its four batches. Ready-made prompts for the two
+families that ship here are in [docs/textures/PROMPTS.md](docs/textures/PROMPTS.md), and the ads that go on
+screens are in [docs/textures/ADS.md](docs/textures/ADS.md).
 
 ## A night city
 

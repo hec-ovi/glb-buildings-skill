@@ -40,9 +40,13 @@ tool what came back, in a `pack.json` beside the images:
 ```json
 {
   "facade": { "across": 10, "down": 3 },
+  "facade_2": { "across": 8, "down": 4 },
   "glass-band": { "across": 12, "down": 3 }
 }
 ```
+
+A key names either the finish or one picture of it. `facade` covers every facade picture; `facade_2` covers
+that one alone and wins where both are there, so two walls of one family may hold different grids.
 
 `across` is how many window bays the picture holds side by side, `down` how many floors. The wall then lays
 its UVs on that, so one drawn window is one 3 m bay and one drawn row is one floor. Without it a picture of

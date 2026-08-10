@@ -111,6 +111,23 @@ describe('a pack of generated images', () => {
     expect((await loadPack(root, 'modern')).grids).toEqual({});
   });
 
+  it('lets one picture of a finish hold a different grid from another', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'packs-'));
+    const dir = join(root, 'cyber');
+    await mkdir(dir, { recursive: true });
+    const tile = png({ width: 4, height: 2, rgba: new Uint8Array(4 * 2 * 4) });
+    await writeFile(join(dir, 'facade_1.png'), tile);
+    await writeFile(join(dir, 'facade_2.png'), tile);
+    // The finish's own key covers both, and the second picture says something else for itself.
+    await writeFile(join(dir, 'pack.json'), JSON.stringify({ facade: { across: 8, down: 4 }, facade_2: { across: 10, down: 3 } }));
+
+    // Seed 0 takes the first picture, seed 1 the second, and each is laid out on its own grid.
+    const pack = await loadPack(root, 'cyber');
+    expect(pack.gridOf('facade', 0)).toEqual({ across: 8, down: 4 });
+    expect(pack.gridOf('facade', 1)).toEqual({ across: 10, down: 3 });
+    expect(pack.gridOf('roof', 0)).toBeUndefined();
+  });
+
   it('is nothing at all when the folder is not there, so a build still works', async () => {
     const pack = await loadPack(join(tmpdir(), 'no-such-packs'), 'cyber');
     expect(pack.finishes).toEqual([]);

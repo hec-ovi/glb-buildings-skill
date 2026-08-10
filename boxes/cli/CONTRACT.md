@@ -26,7 +26,14 @@ The binary is `boxes/cli/bin/buildings.ts`. It prints the answer as JSON and exi
     selection.json          what the human last picked in the preview
 
 ./textures/<style>/         generated images (visible next to the work), `<finish>_<n>.jpg`
+./textures/<style>/pack.json  what each picture holds: `{"facade_2": {"across": 8, "down": 4}}`
+./textures/<style>/ads/     pictures for screens, passed to `screen --image` by path
 ```
+
+Nothing has to be put there by hand. `add-texture` names the file, pairs `-emissive`, picks the next free
+variant number and writes `pack.json`, which is the part that goes wrong when a folder is filled by hand. It
+refuses a finish that is a light (`neon`, `beacon`): a flat colour emitting that colour is the whole material
+and a picture of one would never be read.
 
 The home is the first of these that applies: `BUILDINGS_HOME`, a `.buildings` folder in the current directory,
 then `~/.glb-buildings`. Image packs live in a visible `textures/<style>/` next to the work when the home is
@@ -47,6 +54,7 @@ a session names the building once and every later verb knows what it means.
 | `new <name> [--brief] [--width] [--depth] [--floors] [--style] [--textures] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
 | `style [modern\|cyber]` | which family of finishes the building wears, and what the pack for it holds |
 | `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
+| `add-texture <finish> <file> [--emissive] [--across --down] [--metres] [--style] [--as]` | put a generated picture into a style pack: copies it in under the name the loader reads, pairs its emissive map, and records what grid it holds |
 | `brief ["what it should be"]` | what the building was asked for; kept in the document and shown in the preview |
 | `list` | every building, whether it is built, and which is current |
 | `use <name>` | switch the current building |

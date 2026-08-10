@@ -20,6 +20,7 @@ Match the request to a row, open the file it names (next to this one), then run 
 | to break up a run of identical floors | `parts/enhance.md` |
 | to lay out a roof: turbines, pipes, tanks, masts | `parts/roof.md` |
 | sizes that look right: floor heights, doors, guards, bays | `parts/dimensions.md` |
+| to generate the pictures a building wears, with an image tool of your own | `parts/textures.md` |
 
 ## Always
 
@@ -57,6 +58,7 @@ Run `buildings help` for the current list. Today:
 | `show [name]` | the stack band by band |
 | `style [modern\|cyber]` | which family of finishes the building wears. Says what a family looks like, and whether generated images are in play |
 | `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
+| `add-texture <finish> <file> [--emissive f] [--across 8 --down 4] [--metres 1.6] [--style cyber] [--as 2]` | put a picture you generated into a style pack: names it, pairs its emissive map, records what grid it holds |
 | `templates` | the floor templates the kit can build |
 | `add-band <id> --kind --tier --template --floors [shape and dressing flags] [--after id\|--before id]` | put a section into the stack |
 | `set-band <id> [same flags]` | change a section; omitted flags keep what was there |

@@ -342,6 +342,18 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
   const pack = mode === 'textured' && options.packs ? await loadPack(options.packs, doc.style) : undefined;
   const look: Look = { mode, style: doc.style, seed: seedOf(doc.name), ...(pack ? { pack } : {}) };
 
+  // What each picture this building actually wears says about itself. Two pictures of one finish
+  // need not hold the same grid, and the building picks between them by name, so it is resolved
+  // here rather than read off the finish.
+  const tiles: Record<string, { across: number; down: number }> = {};
+  const scale: Record<string, number> = {};
+  for (const finish of pack?.finishes ?? []) {
+    const grid = pack!.gridOf(finish, look.seed);
+    const covers = pack!.metresOf(finish, look.seed);
+    if (grid) tiles[finish] = grid;
+    if (covers) scale[finish] = covers;
+  }
+
   const pictures = await screenPictures(doc);
   const materials = palette(document, look, pictures);
   const scene = document.createScene(doc.name);
@@ -354,7 +366,7 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
     const above = placed.bands[index + 1];
     // The building's own floor height is the storey the wall tile was drawn for, so a taller
     // floor shows more of the tile rather than stretching one row of it over a lobby.
-    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM, pack?.grids ?? {}, pack?.metres ?? {});
+    const shape = shapeOf(band, sunk, doc.grid.floorHeight * MM, tiles, scale);
     const parts = template(band.template).build(shape);
     const worn = dress(shape, {
       wires: band.wires,

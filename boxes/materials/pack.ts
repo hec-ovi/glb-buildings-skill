@@ -55,15 +55,31 @@ export type Pack = {
   /** What it carries, and how many pictures each one has. */
   finishes: string[];
   variants: Record<string, number>;
-  /** The grid each wall picture actually holds, where the pack says so. */
+  /**
+   * What the pack says about its own pictures, under whatever key it said it: `facade` for every
+   * picture of the facade, `facade_2` for that one alone. Two pictures of one finish need not hold
+   * the same grid, so the picture's own key wins over the finish's.
+   */
   grids: Record<string, Grid>;
-  /** How many metres a tile covers, where the pack says so. */
   metres: Record<string, number>;
   /** One finish, picking between its pictures with the building's own seed. */
   get(finish: string, seed?: number): Maps | undefined;
+  /** The grid the picture this seed picks actually holds, where the pack says so. */
+  gridOf(finish: string, seed?: number): Grid | undefined;
+  /** How many metres of building that picture covers, where the pack says so. */
+  metresOf(finish: string, seed?: number): number | undefined;
 };
 
-export const EMPTY_PACK: Pack = { dir: '', finishes: [], variants: {}, grids: {}, metres: {}, get: () => undefined };
+export const EMPTY_PACK: Pack = {
+  dir: '',
+  finishes: [],
+  variants: {},
+  grids: {},
+  metres: {},
+  get: () => undefined,
+  gridOf: () => undefined,
+  metresOf: () => undefined,
+};
 
 /**
  * Read every image in a style's folder. glTF carries PNG and JPEG and nothing else without an
@@ -101,6 +117,20 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     else keep(colour, stem, { bytes, mime });
   }
 
+  // Same seed, same picture, every build; different buildings spread across what is there.
+  const pickedBy = (finish: string, seed: number): number | undefined => {
+    const set = colour.get(finish);
+    if (!set) return undefined;
+    const numbers = [...set.keys()].sort((a, b) => a - b);
+    return numbers[Math.abs(seed) % numbers.length];
+  };
+
+  /** The picture's own key first, then the finish's, so a variant may hold its own grid. */
+  const said = <T,>(from: Record<string, T>, finish: string, seed: number): T | undefined => {
+    const variant = pickedBy(finish, seed);
+    return (variant === undefined ? undefined : from[`${finish}_${variant}`]) ?? from[finish];
+  };
+
   return {
     dir,
     finishes: [...colour.keys()].sort(),
@@ -108,16 +138,14 @@ export async function loadPack(root: string, style: string): Promise<Pack> {
     grids: declared.grids,
     metres: declared.metres,
     get(finish, seed = 0) {
-      const set = colour.get(finish);
-      if (!set) return undefined;
-
-      // Same seed, same picture, every build; different buildings spread across what is there.
-      const numbers = [...set.keys()].sort((a, b) => a - b);
-      const chosen = numbers[Math.abs(seed) % numbers.length]!;
-      const base = set.get(chosen)!;
+      const chosen = pickedBy(finish, seed);
+      if (chosen === undefined) return undefined;
+      const base = colour.get(finish)!.get(chosen)!;
       const lit = glow.get(finish)?.get(chosen);
       return lit ? { colour: base, emissive: lit } : { colour: base };
     },
+    gridOf: (finish, seed = 0) => said(declared.grids, finish, seed),
+    metresOf: (finish, seed = 0) => said(declared.metres, finish, seed),
   };
 }
 

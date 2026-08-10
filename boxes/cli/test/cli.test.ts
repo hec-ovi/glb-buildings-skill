@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { chmod, mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -367,6 +367,43 @@ describe('how a building is dressed', () => {
   it('names the families it knows and refuses one it does not', async () => {
     await call('new', 'tower-a');
     expect(await call('style', 'baroque')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+  });
+});
+
+describe('a picture generated for a pack', () => {
+  it('names it, pairs its emissive map, and says what grid it holds', async () => {
+    await call('new', 'tower-a', '--style', 'cyber');
+    const made = await mkdtemp(join(tmpdir(), 'made-'));
+    const wall = join(made, 'wall.png');
+    const lit = join(made, 'lit.png');
+    await writeFile(wall, png({ width: 8, height: 4, rgba: new Uint8Array(8 * 4 * 4) }));
+    await writeFile(lit, png({ width: 8, height: 4, rgba: new Uint8Array(8 * 4 * 4) }));
+
+    const answer = (await call('add-texture', 'facade', wall, '--emissive', lit, '--across', '10', '--down', '3')) as unknown as {
+      file: string;
+      emissive: string;
+      declared: unknown;
+    };
+    expect(answer).toMatchObject({ ok: true, style: 'cyber', finish: 'facade', variant: 1, declared: { across: 10, down: 3 } });
+    expect(answer.file.endsWith('cyber/facade_1.png')).toBe(true);
+    expect(answer.emissive.endsWith('cyber/facade_1-emissive.png')).toBe(true);
+
+    // A second picture of the same finish is the next variant, and the build picks between them.
+    // It holds its own grid, so one wall picture never forces the shape of another.
+    expect(await call('add-texture', 'facade', wall, '--across', '6', '--down', '5')).toMatchObject({ variant: 2, pack: 2 });
+    expect(await call('style')).toMatchObject({ pack: { has: ['facade x2'] } });
+
+    const declared = JSON.parse(await readFile(join(projects.textures, 'cyber', 'pack.json'), 'utf8')) as Record<string, unknown>;
+    expect(declared).toEqual({ facade_1: { across: 10, down: 3 }, facade_2: { across: 6, down: 5 } });
+  });
+
+  it('refuses a finish it does not have, and one that is a light rather than a surface', async () => {
+    await call('new', 'tower-a');
+    const wall = join(await mkdtemp(join(tmpdir(), 'made-')), 'wall.png');
+    await writeFile(wall, png({ width: 8, height: 4, rgba: new Uint8Array(8 * 4 * 4) }));
+
+    expect(await call('add-texture', 'marzipan', wall)).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+    expect(await call('add-texture', 'neon', wall)).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
   });
 });
 

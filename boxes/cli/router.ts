@@ -9,6 +9,7 @@ import { enhanceVerbs } from './verbs/enhance.ts';
 import { faceVerbs } from './verbs/faces.ts';
 import { litVerbs } from './verbs/lit.ts';
 import { lookVerbs } from './verbs/look.ts';
+import { packVerbs } from './verbs/pack.ts';
 import { projectVerbs } from './verbs/projects.ts';
 import type { Verb } from './verbs/verb.ts';
 
@@ -16,6 +17,7 @@ export const VERBS: Verb[] = [
   ...doctorVerbs,
   ...projectVerbs,
   ...lookVerbs,
+  ...packVerbs,
   ...bandVerbs,
   ...enhanceVerbs,
   ...faceVerbs,
