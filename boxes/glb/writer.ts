@@ -169,17 +169,26 @@ function palette(document: Document, look: Look, screens: Map<string, Bitmap | u
       .setBaseColorFactor([...recipe.colour, 1])
       .setMetallicFactor(recipe.metallic)
       .setRoughnessFactor(recipe.roughness);
-    if (recipe.emissive) material.setEmissiveFactor(recipe.emissive);
 
     const image = shown ? { key: name, load: () => ({ colour: shown, emissive: shown }) } : recipe.image;
     if (image) {
       const maps = image.load();
       material.setBaseColorFactor([1, 1, 1, 1]).setBaseColorTexture(textureOf(`${image.key}-colour`, maps.colour));
-      if (maps.emissive) {
+
+      // A neon tube, a screen and a beacon are the light, so their own picture is what glows when
+      // no separate one was supplied. A wall glows only where its emissive map says a window is
+      // lit, so without that map it does not glow at all: a factor on its own would light the
+      // whole surface, which is a building shining like a lamp.
+      const glow = maps.emissive ?? (recipe.lit ? maps.colour : undefined);
+      if (glow) {
         // A supplied picture lights itself; a drawn one is tinted by the finish's own colour.
         material.setEmissiveFactor(shown ? [1, 1, 1] : (recipe.emissive ?? [1, 1, 1]));
-        material.setEmissiveTexture(textureOf(`${image.key}-emissive`, maps.emissive));
+        // A surface lit by its own picture points both slots at one texture, not two copies.
+        material.setEmissiveTexture(textureOf(glow === maps.colour ? `${image.key}-colour` : `${image.key}-emissive`, glow));
       }
+    } else if (recipe.lit && recipe.emissive) {
+      // Plain mode: a line still glows, because a flat colour is all a line ever was.
+      material.setEmissiveFactor(recipe.emissive);
     }
 
     made.set(name, material);

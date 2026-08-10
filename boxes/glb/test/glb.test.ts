@@ -71,6 +71,18 @@ describe('buildGlb', () => {
     expect(written.getRoot().listMaterials().map((one) => one.getName()).sort()).toEqual(['facade', 'roof']);
   });
 
+  it('never lights a whole surface: a wall glows only where a map says a window is lit', async () => {
+    // An emissive factor with no map behind it lights every triangle it touches, so a building
+    // with no emissive map would come out shining like a lamp. Both modes are checked.
+    for (const one of [parseDocument({ ...doc, textures: false }), doc]) {
+      const read = await new NodeIO().readBinary((await buildGlb(one)).glb);
+      for (const material of read.getRoot().listMaterials()) {
+        if (material.getEmissiveTexture()) continue;
+        expect(material.getEmissiveFactor(), material.getName()).toEqual([0, 0, 0]);
+      }
+    }
+  });
+
   it('dresses one building in three families, and each one differently', async () => {
     const drawn = async (style: 'modern' | 'fifties' | 'cyber') => {
       const written = await new NodeIO().readBinary((await buildGlb(parseDocument({ ...doc, style }))).glb);

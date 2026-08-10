@@ -94,6 +94,8 @@ export type Finish = {
   roughness: number;
   /** What it gives off. A finish with an emissive map uses this as the tint on it. */
   emissive?: [number, number, number];
+  /** The whole surface is the light, rather than the few places an emissive map names. */
+  lit: boolean;
   /** One picture per element, instead of tiling by the metre. */
   fit: boolean;
   /** Metres of surface one tile covers, when it tiles. */
@@ -107,6 +109,11 @@ type Recipe = {
   metallic: number;
   roughness: number;
   emissive?: (style: Style) => Rgb;
+  /**
+   * The whole surface is the light: a neon tube, a screen, a beacon lens. Everything else glows
+   * only where its emissive map says so, which is a few windows in a dark wall.
+   */
+  lit?: boolean;
   fit?: boolean;
   tile?: number;
   /** The tile this finish draws, and the name it is shared under. */
@@ -206,6 +213,7 @@ const RECIPES: Record<string, Recipe> = {
     metallic: 0,
     roughness: 0.35,
     emissive: (style) => look(style).screen,
+    lit: true,
     fit: true,
     draws: { key: 'screen', draw: (style, seed) => drawScreen(look(style), seed) },
   },
@@ -214,6 +222,7 @@ const RECIPES: Record<string, Recipe> = {
     metallic: 0,
     roughness: 0.3,
     emissive: (style) => look(style).neon,
+    lit: true,
     tile: 1,
     draws: { key: 'neon', draw: (style, seed) => drawNeon(look(style), seed) },
   },
@@ -222,6 +231,7 @@ const RECIPES: Record<string, Recipe> = {
     metallic: 0,
     roughness: 0.3,
     emissive: () => [255, 70, 55],
+    lit: true,
     fit: true,
     draws: { key: 'beacon', draw: (style, seed) => drawBeacon(look(style), seed) },
   },
@@ -264,6 +274,7 @@ export function finish(name: string, at: Look): Finish | undefined {
     metallic: recipe.metallic,
     roughness: recipe.roughness,
     ...(emissive ? { emissive } : {}),
+    lit: recipe.lit ?? false,
     fit: recipe.fit ?? false,
     tile: recipe.tile ?? 3,
   };
