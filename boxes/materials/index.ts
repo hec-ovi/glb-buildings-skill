@@ -2,6 +2,7 @@
 export {
   finish,
   fits,
+  bands,
   known,
   splitName,
   tileOf,

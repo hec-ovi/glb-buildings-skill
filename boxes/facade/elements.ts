@@ -5,7 +5,7 @@
  * Everything bites a little into the wall behind it and reaches further out in front, so no
  * surface shares a plane with the wall and every part is seen from outside the section.
  */
-import { fits, PAINTS, PAINT_NOTES, type PaintName } from '#materials';
+import { bands, fits, tileOf, PAINTS, PAINT_NOTES, type PaintName } from '#materials';
 import { BuildingError } from '#spec';
 import { CONCRETE, Surface, type Patch, type Surfaces, type Vec } from '#kit';
 import { MARGIN, describeRect, type Face, type Rect } from './grid.ts';
@@ -72,18 +72,32 @@ export function claims(element: Element): Rect[] {
 const FULL: Patch = { u0: 0, u1: 1, v0: 0, v1: 1 };
 const EDGE: Patch = { u0: 0, u1: 0.04, v0: 0, v1: 1 };
 
+/** How far apart two points are on the ground, which is how wide a quad of a face is. */
+const across = (a: Vec, b: Vec): number => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+
+/**
+ * How a picture lands on one face of a part. A window fills it, a balustrade fills its height and
+ * repeats along its length so the balusters keep one pitch whatever the face is, and everything
+ * else tiles by the metre both ways.
+ */
+function patchOf(material: string, width: number): Patch | undefined {
+  if (bands(material)) return { u0: 0, u1: Math.max(0.25, width / tileOf(material)), v0: 0, v1: 1 };
+  return fits(material) ? FULL : undefined;
+}
+
 /** A box between two rectangles of the face: `near` behind, `far` in front. */
 function plate(surface: Surface, face: Face, floor: number, rect: Rect, near: number, far: number): void {
   const a = face.corners(floor, rect, near);
   const b = face.corners(floor, rect, far);
-  const fit = fits(surface.material);
+  const front = patchOf(surface.material, across(b[0], b[1]));
+  const edge = front ? EDGE : undefined;
 
-  surface.quad(b[0], b[1], b[2], b[3], fit ? FULL : undefined);
-  surface.quad(a[3], a[2], a[1], a[0], fit ? FULL : undefined);
-  surface.quad(a[0], a[1], b[1], b[0], fit ? EDGE : undefined);
-  surface.quad(a[1], a[2], b[2], b[1], fit ? EDGE : undefined);
-  surface.quad(a[2], a[3], b[3], b[2], fit ? EDGE : undefined);
-  surface.quad(a[3], a[0], b[0], b[3], fit ? EDGE : undefined);
+  surface.quad(b[0], b[1], b[2], b[3], front);
+  surface.quad(a[3], a[2], a[1], a[0], front);
+  surface.quad(a[0], a[1], b[1], b[0], edge);
+  surface.quad(a[1], a[2], b[2], b[1], edge);
+  surface.quad(a[2], a[3], b[3], b[2], edge);
+  surface.quad(a[3], a[0], b[0], b[3], edge);
 }
 
 /** Shrink a rectangle by one cell all round, which is the wall a pane shows against. */
@@ -147,16 +161,17 @@ function balcony(kit: Surfaces, face: Face, floor: number, element: Element): vo
     // the back. A side rail is the same box turned ninety degrees: 10 cm across and a metre and a
     // half deep, so putting the picture on the front there squeezes a whole balustrade into a
     // sliver and smears a strip of it down the side anybody can see.
-    const across = Math.hypot(b[1]![0] - b[0]![0], b[1]![2] - b[0]![2]);
-    const along = Math.hypot(b[0]![0] - a[0]![0], b[0]![2] - a[0]![2]);
-    const facingOut = across >= along;
-    const outward = fit ? (facingOut ? FULL : EDGE) : undefined;
-    const sideways = fit ? (facingOut ? EDGE : FULL) : undefined;
+    const wide = across(b[0]!, b[1]!);
+    const deep = across(b[0]!, a[0]!);
+    const facingOut = wide >= deep;
+    const dressed = fit || bands(surface.material);
+    const outward = facingOut ? patchOf(surface.material, wide) : dressed ? EDGE : undefined;
+    const sideways = facingOut ? (dressed ? EDGE : undefined) : patchOf(surface.material, deep);
 
     surface.quad(b[0]!, b[1]!, b[2]!, b[3]!, outward);
     surface.quad(a[3]!, a[2]!, a[1]!, a[0]!, outward);
-    surface.quad(a[0]!, a[1]!, b[1]!, b[0]!, fit ? EDGE : undefined);
-    surface.quad(a[2]!, a[3]!, b[3]!, b[2]!, fit ? EDGE : undefined);
+    surface.quad(a[0]!, a[1]!, b[1]!, b[0]!, dressed ? EDGE : undefined);
+    surface.quad(a[2]!, a[3]!, b[3]!, b[2]!, dressed ? EDGE : undefined);
 
     // The two faces that look along the balcony rather than out of it. Their corners start one
     // step round the same loop, so the winding is untouched and the picture lands the way up it

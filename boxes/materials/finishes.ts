@@ -106,6 +106,12 @@ export type Finish = {
   tint: number;
   /** One picture per element, instead of tiling by the metre. */
   fit: boolean;
+  /**
+   * Fills the height and repeats along the length. A balustrade is drawn once with its rail at
+   * the top and its balusters under it: fitted to each face it comes out at a different baluster
+   * pitch on a 4 m front and a 1.4 m side, and tiled both ways the rail lands anywhere.
+   */
+  band: boolean;
   /** Metres of surface one tile covers, when it tiles. */
   tile: number;
   /** The picture, in textured mode: what to call it, and how to get it. */
@@ -127,6 +133,7 @@ type Recipe = {
   /** Keeps all of its picture's brightness: it is a light, not a surface lit by one. */
   bright?: boolean;
   fit?: boolean;
+  band?: boolean;
   tile?: number;
   /** The tile this finish draws, and the name it is shared under. */
   draws?: { key: string; draw: (style: Style, seed: number) => Drawing };
@@ -198,7 +205,8 @@ const RECIPES: Record<string, Recipe> = {
     colour: (style) => look(style).rail,
     metallic: 0.25,
     roughness: 0.55,
-    fit: true,
+    band: true,
+    tile: 2,
     draws: { key: 'balcony', draw: (style, seed) => drawBalcony(look(style), seed) },
   },
   concrete: {
@@ -289,6 +297,11 @@ export function fits(name: string): boolean {
   return RECIPES[splitName(name).base]?.fit ?? false;
 }
 
+/** Whether it fills the height and repeats along the length, the way a balustrade does. */
+export function bands(name: string): boolean {
+  return RECIPES[splitName(name).base]?.band ?? false;
+}
+
 export type Look = {
   mode: Mode;
   style: Style;
@@ -319,6 +332,7 @@ export function finish(name: string, at: Look): Finish | undefined {
     alpha: recipe.alpha ?? 1,
     tint: shade,
     fit: recipe.fit ?? false,
+    band: recipe.band ?? false,
     tile: recipe.tile ?? 3,
   };
 
