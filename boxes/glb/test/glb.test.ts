@@ -45,8 +45,9 @@ describe('buildGlb', () => {
       ),
     });
     const { stats } = await buildGlb(composed);
-    // Base, walls, roof, and the two the face asked for.
-    expect(stats.materials).toBe(5);
+    // Base, the plain wall the composed section wears, the wall tile the others keep, the roof,
+    // and the two the face asked for.
+    expect(stats.materials).toBe(6);
   });
 
   it('draws one picture for the wall and the glass in it, not one each', async () => {

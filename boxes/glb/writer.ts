@@ -13,6 +13,7 @@ import { checkSupport, type Support } from '#check';
 import { dressFaces, type Element, type FacePlan } from '#facade';
 import {
   NEON,
+  WALL,
   WINDOW,
   Surface,
   Surfaces,
@@ -71,6 +72,9 @@ export const BUDGET: Record<string, number> = { flat: 120, light: 1200, full: 40
 export const ROOF_BUDGET = 4500;
 
 function shapeOf(band: PlacedBand, sunk: number, storey: number, tiles: Record<string, { across: number; down: number }>): SectionShape {
+  // A section somebody has composed on wears the plain wall: the tile with windows drawn in it
+  // puts one in the middle of every bay, which is exactly where a door composed on the bay goes.
+  const composed = band.faces.some((face) => face.elements.length > 0);
   return {
     bottom: metres(band.bottom),
     top: metres(band.top),
@@ -80,6 +84,7 @@ function shapeOf(band: PlacedBand, sunk: number, storey: number, tiles: Record<s
     windows: band.windows ? WINDOW : undefined,
     storey,
     tiles,
+    ...(composed ? { skin: WALL } : {}),
   };
 }
 
@@ -180,7 +185,11 @@ function palette(document: Document, look: Look, screens: Map<string, (Bitmap & 
     const image = shown ? { key: name, load: () => ({ colour: shown, emissive: shown }) } : recipe.image;
     if (image) {
       const maps = image.load();
-      material.setBaseColorFactor([1, 1, 1, recipe.alpha]).setBaseColorTexture(textureOf(`${image.key}-colour`, maps.colour));
+      // A photograph of a wall is lit for a photograph. Dropped to the finish's own tint it falls
+      // back where a dead surface belongs, and the lit things on it become the brightest thing on
+      // the building. A surface that is itself a light keeps all of its picture.
+      const tint = recipe.tint;
+      material.setBaseColorFactor([tint, tint, tint, recipe.alpha]).setBaseColorTexture(textureOf(`${image.key}-colour`, maps.colour));
 
       // A neon tube, a screen and a beacon are the light, so their own picture is what glows when
       // no separate one was supplied. A wall glows only where its emissive map says a window is

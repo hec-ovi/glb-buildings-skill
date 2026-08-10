@@ -15,6 +15,7 @@ export {
   GLASS,
   GLASS_BAND,
   ROOF,
+  WALL,
   CONCRETE,
   METAL,
   PIPE,

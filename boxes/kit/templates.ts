@@ -12,7 +12,7 @@
 import { FACADE_WALL, tileOf } from '#materials';
 import { BuildingError, type Tier } from '#spec';
 import { Surface, type MeshData, type Patch } from './geometry.ts';
-import { BASE, FACADE, GLASS, GLASS_BAND, PIPE, ROOF } from './names.ts';
+import { BASE, FACADE, GLASS, GLASS_BAND, PIPE, ROOF, WALL } from './names.ts';
 import { cap, capRing, walls, wires, type SectionShape } from './section.ts';
 import { greebles } from './greebles.ts';
 import { columns, type ColumnStyle } from './columns.ts';
@@ -32,7 +32,7 @@ export type Template = {
 /** One point of plain wall. Everything that is not a window takes its colour from there. */
 export const WALL_PATCH: Patch = { u0: FACADE_WALL.u, u1: FACADE_WALL.u, v0: FACADE_WALL.v, v1: FACADE_WALL.v };
 
-export { BASE, FACADE, GLASS, GLASS_BAND, ROOF, CONCRETE, METAL, PIPE, ANTENNA, BEACON, NEON } from './names.ts';
+export { BASE, FACADE, GLASS, GLASS_BAND, ROOF, WALL, CONCRETE, METAL, PIPE, ANTENNA, BEACON, NEON } from './names.ts';
 
 function surfaces(...list: Surface[]): MeshData[] {
   return list.filter((surface) => !surface.empty).map((surface) => surface.data());
@@ -44,7 +44,7 @@ const TEMPLATES: Template[] = [
     tier: 'flat',
     purpose: 'a plain section: four textured walls, windows live in the image',
     build: (shape) => {
-      const skin = new Surface(FACADE, WALL_PATCH);
+      const skin = new Surface(shape.skin ?? FACADE, WALL_PATCH, tileOf(shape.skin ?? FACADE));
       const pane = new Surface(GLASS, WALL_PATCH);
       walls(skin, shape, pane);
       cap(skin, capRing(shape, 0), 0, false);
@@ -84,7 +84,7 @@ const TEMPLATES: Template[] = [
     tier: 'light',
     purpose: 'the crown: a parapet and the roof deck that closes the building',
     build: (shape) => {
-      const skin = new Surface(FACADE, WALL_PATCH);
+      const skin = new Surface(shape.skin ?? FACADE, WALL_PATCH, tileOf(shape.skin ?? FACADE));
       walls(skin, shape);
       cap(skin, capRing(shape, 0), 0, false);
       const deck = new Surface(ROOF);

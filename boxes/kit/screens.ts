@@ -6,13 +6,13 @@
  * how wide, which floors it spans, and how far off the wall it stands.
  *
  * The panel carries its picture across its whole front, so one image is one screen whatever size
- * the screen is, and it hangs on brackets back to the wall so it is held rather than floating.
+ * the screen is, and it hangs in the air off the face with nothing holding it. A screen this size
+ * is a hologram or a drone rig, not a hoarding bolted to a wall, and the brackets only cluttered
+ * the one thing on the building that is meant to read as light.
  */
 import { BuildingError } from '#spec';
 import type { Vec } from './geometry.ts';
-import { METAL } from './names.ts';
 import { edgeFacing, facePoint, type SectionShape } from './section.ts';
-import { segment } from './segment.ts';
 import type { Surfaces } from './surfaces.ts';
 import type { Side } from './lines.ts';
 
@@ -42,7 +42,6 @@ export type ScreenStyle = {
  * as one, thick enough to still be a closed solid with every proof the kit makes about it intact.
  */
 const DEPTH = 0.06;
-const BITE = 0.05;
 
 /** How far in front of the picture the dotted glass sits, and what it is made of. */
 const GLASS_GAP = 0.03;
@@ -103,8 +102,7 @@ export function screen(kit: Surfaces, shape: SectionShape, style: ScreenStyle): 
    * coplanar, and a panel six centimetres thick built across them folds through itself.
    *
    * The plane is taken from the middle of the space it was given: the point it centres on, the way
-   * across, and the way up. The brackets are what take up the difference to the wall, which is
-   * what they do on a real building.
+   * across, and the way up.
    */
   const middleAt = (out: number) => at((t0 + t1) / 2, (span.left + span.right) / 2, out);
   const centre = middleAt(style.stand);
@@ -154,19 +152,4 @@ export function screen(kit: Surfaces, shape: SectionShape, style: ScreenStyle): 
   lens.quad(inner[1], inner[2], outer[2], outer[1]);
   lens.quad(inner[2], inner[3], outer[3], outer[2]);
   lens.quad(inner[3], inner[0], outer[0], outer[3]);
-
-  // Two brackets back to the wall, so the panel is held up by something.
-  const arms = kit.get(METAL);
-  const middle = (t0 + t1) / 2;
-  const reach = span.right - span.left;
-  for (const along of [span.left + reach * 0.2, span.right - reach * 0.2]) {
-    for (const t of [t0 + (t1 - t0) * 0.15, t0 + (t1 - t0) * 0.85]) {
-      segment(arms, [at(t, along, -BITE), at(t, along, style.stand - DEPTH + 0.02)], { profile: 'square', thickness: 0.12 });
-    }
-    // And a stiffener down the back between them.
-    segment(arms, [at(middle - (t1 - t0) * 0.4, along, style.stand - DEPTH + 0.02), at(middle + (t1 - t0) * 0.4, along, style.stand - DEPTH + 0.02)], {
-      profile: 'square',
-      thickness: 0.1,
-    });
-  }
 }

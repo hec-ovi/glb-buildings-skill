@@ -156,9 +156,13 @@ function balcony(kit: Surfaces, face: Face, floor: number, element: Element): vo
     surface.quad(b[0]!, b[1]!, b[2]!, b[3]!, outward);
     surface.quad(a[3]!, a[2]!, a[1]!, a[0]!, outward);
     surface.quad(a[0]!, a[1]!, b[1]!, b[0]!, fit ? EDGE : undefined);
-    surface.quad(a[1]!, a[2]!, b[2]!, b[1]!, sideways);
     surface.quad(a[2]!, a[3]!, b[3]!, b[2]!, fit ? EDGE : undefined);
-    surface.quad(a[3]!, a[0]!, b[0]!, b[3]!, sideways);
+
+    // The two faces that look along the balcony rather than out of it. Their corners start one
+    // step round the same loop, so the winding is untouched and the picture lands the way up it
+    // was drawn: without that a balustrade on a side rail comes out lying on its side.
+    surface.quad(a[2]!, b[2]!, b[1]!, a[1]!, sideways);
+    surface.quad(a[0]!, b[0]!, b[3]!, a[3]!, sideways);
   };
 
   const left = rect.col;

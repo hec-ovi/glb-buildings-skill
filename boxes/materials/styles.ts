@@ -47,6 +47,14 @@ export type StyleSheet = {
   /** What dirt is here, and how much of it: 0 is new, 1 is fifty years of weather. */
   grime: Rgb;
   wear: number;
+  /** Built of small units laid in courses, rather than of large panels. */
+  masonry: boolean;
+  /**
+   * How much of a picture's own brightness a dead surface keeps. A photograph of a wall is lit for
+   * a photograph: dropped to this, the wall falls back where it belongs and the lit things on it
+   * become the brightest thing on the building, which is the whole look.
+   */
+  dim: number;
 };
 
 const SHEETS: Record<Style, StyleSheet> = {
@@ -74,6 +82,8 @@ const SHEETS: Record<Style, StyleSheet> = {
     screen: [235, 240, 250],
     grime: [70, 68, 64],
     wear: 0.08,
+    masonry: false,
+    dim: 0.62,
   },
   fifties: {
     wall: [136, 116, 88],
@@ -100,6 +110,8 @@ const SHEETS: Record<Style, StyleSheet> = {
     screen: [226, 214, 186],
     grime: [58, 48, 38],
     wear: 0.75,
+    masonry: true,
+    dim: 0.58,
   },
   cyber: {
     wall: [10, 11, 13],
@@ -127,6 +139,8 @@ const SHEETS: Record<Style, StyleSheet> = {
     screen: [255, 90, 220],
     grime: [18, 20, 24],
     wear: 0.4,
+    masonry: false,
+    dim: 0.34,
   },
 };
 

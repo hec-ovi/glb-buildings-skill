@@ -96,6 +96,8 @@ must not drift toward any edge, or the repeat shows up as a chequerboard.
 | Finish | What it is | Generate | Ship | Emissive |
 | --- | --- | --- | --- | --- |
 | `facade` | the wall, 8 bays x 4 floors, seamless | 2048 x 1024 | 1024 x 512 | yes |
+| `wall` | the same wall with **no windows**, seamless | 1024 x 1024 | 512 x 512 | no |
+| `base` | street level, no windows, seamless | 1024 x 1024 | 512 x 512 | no |
 | `glass-band` | floors of nothing but glazing, same grid | 2048 x 1024 | 1024 x 512 | yes |
 | `window` | one window unit, fills the element | 512 x 512 | 256 x 256 | no |
 | `door` | one door leaf, fills the element | 512 x 1024 | 256 x 512 | yes |
@@ -106,8 +108,11 @@ must not drift toward any edge, or the repeat shows up as a chequerboard.
 | `antenna` | 0.6 m square, seamless | 512 x 512 | 256 x 256 | no |
 | `roof` | 3 m square, seamless, seen from above | 1024 x 1024 | 512 x 512 | no |
 | `screen` | one panel, fills the element | 1024 x 512 | 512 x 256 | yes |
-| `neon` | wraps the tube across, 1 m of run down, seamless | 512 x 512 | 256 x 256 | yes |
-| `beacon` | one lens, fills the element | 256 x 256 | 128 x 128 | yes |
+
+**`neon` and `beacon` take no picture at all.** They are lights: a flat colour emitting the same colour is
+brighter and reads better at any distance than a photograph of a tube. Give a line its colour on the command
+line instead, `--colour cyan` or `#ff2f88`. **`screen-glass`**, the dot matrix over a screen, is drawn from
+code too: it is mostly transparent, and transparency is not something an image model gives you.
 
 Colour and emissive are sRGB. Normal, roughness and AO are derived afterwards and are linear.
 
@@ -217,6 +222,30 @@ realism, extreme realist.
 ```
 
 *Emissive:* the same layout, lit panels flat and even, everything else absolute black.
+
+### `modern/wall_1.jpg`
+
+The same building with the windows taken out: what a floor you compose your own openings onto is made of.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of a modern building's cladding with NO WINDOWS in it at all, flat
+overcast daylight, dead flat-on with a long telephoto. Large champagne anodised aluminium rainscreen panels
+with fine shadow-gap joints between them, a soft brushed grain running horizontally, the odd hairline mark
+and a faint blue cast from the sky. NO window, NO glass, NO opening, NO frame, NO mullion of any kind: this
+is the blank wall between them. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+### `modern/base_1.jpg`
+
+The street level wall, which is heavier and plainer than the floors above it and carries the entrance.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the polished stone cladding at the base of a modern
+tower, flat overcast daylight, dead flat-on with a long telephoto. Large honed grey-green granite panels with
+fine open joints between them, faint crystalline flecks catching the light, a slightly darker panel among
+them, dust and a scuff or two low down where people pass it. NO window, NO glass, NO opening, NO door: this
+is the wall an entrance is cut into, not the entrance. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
 
 ### `modern/window_1.jpg`
 
@@ -392,6 +421,29 @@ realistic, hyper realism, extreme realist.
 ```
 
 *Emissive:* the same layout, lit panels flat, everything else black.
+
+### `fifties/wall_1.jpg`
+
+Brick with no windows in it: what a floor with balconies and its own doors is built of.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of 1950s buff yellow brickwork with NO WINDOWS in it at
+all, flat overcast daylight, dead flat-on with a long telephoto. Stretcher bond, pale lime mortar raked back
+a little, every brick a slightly different shade from buff to pink to grey, a few overburnt darker ones, fine
+chips at the arrises, soot darkening in patches and an old repointed area where the mortar is greyer. NO
+window, NO glass, NO opening, NO frame, NO sill: this is the blank brick between them. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+### `fifties/base_1.jpg`
+
+The stall riser and plinth at street level, which is not brick and takes the knocks.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the rendered and painted plinth at the base of a 1950s
+block, flat overcast daylight, dead flat-on with a long telephoto. Cement render painted a dull ochre cream,
+gone chalky, blistered and flaking in patches to the grey render beneath, a tide line of dirt low down, a
+patched repair in fresher render, hairline cracks. NO window, NO glass, NO opening, NO door. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
 
 ### `fifties/window_1.jpg`
 
@@ -570,6 +622,29 @@ Vary the four: `_1` red-orange. `_2` cold cyan-white. `_3` amber. `_4` magenta i
 
 *Emissive:* the same layout, lit panels at full brightness, dimmed ones at about a fifth, everything else
 absolute black.
+
+### `cyber/wall_1.jpg`
+
+Blank panel: what a floor carrying a screen, a balcony or its own doors is made of.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of near-black composite panel from a futuristic
+megastructure, at night under weak ambient light, dead flat-on with a long telephoto. Matte dark panels with
+fine recessed joints, a bundled conduit run pinned across it, two small vents, a stencilled maintenance code
+in dim grey, condensation and a faint wet sheen. NO window, NO slit, NO glass, NO opening, NO light of any
+kind: this is the dark panel between them, and it stays at 10 to 14 out of 255. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
+
+### `cyber/base_1.jpg`
+
+Street level: heavier, scarred, and the one part of the building people touch.
+
+```
+Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the armoured base panelling of a futuristic
+megastructure at night, dead flat-on with a long telephoto. Heavy dark gunmetal plates with recessed hex
+bolts, a black and yellow hazard chevron band low down, stencilled unit numbers, scuffs and impact marks,
+a faded spray tag, grime collected in the joints, wet sheen. NO window, NO glass, NO opening, NO door. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+```
 
 ### `cyber/window_1.jpg`
 

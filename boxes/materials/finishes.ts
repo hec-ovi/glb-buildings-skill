@@ -23,6 +23,7 @@ import { drawPipe } from './templates/pipe.ts';
 import { drawRoof } from './templates/roof.ts';
 import { drawScreen } from './templates/screen.ts';
 import { drawScreenGlass } from './templates/screenglass.ts';
+import { drawWall } from './templates/wall.ts';
 import { drawWindow } from './templates/window.ts';
 
 export const MODES = ['textured', 'plain'] as const;
@@ -50,7 +51,7 @@ export const PAINT_NOTES: Record<PaintName, string> = {
 };
 
 /** The rest of the library, which geometry names for itself. */
-export const FINISHES: string[] = [...PAINTS, 'facade', 'base', 'glass', 'glass-band', 'screen-glass', 'beacon', 'roof'];
+export const FINISHES: string[] = [...PAINTS, 'facade', 'wall', 'base', 'glass', 'glass-band', 'screen-glass', 'beacon', 'roof'];
 
 /** Colours a finish can be tinted with, and anything else as #rrggbb. */
 const COLOURS: Record<string, Rgb> = {
@@ -98,6 +99,11 @@ export type Finish = {
   lit: boolean;
   /** How solid it is. Under 1 the file blends it, so what is behind shows through. */
   alpha: number;
+  /**
+   * How much of its picture's brightness this surface keeps, 0 to 1. A dead material is dropped
+   * back so the lit ones read; anything that is itself a light keeps all of it.
+   */
+  tint: number;
   /** One picture per element, instead of tiling by the metre. */
   fit: boolean;
   /** Metres of surface one tile covers, when it tiles. */
@@ -118,6 +124,8 @@ type Recipe = {
   lit?: boolean;
   /** Under 1 makes it see-through: a screen, and the dotted glass over one. */
   alpha?: number;
+  /** Keeps all of its picture's brightness: it is a light, not a surface lit by one. */
+  bright?: boolean;
   fit?: boolean;
   tile?: number;
   /** The tile this finish draws, and the name it is shared under. */
@@ -139,6 +147,14 @@ const RECIPES: Record<string, Recipe> = {
     tile: 3,
     draws: facade,
   },
+
+  wall: {
+    colour: (style) => look(style).wall,
+    metallic: 0,
+    roughness: 0.9,
+    tile: 3,
+    draws: { key: 'wall', draw: (style, seed) => drawWall(look(style), seed) },
+  },
   base: {
     colour: (style) => look(style).concrete,
     metallic: 0,
@@ -158,6 +174,7 @@ const RECIPES: Record<string, Recipe> = {
     colour: (style) => look(style).glass,
     metallic: 0.2,
     roughness: 0.15,
+    bright: true,
     emissive: () => WHITE,
     tile: 3,
     draws: { key: 'glass-band', draw: (style, seed) => drawGlassBand(look(style), seed) },
@@ -288,7 +305,10 @@ export function finish(name: string, at: Look): Finish | undefined {
   const recipe = RECIPES[base];
   if (!recipe) return undefined;
 
-  const flat = colour ?? recipe.colour(at.style);
+  // The flat colour drops with the same tint, so plain mode and textured mode read the same.
+  const shade = recipe.bright || recipe.lit ? 1 : sheet(at.style).dim;
+  const raw = colour ?? recipe.colour(at.style);
+  const flat: Rgb = colour ? raw : [raw[0] * shade, raw[1] * shade, raw[2] * shade];
   const emissive = recipe.emissive ? unit(colour ?? recipe.emissive(at.style)) : undefined;
   const made: Finish = {
     colour: unit(flat),
@@ -297,6 +317,7 @@ export function finish(name: string, at: Look): Finish | undefined {
     ...(emissive ? { emissive } : {}),
     lit: recipe.lit ?? false,
     alpha: recipe.alpha ?? 1,
+    tint: shade,
     fit: recipe.fit ?? false,
     tile: recipe.tile ?? 3,
   };

@@ -35,6 +35,11 @@ export type SectionShape = {
    * out, the grid the kit draws its own tiles on.
    */
   tiles?: Record<string, { across: number; down: number }>;
+  /**
+   * What the skin is made of. A section somebody composes windows and doors onto wears the plain
+   * wall instead of the one with windows drawn in it, or the two land in the same place.
+   */
+  skin?: string;
 };
 
 /** The footprint partway up the section. */

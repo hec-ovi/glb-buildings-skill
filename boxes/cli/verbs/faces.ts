@@ -153,10 +153,11 @@ export const put: Verb = {
     // or a balcony takes the face's own bay, because the wall texture draws one window per bay and
     // a rhythm on that pitch lands under them.
     //
-    // A door is the exception and is one door. A building has an entrance, not a row of them, and
-    // a rhythm of front doors is the thing nobody ever wants and everybody gets by accident.
+    // A door and a balcony are the exceptions and come one at a time. A building has an entrance,
+    // not a row of them, and a balcony on every bay of every floor is a motel: one or two of them,
+    // placed, is what makes a facade. Ask for `--every` and they repeat like anything else.
     const asked = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
-    const repeats = kind !== 'door' || asked !== undefined;
+    const repeats = (kind !== 'door' && kind !== 'balcony') || asked !== undefined;
     const pitch = byShape ? (asked ?? Math.round(grid.bayCells)) : asked;
 
     // A rhythm starts in the middle of its first bay rather than against the margin, so the run
