@@ -397,6 +397,20 @@ describe('a picture generated for a pack', () => {
     expect(declared).toEqual({ facade_1: { across: 10, down: 3 }, facade_2: { across: 6, down: 5 } });
   });
 
+  it('declares a picture that is already there, without a file, once its bays have been counted', async () => {
+    await call('new', 'tower-a', '--style', 'cyber');
+    const wall = join(await mkdtemp(join(tmpdir(), 'made-')), 'wall.png');
+    await writeFile(wall, png({ width: 8, height: 4, rgba: new Uint8Array(8 * 4 * 4) }));
+    await call('add-texture', 'facade', wall);
+
+    expect(await call('add-texture', 'facade', '--as', '1', '--across', '8', '--down', '4')).toMatchObject({
+      declaredOnly: 'facade_1',
+      declared: { across: 8, down: 4 },
+    });
+    // Nothing to install and nothing to say is the one thing it cannot do anything with.
+    expect(await call('add-texture', 'facade', '--as', '1')).toMatchObject({ ok: false, code: 'E_DOC_INVALID' });
+  });
+
   it('refuses a finish it does not have, and one that is a light rather than a surface', async () => {
     await call('new', 'tower-a');
     const wall = join(await mkdtemp(join(tmpdir(), 'made-')), 'wall.png');

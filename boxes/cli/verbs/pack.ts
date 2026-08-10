@@ -7,7 +7,7 @@
  * whoever made the image only has to say which finish it is for.
  */
 import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
+import { extname, join, resolve } from 'node:path';
 import { gridded, known, loadImage, loadPack, pictured, STYLES } from '#materials';
 import { BuildingError } from '#spec';
 import type { Verb } from './verb.ts';
@@ -49,7 +49,7 @@ async function declare(dir: string, key: string, said: { across: number; down: n
 export const addTexture: Verb = {
   name: 'add-texture',
   summary: 'put a generated picture into a style pack, named and declared so the build reads it',
-  usage: 'add-texture <finish> <file> [--emissive file] [--across 8 --down 4] [--metres 1.6] [--style cyber] [--as 2]',
+  usage: 'add-texture <finish> [file] [--emissive file] [--across 8 --down 4] [--metres 1.6] [--style cyber] [--as 2]',
   async run(args, { projects }) {
     const { positionals, values } = parse(args, {
       emissive: { type: 'string' },
@@ -61,7 +61,9 @@ export const addTexture: Verb = {
     });
 
     const finish = need(positionals, 0, 'finish name');
-    const picture = need(positionals, 1, 'the image file');
+    // No file is the other job this verb does: say what a picture already in the pack holds,
+    // which is what you want once you have counted its bays, or when it was dropped in by hand.
+    const picture = positionals[1];
 
     if (!known(finish)) {
       throw new BuildingError('E_DOC_INVALID', `no finish named ${finish}. Run \`buildings face <section>\` to see the ones a part can be given`, ['finish', finish]);
@@ -79,29 +81,48 @@ export const addTexture: Verb = {
       style = (await project.readDocument()).style;
     }
 
-    const image = await loadImage(picture);
     const dir = join(projects.textures, style);
     await mkdir(dir, { recursive: true });
 
     const asked = count(values.as, 'as');
-    const variant = asked ?? (await nextVariant(dir, finish));
-    const name = `${finish}_${variant}${extname(picture).toLowerCase()}`;
-    await copyFile(picture, join(dir, name));
-
-    let glow: string | undefined;
-    const lit = text(values.emissive);
-    if (lit) {
-      await loadImage(lit);
-      glow = `${finish}_${variant}-emissive${extname(lit).toLowerCase()}`;
-      await copyFile(lit, join(dir, glow));
-    }
-
     const across = count(values.across, 'across');
     const down = count(values.down, 'down');
     const metres = text(values.metres) ? Number(text(values.metres)) : undefined;
     let declared: { across: number; down: number } | { metres: number } | undefined;
     if (across && down) declared = { across, down };
     else if (metres && metres > 0) declared = { metres };
+
+    if (!picture && (asked === undefined || !declared)) {
+      throw new BuildingError(
+        'E_DOC_INVALID',
+        'give an image file to install, or say which picture you are declaring and what it holds: `--as 5 --across 8 --down 4`',
+        ['add-texture'],
+      );
+    }
+
+    const variant = asked ?? (await nextVariant(dir, finish));
+    const already = await loadPack(projects.textures, style);
+    if (!picture && !already.finishes.includes(finish)) {
+      throw new BuildingError('E_DOC_INVALID', `${style} carries no ${finish} picture to declare. Install one first`, ['finish', finish]);
+    }
+
+    let name: string | undefined;
+    let glow: string | undefined;
+    let pixels: string | undefined;
+    if (picture) {
+      const image = await loadImage(picture);
+      pixels = image.size ? `${image.size.width} x ${image.size.height}` : undefined;
+      name = `${finish}_${variant}${extname(picture).toLowerCase()}`;
+      if (resolve(picture) !== resolve(join(dir, name))) await copyFile(picture, join(dir, name));
+
+      const lit = text(values.emissive);
+      if (lit) {
+        await loadImage(lit);
+        glow = `${finish}_${variant}-emissive${extname(lit).toLowerCase()}`;
+        if (resolve(lit) !== resolve(join(dir, glow))) await copyFile(lit, join(dir, glow));
+      }
+    }
+
     if (declared) await declare(dir, `${finish}_${variant}`, declared);
 
     // A wall picture that never says what grid it holds is stretched over the one the kit draws,
@@ -113,13 +134,13 @@ export const addTexture: Verb = {
       style,
       finish,
       variant,
-      file: join(dir, name),
+      ...(name ? { file: join(dir, name) } : { declaredOnly: `${finish}_${variant}`, dir }),
       ...(glow ? { emissive: join(dir, glow) } : {}),
-      ...(image.size ? { pixels: `${image.size.width} x ${image.size.height}` } : {}),
+      ...(pixels ? { pixels } : {}),
       ...(declared ? { declared } : {}),
       pack: pack.variants[finish] ?? 1,
       note: undeclared
-        ? `count the window bays across and the floors down in the picture and say so: \`buildings add-texture ${finish} <file> --across 8 --down 4\`. Until then it is laid out on the grid the kit draws, and its windows will not land on the floors`
+        ? `count the window bays across and the floors down in the picture and say so: \`buildings add-texture ${finish} --as ${variant} --across 8 --down 4\`. Until then it is laid out on the grid the kit draws, and its windows will not land on the floors`
         : 'build the building again to see it',
     };
   },

@@ -26,14 +26,18 @@ and how many pictures that finish now has.
 its own name, so a second and third wall is what stops a street looking like one building. Each one
 is declared for itself, so they need not be the same shape or hold the same grid.
 
-## Which batch you need
+## Which part you need
 
-| The picture is | Read |
+| You want | Read |
 | --- | --- |
+| what every finish is, what the two families look like, how to save one and reuse it | `parts/textures-glossary.md` |
 | a wall: the facade and its windows, a blank wall, the street level, a band of full glazing | `parts/textures-walls.md` |
 | one thing on a wall: a window, a door, a balustrade, a sign panel | `parts/textures-elements.md` |
 | a material: concrete, metal, pipe, antenna steel, roof membrane | `parts/textures-materials.md` |
-| an ad for a screen on a cyberpunk tower | `parts/textures-ads.md` |
+| an ad for a screen on a cyberpunk tower, and how to make it read as a light | `parts/textures-ads.md` |
+
+**Read the glossary first if you are not sure which finish the thing you want to make is.** Half the
+mistakes are a picture generated for the wrong name.
 
 ## The five rules
 

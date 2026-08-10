@@ -34,11 +34,32 @@ size is only quality. Pick the shape from where the ad goes on the building.
 | square | 1:1 | a short wide section, two or three floors | 1536 x 1536 | 768 x 768 |
 | band | 3:1 | wrapping a base or a setback | 2048 x 683 | 1024 x 341 |
 
+## What the material does with the picture, and why it decides the picture
+
+The image is used twice: as the panel's colour, and as what the panel **emits**, a little over the brightest
+a plain surface can be. Every pixel is its own light and a black pixel emits nothing, the way an LED wall
+works. Three consequences, and they are most of what separates a screen from a bright rectangle:
+
+- **Black has to be black.** Whatever grey the ground is, the panel emits it, and a screen that emits
+  everywhere is a lamp with a picture faintly printed on it.
+- **Only the highlights should bleed.** The renderer bleeds light into the air around anything past about
+  0.85 of full brightness. Small very bright areas against a lot of black read as a source; a bright field
+  blurs into itself and every ad in a city becomes the same white shape.
+- **Green decides how much it glows.** Brightness is weighted for the eye, roughly 0.21 red, 0.72 green,
+  0.07 blue, so a saturated magenta or deep red ad throws far less light than a cyan or white one at the
+  same exposure. An ad in warm reds still wants one small near-white element, or it reads as a printed
+  poster rather than a screen.
+
 ## Rules for all of them
 
 - **Fill the frame edge to edge.** No bezel, no border, no frame, no margin, no drop shadow. The panel is
   geometry; the picture is only what is on it.
-- **Near-black ground.** These are seen at night against a dark building. A pale ad reads as a hole.
+- **Pure black ground.** These are seen at night against a dark building. A pale ad reads as a hole, and a
+  grey one glows all over.
+- **No baked glow.** No halo painted round the subject, no lens bloom, no light rays. The renderer adds the
+  bleed; a painted one bleeds again on top of itself.
+- **Highlights just short of clipping.** The material takes them over the line. A picture that is already
+  blown out has nothing left to blow out with.
 - **One subject, huge.** It is read from two hundred metres. Anything with three things in it reads as
   nothing.
 - **Two or three saturated colours** carrying the whole image, against the black.

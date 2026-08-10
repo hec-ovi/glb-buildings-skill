@@ -21,6 +21,7 @@ Match the request to a row, open the file it names (next to this one), then run 
 | to lay out a roof: turbines, pipes, tanks, masts | `parts/roof.md` |
 | sizes that look right: floor heights, doors, guards, bays | `parts/dimensions.md` |
 | to generate the pictures a building wears, with an image tool of your own | `parts/textures.md` |
+| what a family already has, what each finish is, how to save a picture and reuse it | `parts/textures-glossary.md` |
 
 ## Always
 
