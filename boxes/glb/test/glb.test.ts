@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { NodeIO } from '@gltf-transform/core';
+import { KHRMaterialsEmissiveStrength } from '@gltf-transform/extensions';
 import { buildGlb, validateGlb } from '#glb';
 import { BuildingError, newDocument, parseDocument } from '#spec';
+
+/** Reads what the writer writes, lights and all, rather than warning about the one extension. */
+const io = () => new NodeIO().registerExtensions([KHRMaterialsEmissiveStrength]);
 
 const doc = newDocument('tower-a', { width: 18, depth: 14, floors: 12 });
 
@@ -55,7 +59,7 @@ describe('buildGlb', () => {
       ...doc,
       bands: doc.bands.map((band) => (band.id === 'body' ? { ...band, tier: 'light', windows: true } : band)),
     });
-    const written = await new NodeIO().readBinary((await buildGlb(cut)).glb);
+    const written = await io().readBinary((await buildGlb(cut)).glb);
     const materials = written.getRoot().listMaterials();
     const wall = materials.find((one) => one.getName() === 'facade')!;
     const glass = materials.find((one) => one.getName() === 'glass')!;
@@ -66,7 +70,7 @@ describe('buildGlb', () => {
 
   it('carries no pictures at all when the building is built plain', async () => {
     const plain = parseDocument({ ...doc, textures: false });
-    const written = await new NodeIO().readBinary((await buildGlb(plain)).glb);
+    const written = await io().readBinary((await buildGlb(plain)).glb);
 
     expect(written.getRoot().listTextures()).toEqual([]);
     // The materials are still there and still named, so an engine can drop its own on them.
@@ -77,7 +81,7 @@ describe('buildGlb', () => {
     // An emissive factor with no map behind it lights every triangle it touches, so a building
     // with no emissive map would come out shining like a lamp. Both modes are checked.
     for (const one of [parseDocument({ ...doc, textures: false }), doc]) {
-      const read = await new NodeIO().readBinary((await buildGlb(one)).glb);
+      const read = await io().readBinary((await buildGlb(one)).glb);
       for (const material of read.getRoot().listMaterials()) {
         if (material.getEmissiveTexture()) continue;
         expect(material.getEmissiveFactor(), material.getName()).toEqual([0, 0, 0]);
@@ -85,14 +89,13 @@ describe('buildGlb', () => {
     }
   });
 
-  it('dresses one building in three families, and each one differently', async () => {
-    const drawn = async (style: 'modern' | 'fifties' | 'cyber') => {
-      const written = await new NodeIO().readBinary((await buildGlb(parseDocument({ ...doc, style }))).glb);
+  it('dresses one building in either family, and each one differently', async () => {
+    const drawn = async (style: 'modern' | 'cyber') => {
+      const written = await io().readBinary((await buildGlb(parseDocument({ ...doc, style }))).glb);
       const facade = written.getRoot().listTextures().find((one) => one.getName() === 'facade-colour')!;
       return [...facade.getImage()!];
     };
-    expect(await drawn('modern')).not.toEqual(await drawn('fifties'));
-    expect(await drawn('cyber')).not.toEqual(await drawn('fifties'));
+    expect(await drawn('modern')).not.toEqual(await drawn('cyber'));
   });
 
   it('steps a section in over the one below, and keeps every section closed', async () => {
@@ -125,7 +128,7 @@ describe('buildGlb', () => {
 
   it('keeps metres, Y up, and a plain node transform per section', async () => {
     const { glb } = await buildGlb(doc);
-    const read = await new NodeIO().readBinary(glb);
+    const read = await io().readBinary(glb);
     const root = read.getRoot();
 
     expect(root.listExtensionsRequired()).toEqual([]);
@@ -189,13 +192,26 @@ describe('buildGlb', () => {
     const { glb, stats } = await buildGlb(lit);
     expect((await validateGlb(glb)).errors).toEqual([]);
 
-    const names = (await new NodeIO().readBinary(glb)).getRoot().listMaterials().map((one) => one.getName());
+    const names = (await io().readBinary(glb)).getRoot().listMaterials().map((one) => one.getName());
     // Two colours of line are two materials over one picture, and the screen is its own.
     expect(names).toContain('neon:cyan');
     expect(names).toContain('neon:magenta');
     expect(names).toContain('neon:red');
     expect(names).toContain('screen-body-1');
     expect(stats.triangles).toBeGreaterThan(0);
+  });
+
+  it('stands a lit mast on every cyber roof, whether or not anyone asked for one', async () => {
+    // The lit tip is what puts this kind of tower against the sky, so it is the toolkit's job and
+    // not a thing to remember. A modern building is left alone.
+    const lit = await buildGlb(parseDocument({ ...doc, style: 'cyber' }));
+    const names = (await io().readBinary(lit.glb)).getRoot().listMaterials().map((one) => one.getName());
+    expect(names).toContain('antenna');
+    expect(names).toContain('beacon:red');
+
+    const plain = await buildGlb(parseDocument({ ...doc, style: 'modern' }));
+    const quiet = (await io().readBinary(plain.glb)).getRoot().listMaterials().map((one) => one.getName());
+    expect(quiet).not.toContain('beacon:red');
   });
 
   it('refuses a screen that would stand inside the wall it hangs on', async () => {

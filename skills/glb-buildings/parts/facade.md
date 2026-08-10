@@ -14,8 +14,8 @@ So the rhythm is: **four or five plain floors, then one composed floor**, and re
 
 ```bash
 buildings enhance body.f11 --style ledge          # lift one floor into its own section
-buildings put balcony --row 2 --wide 2.2 --tall 1.2 --every 3 --section body-e11
-buildings put door --row 4 --wide 0.9 --tall 2.1 --every 3 --section body-e11
+buildings put balcony --row 2 --wide 4.5 --tall 1.3 --section body-e11
+buildings put door --row 4 --wide 0.9 --tall 2.1 --section body-e11
 ```
 
 `enhance` splits the run: the floors below keep the section id, the chosen floor becomes
@@ -25,10 +25,13 @@ Compose on the middle one. The two plain runs stay flat and stay free.
 That is where balconies, doors, deep reveals, screens and landing decks go: on the one floor that
 is meant to be looked at. It is also what keeps a forty floor tower under a thousand triangles.
 
-**A rhythm lines up with the texture on its own.** The wall tile draws one window per 3 m bay, and
-`--every 3` steps the same 3 m and starts in the middle of the first bay, so what you compose on
-the special floor sits directly under the windows the plain floors draw. Use `--every 3` and do
-not count columns.
+**A rhythm lines up with the texture on its own.** Leave `--every` out: the face steps its own bay,
+which is the pitch the wall texture draws, and starts in the middle of the first one. What you
+compose on the worked floor sits directly under the windows the plain floors draw. `buildings face`
+prints the bay if you want to see it.
+
+**A door and a balcony come one at a time.** A building has an entrance, not a row of them, and a
+balcony on every bay is a motel. Both are placed once, centred, unless you ask for `--every`.
 
 ## Read the face first
 
@@ -106,8 +109,8 @@ A balcony always builds its slab in `concrete`, whatever its balustrade is made 
 | `neon` | a lit tube in a housing. Give it a colour: `neon:cyan`, `neon:#ff2f88` |
 
 What each one actually looks like depends on the building's `style`: the same `concrete` is pale precast on
-a `modern` tower and stained board-formed concrete on a `fifties` one. Run `buildings style` to see which
-family this building wears.
+a `modern` tower and dark stained concrete on a `cyber` one. Run `buildings style` to see which family
+this building wears.
 
 ## Sizes in cells
 

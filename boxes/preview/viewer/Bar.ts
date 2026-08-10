@@ -15,7 +15,7 @@ import { element } from './dom.ts';
  * What is on screen: the drawing, the drawing over the built file, or the building on its own
  * with nothing drawn over it. `final` is the one to look at when you want to see the product.
  */
-export const VIEWS = ['blueprint', 'model', 'final'] as const;
+const VIEWS = ['blueprint', 'model', 'final'] as const;
 export type View = (typeof VIEWS)[number];
 
 export type BarHandlers = {

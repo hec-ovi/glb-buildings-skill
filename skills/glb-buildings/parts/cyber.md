@@ -61,7 +61,7 @@ Compose the other faces if you want detail.
 ## Screens
 
 A screen stands off a face by about a metre and spans many floors. It carries one picture across its whole
-front and hangs on brackets, so it is held rather than floating.
+front, and hangs in the air off the face with nothing holding it.
 
 ```bash
 buildings screen body --side E --along 3 --width 8 --from 6 --to 18
@@ -80,12 +80,16 @@ shopping centre, not a skyline.
 
 ```bash
 buildings crown crown --colour red
-buildings place mast C2 --section crown
 buildings place dish A1 B4 --section crown
 ```
 
 `crown` runs a lit line round the top edge of a section. Put it on the roof, or on a section that steps in,
-where the edge is seen. A mast carries a red beacon on its tip on its own: you do not place that.
+where the edge is seen.
+
+**Every cyber roof gets a lit mast, whether you ask or not.** A tower of this kind is read against the sky
+and the beacon on the tip is what puts it there, so the toolkit stands one as near the middle of the deck as
+there is room for. Place your own with `buildings place mast <cell>` if you want it somewhere particular;
+one is already there if you do not.
 
 ## Keep it dark
 
@@ -96,7 +100,7 @@ where the edge is seen. A mast carries a red beacon on its tip on its own: you d
   big panels belong there.
 - **Greebles are off** on any section carrying lines, screens or composed elements. That is automatic.
 - A `flat` section may carry lines and a crown. Adding a screen to one usually needs `light`, because the
-  panel and its brackets cost more than 120 triangles a floor on a short section. Move it with
+  panel and its dotted glass cost more than 120 triangles a floor on a short section. Move it with
   `--tier light` if the build says so.
 
 ## A tower, end to end
@@ -110,7 +114,6 @@ buildings add-band upper --kind bulk --tier flat --floors 10 --inset 1.5 --after
 buildings line body --side S --count 5 --spacing 3.5 --colours cyan,magenta,red
 buildings screen body --side E --along 3 --width 8 --from 8 --to 20
 buildings crown crown --colour red
-buildings place mast C2 --section crown
 buildings build
 ```
 

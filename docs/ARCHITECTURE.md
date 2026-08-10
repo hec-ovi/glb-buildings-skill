@@ -91,9 +91,9 @@ glass material rather than copied.
 
 Two settings on the building, not on a section.
 
-**Style** is the family every finish comes from: `modern`, `fifties`, `cyber`. A style is a sheet of colours
+**Style** is the family every finish comes from: `modern` or `cyber`. A style is a sheet of colours
 and a wear number, and every texture template reads what it needs from it, so one set of templates draws a
-curtain wall tower, a 1950s block and a near black megastructure without a branch anywhere.
+curtain wall tower and a near black megastructure without a branch anywhere.
 
 **Textures** is whether the file carries pictures at all. On, every part carries its own: windows, cast
 concrete, painted pipe, galvanised steel, a lit screen. Off, the file holds no images and every part is a
@@ -112,9 +112,12 @@ the grid repeats its design on every floor and these span floors on purpose.
 ## The file
 
 Plain glTF 2.0: metres, Y up, right handed, one UV set, PBR metallic roughness, no Draco, no meshopt, no
-texture transform, `extensionsRequired` empty. Materials are made on demand and named after what they dress
-(`facade`, `glass`, `window`, `door`, `balcony`, `concrete`, `metal`, `pipe`, `antenna`, `screen`, `neon`,
-`beacon`, `roof`), so a plain tower carries two and a dressed one carries what it asked for. Nothing is
+texture transform, `extensionsRequired` empty. The one extension used is
+`KHR_materials_emissive_strength`, and it is optional: a reader that lacks it sees a screen or a neon run at
+strength one instead of refusing the file. Materials are made on demand and named after what they dress
+(`facade`, `wall`, `base`, `glass`, `glass-band`, `window`, `door`, `balcony`, `concrete`, `metal`, `pipe`,
+`antenna`, `screen`, `screen-glass`, `neon`, `beacon`, `roof`), so a plain tower carries two and a dressed
+one carries what it asked for. Nothing is
 scaled and nothing is mirrored, so every node keeps a positive determinant and the only handedness flip is
 the one each importer does for itself.
 

@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { FINISHES, PAINTS, STYLES, finish, fits, loadPack, png, tileOf } from '#materials';
+import { FINISHES, PAINTS, STYLES, finish, fits, loadPack, pictured, png, tileOf } from '#materials';
 
 const look = { mode: 'textured', style: 'cyber', seed: 7 } as const;
 
@@ -31,12 +31,16 @@ describe('the finish library', () => {
     expect(cyan.image).toBeUndefined();
     expect(finish('beacon:red', look)!.image).toBeUndefined();
     expect(cyan.emissive).toEqual(cyan.colour);
+    // And it says so before anyone loads a pack, so a generated picture of a tube is not reported
+    // as being in play when nothing will ever read it.
+    expect(pictured('neon')).toBe(false);
+    expect(pictured('facade')).toBe(true);
   });
 
   it('draws every family differently, and the same one the same way twice', () => {
     const drawn = (style: (typeof STYLES)[number]) => [...finish('facade', { ...look, style })!.image!.load().colour.bytes];
     expect(drawn('modern')).not.toEqual(drawn('cyber'));
-    expect(drawn('fifties')).toEqual(drawn('fifties'));
+    expect(drawn('cyber')).toEqual(drawn('cyber'));
   });
 
   it('keeps every tile small enough to ship on every building in a scene', () => {

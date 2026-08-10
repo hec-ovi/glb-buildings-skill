@@ -3,8 +3,8 @@
 Procedural building GLBs for Unreal Engine, Unity and three.js.
 
 A building is a JSON document of floor sections, not a mesh. You edit the ground floor and rebuild, and
-nothing above it moves. What comes out is plain glTF 2.0: metres, Y up, one UV set, no extensions, one mesh
-and one node per section.
+nothing above it moves. What comes out is plain glTF 2.0: metres, Y up, one UV set, nothing in
+`extensionsRequired`, one mesh and one node per section.
 
 It is three things that fit together, and you can use any one of them on its own:
 
@@ -97,7 +97,7 @@ of them has to be careful.
 
 - **Node.js 24 or newer.** The CLI runs TypeScript directly, with no build step, which is a Node 24 feature.
   Check with `node --version`.
-- **npm**, to install the four dependencies (glTF Transform, three.js, esbuild, zod).
+- **npm**, to install the dependencies (glTF Transform, the Khronos validator, three.js, esbuild, zod).
 - Nothing else. No GPU to build, no network, no service account, no database.
 
 ```bash
@@ -181,18 +181,20 @@ section holds the whole way, and a turn too sharp to mitre is refused with the p
 
 ## Finishes, and two modes
 
-Every named surface has a finish, and a building wears one of three families: `modern`, `fifties` or
-`cyber`. A family is a sheet of colours and a wear number, and one set of texture templates draws all three,
-so the same `concrete` is pale precast on a curtain wall tower and stained board-formed concrete on a 1950s
-block. Textures are written from code, seeded from the building's name, and stay under 40 kB a tile.
+Every named surface has a finish, and a building wears one of two families: `modern` or `cyber`. A family
+is a sheet of colours and a wear number, and one set of texture templates draws both, so the same `concrete`
+is pale precast on a curtain wall tower and dark stained concrete on a megastructure. Textures are written
+from code, seeded from the building's name, and stay under 40 kB a tile.
 
 ```bash
 buildings style cyber      # dark mass, hard little windows in cyan, amber and red
 buildings textures off     # no images at all: named flat colour slots for your own materials
 ```
 
-A folder of generated images per family stands in for the drawn tiles, one file per finish, and anything the
-folder lacks stays drawn. [docs/textures/PROMPTS.md](docs/textures/PROMPTS.md) is how those get generated.
+A folder of generated images per family stands in for the drawn tiles, and anything the folder lacks stays
+drawn. A finish can hold several pictures (`facade_1` to `facade_4`) and a building picks one from its own
+seed, so a street of towers does not wear one wall.
+[docs/textures/PROMPTS.md](docs/textures/PROMPTS.md) is how those get generated.
 
 ## A night city
 
@@ -205,9 +207,10 @@ buildings crown crown --colour red
 ```
 
 A `line` is a lit run climbing a face, several across it, each tinted from one white tile. A `screen` stands
-off a face on brackets, carries its own picture, and gets its own material slot so an engine can bind a video
-to it. A `crown` runs round the top edge. A `bulk-glass` section is four or five floors of nothing but lit
-glazing in an otherwise dark tower, and a mast lights its own tip.
+off a face with nothing holding it, carries its own picture behind a tile of dotted glass, and gets its own
+material slot so an engine can bind a video to it. A `crown` runs round the top edge. A `bulk-glass` section is four or five floors of nothing but lit glazing
+in an otherwise dark tower. Every `cyber` roof stands a mast with a lit tip whether you ask for one or not,
+because that is what puts a tower against the sky.
 
 ## Nothing is written until it is proved
 

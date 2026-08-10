@@ -27,7 +27,7 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `dress(shape, options)` | shape, what it wears | cables, columns, greebles, deck parts, lines, screens, a crown |
 | `line(surface, shape, style)` | a side, how far along it, which floors | a lit run climbing that face |
 | `crown(surface, shape, thickness)` | a section | a lit run round the top edge of it |
-| `screen(kit, shape, style)` | a side, how far along, how wide, which floors | a panel standing off the face on brackets |
+| `screen(kit, shape, style)` | a side, how far along, how wide, which floors, the shape of its picture | a flat panel hanging off the face, under its dotted glass |
 | `new Surfaces()` | | one surface per material, made on demand at that material's own tile scale |
 | `segment(surface, points, style)` | a path in metres, a profile and a thickness | one closed run of tube, mitred at every corner |
 | `walls` / `cap` / `capRing` / `ringAt` | shape or rings | the pieces templates are made of |
@@ -35,7 +35,10 @@ into one row of quads per floor, so a texture tiles once per floor.
 | `outsideBy(ring, point)` | footprint, point | metres past the footprint, negative inside |
 | `facePoint(shape, t, edge, along, out)` | a face, how far up and across it | that point in the building |
 | `insideRing` / `insetRing` / `middleOf` / `outsideBy` | footprints | the rest of the plan arithmetic |
+| `rooftop(kit, shape, options)` | a roof section, what is placed on it and how full it is | the deck: parts in their cells, clutter in what is left, a railing round it |
 | `cells(ring, margin, covered?)` | deck footprint | the two metre grid, named `A1`, `B3` |
+| `claim(grid, cell, size)` | the grid, a cell, how many cells across | the block a part of that size stands in |
+| `covers(grid, ring, cell, part)` | the grid, the deck footprint, a cell, a part | every cell that part really occupies |
 | `windingProblems(mesh)` | one mesh | where a normal disagrees with its triangle, or a triangle has no area |
 | `shellProblems(meshes)` | a section's meshes | where it is open, doubled, or inside out |
 | `sunkProblems(meshes, shape)` | what a section wears | which parts are buried inside it |
@@ -73,15 +76,27 @@ A run lays its own UVs: across the tile wraps once around the profile, down the 
 worth of run. That is what puts a flange every metre on a pipe and keeps a neon line the same width
 whatever thickness it is drawn at.
 
+## The roof deck
+
+A deck is a two metre grid of named cells, and a part claims a block of them. What a part **covers** is not
+always the block it stands in: a pipe runs across the deck to the nearest edge before it drops, so it holds
+the corridor it crosses and nothing else is placed in a pipeline.
+
+`mast: true` stands one as near the middle of the deck as there is room for, unless a mast was placed
+already. A tower read against the sky needs the lit tip, and that is not left to whoever composed the deck
+to remember.
+
 ## Lines, screens and the crown
 
 A **line** is a run placed on a face rather than in the building's coordinates: a side, how far along it,
 and the floors it spans. One point per floor, so a straight face comes out as one length and a twisting one
 bends at each floor.
 
-A **screen** is a panel standing off a face, spanning many floors, with its picture across its whole front
-and brackets back to the wall. It is not composed on the face grid, because the grid repeats its design on
-every floor and a screen must not.
+A **screen** is a flat panel hanging off a face, spanning many floors, with its picture across its whole
+front and a tile of dotted glass in front of it carrying the grid of lamps. It is built on one plane of its
+own: on a section that twists, four points of the wall are not coplanar and a panel six centimetres thick
+built across them folds through itself. It is fitted to the shape of its picture, and it is not composed on
+the face grid, because the grid repeats its design on every floor and a screen must not.
 
 The **crown** is a run round the top edge of a section, drawn edge by edge, each reaching a little past both
 corners so consecutive runs overlap instead of butting onto the same plane.

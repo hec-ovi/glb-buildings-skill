@@ -45,7 +45,7 @@ a session names the building once and every later verb knows what it means.
 | `doctor [--port]` | whether this machine can build and preview: node, the home, the bundler, the service. Every failing check carries the command that fixes it |
 | `link [name] [--port]` | the address that opens one building in the preview |
 | `new <name> [--brief] [--width] [--depth] [--floors] [--style] [--textures] [--here]` | start a building, in metres, and make it current. `--here` is refused when `BUILDINGS_HOME` is set, since the two disagree about where to look |
-| `style [modern\|fifties\|cyber]` | which family of finishes the building wears, and what the pack for it holds |
+| `style [modern\|cyber]` | which family of finishes the building wears, and what the pack for it holds |
 | `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
 | `brief ["what it should be"]` | what the building was asked for; kept in the document and shown in the preview |
 | `list` | every building, whether it is built, and which is current |
@@ -58,7 +58,7 @@ a session names the building once and every later verb knows what it means.
 | `enhance [floorId ...] [--style ledge\|notch\|twist\|taper\|cables] [--side S]` | split a run of identical floors so one of them has a shape of its own. With no floor named it uses the last pick |
 | `face <section> [--side S] [--draw]` | the face as a grid of 10 cm cells, and what stands on it |
 | `put <kind> <from> <to> [--section] [--side] [--material] [--depth] [--every 3]` | put a window, door, panel or balcony on a face, in cells |
-| `put <kind> --row 9 --wide 1.4 --tall 1.5 [--every 3]` | the same from a shape: the face works out the columns, steps across on the pitch, and skips what is taken |
+| `put <kind> --row 9 --wide 1.4 --tall 1.5 [--every 3]` | the same from a shape: the face works out the columns, steps across on the pitch, and skips what is taken. Without `--every` a window or a panel takes the face's own bay, and a door or a balcony is placed once, centred |
 | `clear [n ...] [--section] [--side] [--all]` | take elements off a face |
 | `run <x,y,z> <x,y,z> [more ...] [--section] [--profile] [--thickness] [--material]` | a duct, pipe or cable along a path, mitred at every corner |
 | `line <section> [--side] [--count] [--spacing] [--along] [--from] [--to] [--colours]` | lit lines climbing one face across many floors |

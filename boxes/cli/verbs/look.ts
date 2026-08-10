@@ -2,27 +2,31 @@
  * How a building is dressed: which family of finishes it wears, and whether the file carries its
  * pictures at all. Both are one setting on the document, read back by `show`.
  */
-import { MODES, MODE_NOTES, STYLES, STYLE_NOTES, loadPack } from '#materials';
+import { MODES, MODE_NOTES, STYLES, STYLE_NOTES, loadPack, pictured } from '#materials';
 import type { Verb } from './verb.ts';
 import { oneOf, parse } from './args.ts';
 
 /** What the pack for a style holds right now, so nobody wonders whether the images are in play. */
 async function packOf(root: string, style: string) {
   const pack = await loadPack(root, style);
+  // A picture of a light is never read, so listing one as in play would be a lie.
+  const used = pack.finishes.filter((finish) => pictured(finish));
+  const ignored = pack.finishes.filter((finish) => !pictured(finish));
   return {
     dir: pack.dir,
-    has: pack.finishes.map((finish) => (pack.variants[finish]! > 1 ? `${finish} x${pack.variants[finish]}` : finish)),
+    has: used.map((finish) => (pack.variants[finish]! > 1 ? `${finish} x${pack.variants[finish]}` : finish)),
+    ...(ignored.length === 0 ? {} : { ignored, why: 'a light is a flat colour emitting that colour, so no picture of one is read' }),
     note:
-      pack.finishes.length === 0
-        ? `no generated images here yet, so every finish is drawn from code. Put PNGs or JPEGs named after the finish in ${pack.dir} to override them: facade.png, or facade_1.png to facade_4.png for a building to pick between`
-        : `${pack.finishes.length} finishes come from images, the rest are drawn from code. A finish with several pictures is picked between per building`,
+      used.length === 0
+        ? `no generated images here yet, so every finish is drawn from code. Put JPEGs named after the finish in ${pack.dir} to override them: facade_1.jpg to facade_4.jpg for a building to pick between, and facade_1-emissive.png for what glows`
+        : `${used.length} finishes come from images, the rest are drawn from code. A finish with several pictures is picked between per building`,
   };
 }
 
 export const style: Verb = {
   name: 'style',
   summary: 'which family of finishes this building is dressed in',
-  usage: 'style [modern|fifties|cyber]',
+  usage: 'style [modern|cyber]',
   async run(args, { projects }) {
     const { positionals } = parse(args, {});
     const { name, project } = await projects.open();

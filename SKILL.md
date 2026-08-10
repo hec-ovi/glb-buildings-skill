@@ -54,7 +54,7 @@ Run `buildings help` for the current list. Today:
 | `list` | every building, and which is current |
 | `use <name>` | switch the current building |
 | `show [name]` | the stack band by band |
-| `style [modern\|fifties\|cyber]` | which family of finishes the building wears. Says what a family looks like, and whether generated images are in play |
+| `style [modern\|cyber]` | which family of finishes the building wears. Says what a family looks like, and whether generated images are in play |
 | `textures [on\|off]` | whether the file carries its pictures, or flat colours an engine can replace |
 | `templates` | the floor templates the kit can build |
 | `add-band <id> --kind --tier --template --floors [shape and dressing flags] [--after id\|--before id]` | put a section into the stack |
@@ -109,8 +109,8 @@ The verbs spell a section `band`: `add-band`, `set-band`, `remove-band`. Same th
 Two settings on the building, not on a section.
 
 - **`style`** is the family every finish comes from: `modern` (dark glass, aluminium, pale precast, cool
-  white offices), `fifties` (buff brick, painted steel windows, tungsten light, weathered), `cyber` (a near
-  black mass drawn by its lights). Set it with `buildings style cyber`, or `--style` when you start one.
+  white offices) and `cyber` (a near black mass drawn by its lights, with a lit mast on every roof). Set it
+  with `buildings style cyber`, or `--style` when you start one.
 - **`textures`** is whether the file carries pictures at all. `on` is the default. `off` writes no images:
   every part is a named flat colour slot (`facade`, `window`, `concrete`, `pipe`, `antenna`, `door`,
   `balcony`, `screen`, `neon`, `roof`), which is what a team that applies its own materials in the engine

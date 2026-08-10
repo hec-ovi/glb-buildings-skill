@@ -1,19 +1,18 @@
 /**
- * The three families a building can be dressed in. A style is a sheet of colours and two or three
- * numbers, and every template reads what it needs from it, so one set of templates draws a modern
- * curtain wall tower, a 1950s block and a cyberpunk megastructure without a branch anywhere.
+ * The two families a building can be dressed in. A style is a sheet of colours and a number or
+ * two, and every template reads what it needs from it, so one set of templates draws a present day
+ * curtain wall tower and a cyberpunk megastructure without a branch anywhere.
  *
  * Generated image packs override these tiles per style. Anything a pack does not carry falls back
  * to the drawing, so a half finished pack still builds.
  */
 import type { Rgb } from './paint.ts';
 
-export const STYLES = ['modern', 'fifties', 'cyber'] as const;
+export const STYLES = ['modern', 'cyber'] as const;
 export type Style = (typeof STYLES)[number];
 
 export const STYLE_NOTES: Record<Style, string> = {
   modern: 'a present day curtain wall tower: dark glass, aluminium, pale precast, cool white offices',
-  fifties: 'a 1950s block: buff brick, painted steel windows, enamel spandrels, tungsten light, weathered',
   cyber: 'a near black megastructure drawn entirely by its lights: neon, screens, hard little windows',
 };
 
@@ -47,8 +46,6 @@ export type StyleSheet = {
   /** What dirt is here, and how much of it: 0 is new, 1 is fifty years of weather. */
   grime: Rgb;
   wear: number;
-  /** Built of small units laid in courses, rather than of large panels. */
-  masonry: boolean;
   /**
    * How much of a picture's own brightness a dead surface keeps. A photograph of a wall is lit for
    * a photograph: dropped to this, the wall falls back where it belongs and the lit things on it
@@ -82,36 +79,7 @@ const SHEETS: Record<Style, StyleSheet> = {
     screen: [235, 240, 250],
     grime: [70, 68, 64],
     wear: 0.08,
-    masonry: false,
     dim: 0.62,
-  },
-  fifties: {
-    wall: [136, 116, 88],
-    spandrel: [122, 134, 116],
-    glass: [72, 78, 72],
-    sheen: [120, 130, 124],
-    lights: [
-      { colour: [255, 196, 120], weight: 10 },
-      { colour: [232, 160, 92], weight: 5 },
-      { colour: [206, 232, 206], weight: 2 },
-      { colour: [150, 180, 220], weight: 1 },
-    ],
-    lit: 0.12,
-    partial: 0.35,
-    concrete: [150, 144, 132],
-    metal: [128, 120, 110],
-    pipe: [64, 78, 64],
-    antenna: [176, 176, 170],
-    roof: [78, 74, 70],
-    door: [64, 82, 66],
-    frame: [216, 210, 192],
-    rail: [150, 166, 180],
-    neon: [255, 214, 150],
-    screen: [226, 214, 186],
-    grime: [58, 48, 38],
-    wear: 0.75,
-    masonry: true,
-    dim: 0.58,
   },
   cyber: {
     wall: [10, 11, 13],
@@ -139,7 +107,6 @@ const SHEETS: Record<Style, StyleSheet> = {
     screen: [255, 90, 220],
     grime: [18, 20, 24],
     wear: 0.4,
-    masonry: false,
     dim: 0.34,
   },
 };

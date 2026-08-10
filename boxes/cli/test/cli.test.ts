@@ -342,9 +342,9 @@ describe('how a building is dressed', () => {
     await call('new', 'tower-a', '--style', 'cyber', '--textures', 'off');
     expect(await call('show')).toMatchObject({ style: 'cyber', textures: 'off' });
 
-    expect(await call('style', 'fifties')).toMatchObject({ ok: true, style: 'fifties' });
+    expect(await call('style', 'modern')).toMatchObject({ ok: true, style: 'modern' });
     expect(await call('textures', 'on')).toMatchObject({ ok: true, textures: 'on' });
-    expect(await call('show')).toMatchObject({ style: 'fifties', textures: 'on' });
+    expect(await call('show')).toMatchObject({ style: 'modern', textures: 'on' });
   });
 
   it('says where generated images would go, and that there are none yet', async () => {
@@ -371,8 +371,12 @@ describe('the lit parts', () => {
     expect(answer.lines.map((one) => one.colour)).toEqual(['cyan', 'magenta', 'cyan', 'magenta']);
     expect(answer.lines.map((one) => one.along)).toEqual([1.5, 4.5, 7.5, 10.5]);
 
+    // A second face, so what is read back is per face rather than everything on the first one's side.
+    await call('line', 'body', '--side', 'W', '--count', '2', '--spacing', '3');
     const shown = (await call('show')) as unknown as { bands: { id: string; wears: string[] }[] };
-    expect(shown.bands.find((one) => one.id === 'body')!.wears.join(' ')).toContain('4 lit lines');
+    const wears = shown.bands.find((one) => one.id === 'body')!.wears.join(' ');
+    expect(wears).toContain('4 lit lines up the S face');
+    expect(wears).toContain('2 lit lines up the W face');
   });
 
   it('refuses lines that would run off the end of the face', async () => {

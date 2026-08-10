@@ -64,7 +64,7 @@ export function capRing(shape: SectionShape, end: 0 | 1): Corner[] {
  * taller one, a 6 m lobby under 3.2 m floors, shows two rather than stretching one row over it.
  * A section that cuts real windows always shows one, because one pane is drawn per floor.
  */
-export function rowsPerFloor(shape: SectionShape): number {
+function rowsPerFloor(shape: SectionShape): number {
   const storey = shape.storey;
   if (shape.windows || !storey || storey <= 0) return 1;
   return Math.max(1, Math.round(shape.height / Math.max(1, shape.floors) / storey));

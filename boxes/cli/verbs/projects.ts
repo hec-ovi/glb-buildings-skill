@@ -9,10 +9,10 @@ import { LOCAL, Projects } from '../projects.ts';
 import type { Verb } from './verb.ts';
 import { count, need, oneOf, parse, text } from './args.ts';
 
-export const newProject: Verb = {
+const newProject: Verb = {
   name: 'new',
   summary: 'start a building and make it the current one',
-  usage: 'new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14] [--style modern|fifties|cyber] [--textures off] [--here]',
+  usage: 'new <name> [--brief "what it should be"] [--width 18] [--depth 14] [--floors 14] [--style modern|cyber] [--textures off] [--here]',
   async run(args, ctx) {
     const { positionals, values } = parse(args, {
       width: { type: 'string' },
@@ -113,8 +113,12 @@ function wornBy(band: Band): string[] {
   if (band.wires !== 'none') worn.push(`wires up ${band.wires}`);
   if (band.clutter > 0) worn.push(`deck clutter ${band.clutter}`);
   if (band.deck.length > 0) worn.push(`${band.deck.length} parts placed on the deck`);
-  if (band.lines.length > 0) worn.push(`${band.lines.length} lit lines up the ${band.lines[0]!.side} face`);
-  if (band.screens.length > 0) worn.push(`${band.screens.length} screens standing off it`);
+  // Lines are counted per face: a section may carry a run up one side and another up the next.
+  for (const side of new Set(band.lines.map((line) => line.side))) {
+    const many = band.lines.filter((line) => line.side === side).length;
+    worn.push(`${many} lit ${many === 1 ? 'line' : 'lines'} up the ${side} face`);
+  }
+  if (band.screens.length > 0) worn.push(`${band.screens.length} ${band.screens.length === 1 ? 'screen' : 'screens'} hanging off it`);
   if (band.crown !== '') worn.push(`a ${band.crown} crown round its top`);
   return worn;
 }
@@ -176,7 +180,7 @@ export const show: Verb = {
   },
 };
 
-export const setBrief: Verb = {
+const setBrief: Verb = {
   name: 'brief',
   summary: 'what this building was asked for, in the words it was asked in',
   usage: 'brief ["what it should be"]',
@@ -192,7 +196,7 @@ export const setBrief: Verb = {
   },
 };
 
-export const listTemplates: Verb = {
+const listTemplates: Verb = {
   name: 'templates',
   summary: 'the floor templates the kit can build',
   usage: 'templates',

@@ -39,9 +39,10 @@ times and still costs one mesh.
 | `balcony` | a slab standing out of the face with a rail round it | 48 a floor |
 
 Materials are the finishes `#materials` carries: `window`, `door`, `balcony`, `concrete`, `metal`,
-`screen`, `pipe`, `antenna` and `neon`. Each kind has its own default, and a finish that fills one
-element (a window, a door, a balcony, a screen) puts its whole picture across the element's front
-instead of tiling by the metre. A balcony always builds its slab in `concrete`, whatever its
+`screen`, `pipe`, `antenna` and `neon`. Each kind has its own default, and how a picture lands on an
+element comes from the finish rather than from here: one that **fills** (a window, a door, a screen) puts
+its whole picture across the element's front, one that **bands** (a balustrade) fills the height and repeats
+along the length, and the rest tile by the metre. A balcony always builds its slab in `concrete`, whatever its
 balustrade is made of.
 
 ## Balconies and the door onto them

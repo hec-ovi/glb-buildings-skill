@@ -231,8 +231,12 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
 
     /**
      * What makes a lit window read as a light rather than as a pale rectangle: everything brighter
-     * than the threshold bleeds into the air around it. Neon, screens and lit windows are the only
-     * things on a night building that pass it.
+     * than the threshold bleeds into the air around it. Neon, lit windows and the highlights of a
+     * screen are the only things on a night building that pass it.
+     *
+     * The threshold is high on purpose. Low enough to catch a screen's midtones and the picture on
+     * it smears into one glowing rectangle, which is the opposite of what a screen is for: the
+     * bleed belongs to the few things that really are brighter than white.
      *
      * If the browser cannot give the composer its render targets, the scene still draws: bloom is
      * the difference between good and better, not between working and not.
@@ -241,7 +245,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     try {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 1.25, 0.75, 0.55));
+      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 1.1, 0.75, 0.85));
       composer.addPass(new OutputPass());
       draw = () => composer!.render();
     } catch {

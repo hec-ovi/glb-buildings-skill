@@ -141,6 +141,8 @@ export type Dressing = {
   crown?: { material: string; thickness: number };
   /** Panels standing off a face, each with its own picture. */
   screens?: ScreenStyle[];
+  /** This roof carries a mast whatever else is on it. */
+  mast?: boolean;
 };
 
 /**
@@ -154,11 +156,12 @@ export function dress(shape: SectionShape, options: Dressing): MeshData[] {
   if (options.wires && options.wires !== 'none') wires(kit.get(PIPE), shape, options.wires);
   if (options.columns && options.columns !== 'none') columns(skin, shape, options.columns, options.seed ?? 1);
   if (options.greebles) greebles(skin, shape, { density: options.greebles, seed: options.seed ?? 1 });
-  if (options.clutter || options.deck?.length) {
+  if (options.clutter || options.deck?.length || options.mast) {
     rooftop(kit, shape, {
       clutter: options.clutter,
       placements: (options.deck ?? []) as never,
       covered: options.covered,
+      mast: options.mast,
       seed: (options.seed ?? 1) ^ 0x9e37,
     });
   }

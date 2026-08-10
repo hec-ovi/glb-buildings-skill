@@ -1,7 +1,7 @@
 # glb
 
-Writes the file an engine opens, and proves it before anyone does. Core glTF 2.0 only: metres, Y up, one UV
-set, PBR metallic roughness, no extensions, so one file serves Unreal, Unity and three.js.
+Writes the file an engine opens, and proves it before anyone does. Core glTF 2.0: metres, Y up, one UV set,
+PBR metallic roughness, and nothing in `extensionsRequired`, so one file serves Unreal, Unity and three.js.
 
 ## In and out
 
@@ -29,7 +29,16 @@ is a separate call: `buildGlb` builds and proves the bytes, the caller decides w
 - A building built with `textures` off carries no images at all: every material is a named flat colour an
   engine can drop its own material onto.
 - A screen is its own material, named `screen-<section>-<n>`, carrying the picture it was given. An engine
-  can bind a video to that slot; the file holds the still.
+  can bind a video to that slot; the file holds the still. The panel is fitted to the shape of that picture,
+  so an ad is never squashed to the rectangle someone asked for.
+- A wall glows only where its emissive map says a window is lit. A surface that is itself a light (a screen,
+  a neon run, a beacon) glows over its whole picture, and how much light it throws past a plain material's
+  most is `KHR_materials_emissive_strength`: an optional extension, so a reader that lacks it sees the same
+  material at one and the file still opens.
+- Anything you can see through says so with `BLEND`: the dotted glass over a screen, and the screen itself,
+  which lets the city through.
+- **Every `cyber` roof gets a lit mast**, asked for or not, as near the middle of the deck as there is room.
+  A tower of that family is read against the sky and the beacon on the tip is what puts it there.
 - A section's composed faces, its runs and its lit parts are built alongside what it wears, and held to the
   same proofs.
 - `extensionsRequired` is empty. A file that requires an extension Unreal lacks does not load at all.

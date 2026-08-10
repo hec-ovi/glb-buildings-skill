@@ -34,7 +34,7 @@ export function tint(colour: Rgb, factor: number): Rgb {
   return [colour[0] * factor, colour[1] * factor, colour[2] * factor];
 }
 
-export const BLACK: Rgb = [0, 0, 0];
+const BLACK: Rgb = [0, 0, 0];
 
 /** A roll snapped to one of five levels. Fewer distinct colours, far smaller PNG, same picture. */
 const LEVELS = 5;

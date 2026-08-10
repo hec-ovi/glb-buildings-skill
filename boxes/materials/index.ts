@@ -4,6 +4,7 @@ export {
   fits,
   bands,
   gridded,
+  pictured,
   known,
   splitName,
   tileOf,

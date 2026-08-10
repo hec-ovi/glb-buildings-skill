@@ -25,7 +25,7 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 | [`cli`](../boxes/cli/CONTRACT.md) | Named projects and the verbs an agent calls | every box above |
 | [`skill`](../skills/glb-buildings/SKILL.md) | What an agent reads instead of the code: a resolver and eight fat parts. `SKILL.md` is its contract | `cli` |
 | [`facade`](../boxes/facade/CONTRACT.md) | Faces as grids of 10 cm cells: what stands where on a wall, and the geometry it becomes | `spec`, `kit`, `materials` |
-| [`materials`](../boxes/materials/CONTRACT.md) | The finish library: what every named surface looks like, in three families, drawn from code or read from a pack | none |
+| [`materials`](../boxes/materials/CONTRACT.md) | The finish library: what every named surface looks like, in either family, drawn from code or read from a pack | none |
 | [`check`](../boxes/check/CONTRACT.md) | The proofs on the document: what rests on what, and by how much | `spec`, `assemble` |
 
 Edges run one way. `cli` is the only box that touches several: it is the agent's face onto all of them. A box
@@ -46,7 +46,7 @@ npm link && buildings new tower-a && buildings build && buildings preview
 | The closed error set | `boxes/spec/errors.ts` |
 | Units, grid and rounding rules | `boxes/spec/units.ts` |
 | Triangle budgets per tier | `boxes/glb/writer.ts` |
-| The finishes, the three families, and the two modes | `boxes/materials/finishes.ts`, `boxes/materials/styles.ts` |
+| The finishes, the two families, and the two modes | `boxes/materials/finishes.ts`, `boxes/materials/styles.ts` |
 | Where generated image packs live | `boxes/cli/projects.ts` (`textures`), `BUILDINGS_TEXTURES` |
 | Where projects live on disk | `boxes/cli/projects.ts` |
 | The CLI entry point | `boxes/cli/bin/buildings.ts` |

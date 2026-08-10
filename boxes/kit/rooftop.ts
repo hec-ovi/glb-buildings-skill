@@ -113,6 +113,12 @@ export type RooftopOptions = {
   clutter?: number;
   /** The footprint of the section above, whose cells are not roof at all. */
   covered?: Corner[];
+  /**
+   * This roof carries a mast whatever else is on it. A tower of this kind is read against the sky
+   * and the lit tip is what puts it there, so it is not left to whoever composed the deck to
+   * remember. One is placed as near the middle as there is room for, unless one was placed already.
+   */
+  mast?: boolean;
   seed: number;
 };
 
@@ -143,6 +149,27 @@ function one(kit: Surfaces, part: DeckPart, at: Corner, y: number, turn: number,
     case 'tower':
       return block(kit.get(METAL), at, 2.4 + random() * 1.2, 2.4 + random() * 1.2, y, 4 + random() * 5, turn);
   }
+}
+
+/**
+ * A mast, as near the middle of the deck as there is room for. Nearest the middle because that is
+ * where a mast goes and because the edge cells are where everything else wants to be.
+ */
+function standMast(kit: Surfaces, grid: Cell[], ring: Corner[], taken: Set<string>, y: number, random: () => number): string | undefined {
+  if (grid.length === 0) return undefined;
+  const middle = blockCentre(grid);
+  const near = [...grid].sort(
+    (a, b) => Math.hypot(a.centre[0] - middle[0], a.centre[1] - middle[1]) - Math.hypot(b.centre[0] - middle[0], b.centre[1] - middle[1]),
+  );
+
+  for (const cell of near) {
+    const block = covers(grid, ring, cell.name, 'mast');
+    if (!block || block.some((one) => taken.has(one.name))) continue;
+    for (const one of block) taken.add(one.name);
+    mast(kit, blockCentre(block), y - SINK, random);
+    return cell.name;
+  }
+  return undefined;
 }
 
 /** A run of thin bars around the deck edge, with a rail across the top. */
@@ -185,6 +212,12 @@ export function rooftop(kit: Surfaces, shape: SectionShape, options: RooftopOpti
     // What it stands on decides where it is drawn; what it covers decides what may go near it.
     for (const cell of covers(grid, deck, placement.cell, placement.part) ?? block) taken.add(cell.name);
     one(kit, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random, deck);
+  }
+
+  // The mast this kind of roof always carries, if nobody placed one.
+  if (options.mast && !(options.placements ?? []).some((placed) => placed.part === 'mast')) {
+    const stood = standMast(kit, grid, deck, taken, y, random);
+    if (stood) taken.add(stood);
   }
 
   const clutter = Math.max(0, Math.min(1, options.clutter ?? 0));

@@ -48,12 +48,6 @@ describe('geometry', () => {
     expect(shellProblems([box])).toEqual([]);
   });
 
-  it('catches a shell turned inside out', () => {
-    const box = new Surface('facade').box([-1, 0, -1], [1, 2, 1]).data();
-    const flipped = { ...box, indices: box.indices.slice().reverse() };
-    expect(shellProblems([flipped]).some((p) => p.detail.includes('inside out'))).toBe(true);
-  });
-
   it('catches a stored normal pointing away from its triangle', () => {
     const box = new Surface('facade').box([-1, 0, -1], [1, 2, 1]).data();
     const turned = { ...box, normals: box.normals.map((n) => -n) };

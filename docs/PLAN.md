@@ -40,7 +40,7 @@ wall, the glass and the roof), each with a flat colour and a tile drawn from cod
 drops its own material onto. Textured is the default.
 
 A **pack** is a folder of generated images that overrides the drawn tiles, one folder per style
-(`modern`, `fifties`, `cyber`). A building names its style; anything the pack does not carry falls back to
+(`modern`, `cyber`). A building names its style; anything the pack does not carry falls back to
 the drawn tile, so a half-finished pack still builds. Generating the packs is `docs/textures/PROMPTS.md`.
 
 **11. Cyberpunk parts.** Section-level parts, exposed only in the cyberpunk part of the skill.

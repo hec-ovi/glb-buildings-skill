@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@gltf-transform/core": "^4.4.2",
-    "@gltf-transform/functions": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
     "esbuild": "^0.25.0",
     "gltf-validator": "^2.0.0-dev.3.10",
     "three": "^0.185.0",

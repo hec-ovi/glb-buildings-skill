@@ -1,10 +1,11 @@
 # Texture prompt pack
 
-Every texture the kit can wear, in three families: **modern**, **fifties**, **cyber**. One entry per file:
-the path it has to be saved at, and the prompt.
+Every texture the kit can wear, in two families: **modern** and **cyber**. One entry per file: the path it
+has to be saved at, and the prompt.
 
-Generate four of each and keep them all. A finish with several pictures is picked between per building, so a
-street of towers does not wear one wall.
+Sections 5 and 6 are a whole family each, one picture per finish. Section 7 is the variants worth generating
+on top of that: a finish with several pictures is picked between per building, so a street of towers does not
+wear one wall.
 
 ---
 
@@ -50,8 +51,17 @@ the top and bottom of a section look cut.
 
 **Count them by eye.** Open the picture and count the mullions across and the floor bands down. It is the
 one measurement a person does better than a script: an autocorrelation locks onto the sub-mullions or a
-harmonic and answers confidently wrong. Only `facade` and `glass-band` need it; everything else tiles by the
-metre and has no grid.
+harmonic and answers confidently wrong. Only `facade` and `glass-band` hold a grid; everything else tiles by
+the metre.
+
+**A material tile says how much wall it covers instead**, in the same file:
+
+```json
+{ "wall": { "metres": 1.6 } }
+```
+
+A wall of brick and a wall of three metre panels are both `wall`, and the only way to tell them apart is to
+be told. 21 courses of brick is 1.6 m; read as the default 3 m every course comes out the depth of a door.
 
 Only the finishes you name are affected, and a missing or unreadable file is the same as saying nothing.
 
@@ -118,7 +128,8 @@ Colour and emissive are sRGB. Normal, roughness and AO are derived afterwards an
 
 ## 4. Getting a photograph instead of a render
 
-The first pass of these came out grey and CG. Two things cause that, and both are in the prompt:
+Ask an image model for a wall and the first pass comes back grey and CG. Two things cause that, and both
+are in the prompt:
 
 - **"Flat even lighting, orthographic, uniform"** is render language. Models answer it with a render. Ask
   for a **long telephoto lens straight on** instead: it gives the same flat, distortion-free wall and it
@@ -131,13 +142,13 @@ The rest:
 
 1. Say **seamless** and **tileable**, and say what it is a texture *of*, never a scene.
 2. **Even detail across the frame.** Anything the model centres becomes a polka dot when it tiles.
-2b. **Nothing that belongs at one height.** A hazard band low down, a stencilled number, a stone band at
-   the top: a tile has no top and no bottom, so each of those repeats up the whole wall. Anything that
-   belongs at a particular place on a building belongs in the geometry, not in the tile.
-3. **State the scale**: "a 3 metre square of", "eight window bays across".
-4. **1:1 tiles best.** The wall tile is 2:1 and worth the extra work, because the bays stay square.
-5. **Never upscale a tile.** Upscalers repaint the edges and the seam comes back.
-6. **Ask only for what you can see.** Normal, roughness, height and AO come afterwards, from the colour map.
+3. **Nothing that belongs at one height.** A hazard band low down, a stencilled number, a stone band at the
+   top: a tile has no top and no bottom, so each of those repeats up the whole wall. Anything that belongs
+   at a particular place on a building belongs in the geometry, not in the tile.
+4. **State the scale**: "a 3 metre square of", "eight window bays across".
+5. **1:1 tiles best.** The wall tile is 2:1 and worth the extra work, because the bays stay square.
+6. **Never upscale a tile.** Upscalers repaint the edges and the seam comes back.
+7. **Ask only for what you can see.** Normal, roughness, height and AO come afterwards, from the colour map.
 
 Per tool: Midjourney `--tile` (works with `--ar 2:1`, skip the upscale). Local SDXL or Flux: circular
 padding in the UNet and the VAE, per axis. Anything else: generate at 2x and fix the seam by hand.
@@ -358,227 +369,9 @@ realistic, hyper realism, extreme realist.
 
 *Emissive:* the same at full brightness on black.
 
-### `modern/neon_1.jpg` + `modern/neon_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of the surface of an architectural LED strip light,
-one metre of run from the top of the frame to the bottom, wrapping around from left to right. The middle third
-of the frame is a frosted white diffuser lens glowing evenly and slightly brighter down its centre line; the
-outer thirds are a dark anodised aluminium housing with fine longitudinal ribs and a thin dark gasket line
-where it meets the lens. One slim mounting bracket crosses near the top. Neutral white light, no colour cast.
-Seamless top to bottom. The picture starts and ends midway between two collars, so where it repeats along the
-run the join is invisible and no fitting is cut in half. Hyper realistic, hyper realism, extreme realist.
-```
-
-*Emissive:* black, only the diffuser lit, flat neutral white edge to edge.
-
-### `modern/beacon_1.jpg` + `modern/beacon_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of a small aviation obstruction beacon seen
-dead-on, filling the frame. A ribbed fresnel lens of deep translucent red glowing hot at the centre and
-falling off to a dark rim, set in a dark grey cage of four thin vertical guard bars with a machined base ring
-below and a vented cap above. Condensation beading on the metal. The lens is the only bright thing in the
-frame. The subject fills the frame edge to edge, its own frame running right to the edge of the picture:
-nothing cropped, no background and no margin around it. Hyper realistic, hyper realism, extreme realist.
-```
-
-*Emissive:* black, only the lens disc lit, hottest at the centre.
-
 ---
 
-## 6. fifties
-
-A 1950s block. Warm, uneven, patched, and fifty years of weather on it. The lights inside are tungsten.
-
-### `fifties/facade_1.jpg` + `fifties/facade_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Night photograph of a 1950s apartment building facade, taken
-with a 400mm telephoto from across the street so the wall fills the frame dead flat-on. An exact grid of 8
-window bays across and 4 floors down, every cell the same size. Each cell is a punched rectangular window in
-buff yellow brick laid in stretcher bond with pale lime mortar, the frame a painted steel casement in chalky
-cream gone to bare metal at the corners, divided by thin glazing bars into six small panes, with a cast stone
-sill under it and a brick soldier course over it. Under every sill a grey-brown weathering streak runs down
-the brick. One window in five is a sage green vitreous enamel spandrel panel instead of glass, faded and
-crazed. About one window in six is lit with warm tungsten light, and every one is different: net curtains
-glowing amber, a bare bulb in a hallway, a room where only the top pane shows light, a cold green stairwell
-fluorescent, a television flickering blue. Soot darkening along the top of the frame, patches of newer brick,
-a rusted bracket. No exterior light source at all. The picture starts and ends in the middle of a mullion, and
-in the middle of the solid band between two floors, so where it repeats the join makes one whole mullion and
-one whole floor band and never cuts a window in half. Hyper realistic, hyper realism, extreme realist.
-```
-
-Vary the four: `_1` red brick instead of buff. `_2` cream render with painted panels. `_3` more enamel
-spandrels, fewer windows lit. `_4` heavier soot and more patched brickwork.
-
-*Emissive:* pure black, only the lit windows carrying warm colour, several with only one small pane of the
-six glowing.
-
-### `fifties/glass-band_1.jpg` + `fifties/glass-band_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Night photograph of a 1950s office building's glazed floors,
-400mm telephoto, dead flat-on. An exact grid of 8 panels across by 4 floors down, steel framed, each panel a
-large pane divided by one thin horizontal transom, the frames painted a chalky pale grey. Two thirds of the
-panels are lit by warm tungsten and cold green fluorescent in roughly equal measure, the interiors showing
-bare ceiling fittings and the silhouettes of filing cabinets and desks; the rest are dark glass with a dull
-reflection. The lit and dark panels group irregularly. Old wavy glass, dirt in the frame corners. The picture
-starts and ends in the middle of a mullion, and in the middle of the solid band between two floors, so where
-it repeats the join makes one whole mullion and one whole floor band and never cuts a window in half. Hyper
-realistic, hyper realism, extreme realist.
-```
-
-*Emissive:* the same layout, lit panels flat, everything else black.
-
-### `fifties/wall_1.jpg`
-
-Brick with no windows in it: what a floor with balconies and its own doors is built of.
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of 1950s buff yellow brickwork with NO WINDOWS in it at
-all, flat overcast daylight, dead flat-on with a long telephoto. Stretcher bond, pale lime mortar raked back
-a little, every brick a slightly different shade from buff to pink to grey, a few overburnt darker ones, fine
-chips at the arrises, soot darkening in patches and an old repointed area where the mortar is greyer. NO
-window, NO glass, NO opening, NO frame, NO sill: this is the blank brick between them. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
-```
-
-### `fifties/base_1.jpg`
-
-The stall riser and plinth at street level, which is not brick and takes the knocks.
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the rendered and painted plinth at the base of a 1950s
-block, flat overcast daylight, dead flat-on with a long telephoto. Cement render painted a dull ochre cream,
-gone chalky, blistered and flaking in patches to the grey render beneath, a tide line of dirt low down, a
-patched repair in fresher render, hairline cracks. NO window, NO glass, NO opening, NO door. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
-```
-
-### `fifties/window_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of one 1950s painted steel casement window seen
-dead-on, filling the frame edge to edge. A chunky steel frame in chalky cream paint flaking to red oxide
-primer and bare metal at the corners, thin glazing bars dividing it into six small panes, a small brass handle
-and stay. The glass is old and slightly wavy, dull grey-green, one pane showing the edge of a net curtain,
-another with a fine crack, hardened putty and collected dirt in the corners. The subject fills the frame edge
-to edge, its own frame running right to the edge of the picture: nothing cropped, no background and no margin
-around it. Hyper realistic, hyper realism, extreme realist.
-```
-
-### `fifties/door_1.jpg` + `fifties/door_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of one 1950s panelled timber entrance door seen
-dead-on, filling the frame edge to edge. Six moulded panels painted a muted bottle green, the paint worn to
-bare wood around the handle and scuffed along the bottom rail, a dulled brass lever handle, letterplate and
-number, and a glazed fanlight across the top with a dim warm hallway light behind it. Grain showing through
-the paint, a boot scuff low down. The subject fills the frame edge to edge, its own frame running right to the
-edge of the picture: nothing cropped, no background and no margin around it. Hyper realistic, hyper realism,
-extreme realist.
-```
-
-*Emissive:* black, a dim warm rectangle at the fanlight only.
-
-### `fifties/balcony_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of one 1950s balcony balustrade seen dead-on from
-outside, filling the frame edge to edge. A painted steel railing of thin vertical bars with a flat top rail
-and a flat bottom rail, pale blue paint chalked and flaking to rust at every weld, rust stains bleeding down
-from each baluster foot. The space behind the bars is dark. No slab, no building around it. The subject fills
-the frame edge to edge, its own frame running right to the edge of the picture: nothing cropped, no background
-and no margin around it. Hyper realistic, hyper realism, extreme realist.
-```
-
-### `fifties/concrete_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Pure seamless tile of weathered 1950s concrete only, darker
-warm brown-grey, soft even timber-grain impression barely visible, fine aggregate only, no tie holes, no
-repair patches, no algae blotches, no water streaks as stripes. Continuous concrete field only. Seamless and
-tileable. Hyper realistic, hyper realism, extreme realist.
-```
-
-### `fifties/metal_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Pure seamless tile of old painted steel only, darker chalky
-blue-grey paint with fine even wear mottling, no rivets, no lap joint, no blister islands, no rust patches as
-shapes, no dents. Continuous painted metal field only. Seamless and tileable. Hyper realistic, hyper realism,
-extreme realist.
-```
-
-### `fifties/pipe_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Pure seamless wrap of old cast-iron pipe surface only, darker
-bottle-green paint filling the frame, soft cylindrical shade lighter down the centre and darker at both
-edges, fine even age wear only, no socket joint, no flange, no caulking, no rust streaks, no scale blotches.
-Seamless top to bottom. Hyper realistic, hyper realism, extreme realist.
-```
-
-### `fifties/antenna_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Pure seamless tile of oxidised aluminium only, darker dull
-chalky grey, fine even drawing lines and light pitting spread evenly, no bolt, no washer, no rust stain mark,
-no painted band. Continuous metal field only. Seamless and tileable. Hyper realistic, hyper realism, extreme
-realist.
-```
-
-### `fifties/roof_1.jpg`
-
-```
-Hyper realistic, extreme realism, photographic. Pure seamless top-down tile of old tar-and-gravel roofing only,
-darker grey-brown fine chippings pressed evenly into bitumen across the whole frame, no repair patch, no
-puddle ring, no leaves, no bare tar islands. Continuous roof field only. Seamless and tileable. Hyper
-realistic, hyper realism, extreme realist.
-```
-
-### `fifties/screen_1.jpg` + `fifties/screen_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of a 1950s vitreous enamel advertising panel seen
-dead-on, filling the frame edge to edge with no bezel. Enamel on steel, a faded cream ground with a wide muted
-red border band and one horizontal red band across the middle, the surface crazed and chipped to black metal
-at the corner fixing holes with rust creeping in. No text, no letters, no logo. The subject fills the frame
-edge to edge, its own frame running right to the edge of the picture: nothing cropped, no background and no
-margin around it. Hyper realistic, hyper realism, extreme realist.
-```
-
-*Emissive:* black, or a very dim warm wash if the sign is meant to be lit from a lamp above.
-
-### `fifties/neon_1.jpg` + `fifties/neon_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of the surface of an old neon tube in its bracket,
-one metre of run from the top of the frame to the bottom, wrapping around from left to right. The middle third
-is glass tubing glowing warm amber, hot down the centre line and falling off to the sides, with the faint dark
-line of the electrode wire behind it; the outer thirds are a painted steel channel in flaking cream paint with
-rust at the fixings. One bracket crosses near the top. Seamless top to bottom. The picture starts and ends
-midway between two collars, so where it repeats along the run the join is invisible and no fitting is cut in
-half. Hyper realistic, hyper realism, extreme realist.
-```
-
-*Emissive:* black, only the tube lit.
-
-### `fifties/beacon_1.jpg` + `fifties/beacon_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of an old aviation obstruction light seen dead-on,
-filling the frame. A ribbed red glass lens glowing warm at the centre, set in a painted cast aluminium cage of
-four guard bars, the paint chalked and rusting at the base ring, condensation inside the glass. The lens is
-the only bright thing in the frame. The subject fills the frame edge to edge, its own frame running right to
-the edge of the picture: nothing cropped, no background and no margin around it. Hyper realistic, hyper
-realism, extreme realist.
-```
-
-*Emissive:* black, only the lens disc lit.
-
----
-
-## 7. cyber
+## 6. cyber
 
 The family in the references. The mass is almost pure black and the building is drawn entirely by its
 lights: hundreds of tiny hard-edged rectangles, no two the same, cool white and teal with amber, red and the
@@ -651,8 +444,10 @@ Street level: heavier, scarred, and the one part of the building people touch.
 ```
 Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the armoured base panelling of a futuristic
 megastructure at night, dead flat-on with a long telephoto. Heavy dark gunmetal plates with recessed hex
-bolts, a black and yellow hazard chevron band low down, stencilled unit numbers, scuffs and impact marks,
-a faded spray tag, grime collected in the joints, wet sheen. NO window, NO glass, NO opening, NO door. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
+bolts at their corners, deep shadow joints between them, scuffs and impact dents, grime collected in the
+joints, condensation and a wet sheen. Evenly the same all over. NO hazard stripes, NO chevrons, NO yellow,
+NO text, NO numbers, NO stencils, NO graffiti, NO window, NO glass, NO opening, NO door: every one of those
+belongs at one place on a building and this picture repeats every three metres. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
 ```
 
 ### `cyber/window_1.jpg`
@@ -760,52 +555,18 @@ bright element and a lot of black.
 
 *Emissive:* the same image at full brightness on black.
 
-### `cyber/neon_1.jpg` + `cyber/neon_1-emissive.png`
-
-Generate this white and let the material tint it: one picture gives cyan, magenta, red and amber.
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of a thin architectural neon tube at night, one
-metre of run from the top of the frame to the bottom, wrapping around from left to right. The middle of the
-frame is the tube itself, a hot white core blowing out to pure white down its centre line and falling off
-sharply to either side; the outer edges are a narrow dark matte housing that disappears against the night. One
-slim mounting clip crosses near the top. Neutral white, no colour cast, no visible bracket detail beyond the
-clip. Seamless top to bottom. The picture starts and ends midway between two collars, so where it repeats
-along the run the join is invisible and no fitting is cut in half. Hyper realistic, hyper realism, extreme
-realist.
-```
-
-*Emissive:* black, only the tube lit, a hot white core falling off to the sides.
-
-### `cyber/beacon_1.jpg` + `cyber/beacon_1-emissive.png`
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of an aviation obstruction beacon on a mast tip at
-night, seen dead-on and filling the frame. A ribbed lens burning deep red, blown out to white at the centre
-and falling off to a dark rim, set in a near-black cage of four thin guard bars with a machined base ring and
-a vented cap. Condensation on the metal, everything except the lens almost black. The subject fills the frame
-edge to edge, its own frame running right to the edge of the picture: nothing cropped, no background and no
-margin around it. Hyper realistic, hyper realism, extreme realist.
-```
-
-Also make a teal version for roof corner markers: `cyber/beacon_2.jpg`, same prompt with the lens burning
-teal-green.
-
-*Emissive:* black, only the lens disc lit, hottest at the centre.
-
 ---
 
-## 8. Still missing from the packs
+## 7. The variants
 
-What each family has today is `_1` of every finish, and nothing else. Two things are missing, and both
-show on a building.
+A finish carries up to four pictures and a building picks one from its own name, so a variant is free
+variety rather than more work per building. These are the ones that earn their place.
 
 ### The quiet walls, `_2` `_3` `_4`
 
-`facade_1` of every family came out with **every window lit and every window the same size**, so a tower
-reads as noise and the band of glass floors, the neon and the screen have nothing quiet to stand against.
-The fix is not to redo `_1`. It is to generate three quieter walls beside it, because a building picks a
-variant from its own name: a street then runs one busy tower to three calm ones on its own.
+A wall with every window lit and every window the same size reads as noise, and the band of glass floors,
+the neon and the screen have nothing quiet to stand against. So `_1` is the busy one and `_2` to `_4` are
+progressively shut down: a street then runs one lit tower to three calm ones on its own.
 
 **Generate each one from `facade_1` as an image reference, not from the text alone.** That is the whole
 trick. The reference carries the mullion spacing, the spandrel bands, the metal, the glass tint and the
@@ -887,37 +648,6 @@ window in half. Hyper realistic, hyper realism, extreme realist.
 
 ---
 
-**`fifties/facade_2.jpg`** the quiet one, plus its `-emissive.png`
-**From:** `fifties/facade_1.jpg` as the image reference.
-
-```
-Hyper realistic, extreme realism, photographic. The same 1950s apartment facade as the reference image:
-identical brick bond and colour, identical cream painted steel casements with the same glazing bars,
-identical stone sills, identical grid of 8 window bays across and 4 floors down, same 400mm telephoto, dead
-flat-on. Change one thing only: the block has gone to bed. SWITCH THE WINDOWS OFF. Almost every window is
-dark, closed and empty, the old glass holding only a dull grey-green reflection. NO lit rooms, NO
-televisions, NO lamps, NO furniture, NO people, NO visible interiors, in any window except the three named
-here. Only three windows in the whole picture carry light, all warm tungsten and all different: one full
-window glowing amber behind net curtains, one showing light in a single small pane of the six, one a dim
-brown wash behind a drawn curtain. Two whole zones, each three bays wide and two floors tall, are completely
-dead, and one of them is a run of sage green enamel spandrel panels instead of windows. Soot along the top,
-patched brick, weathering streaks under every sill. The picture starts and ends in the middle of a mullion,
-and in the middle of the solid band between two floors, so where it repeats the join makes one whole mullion
-and one whole floor band and never cuts a window in half. Hyper realistic, hyper realism, extreme realist.
-```
-
-**`fifties/facade_3.jpg`** curtains drawn, plus its `-emissive.png`
-**From:** `fifties/facade_1.jpg`. Same prompt as `_2`, with one change: **only one window** in the whole
-picture is lit, and every other window has a curtain or a blind drawn across it, so nothing at all can be
-seen through the glass. NO interiors, NO furniture, NO glow anywhere else.
-
-**`fifties/facade_4.jpg`** all off, and NO emissive map
-**From:** `fifties/facade_1.jpg`. Same prompt as `_2`, with one change: EVERY LIGHT IS OFF. NO lit window
-anywhere, NO glow, NO visible interior in any window. Old wavy glass carrying nothing but a dull grey-green
-reflection, curtains and blinds drawn, the brick and the sills catching a little ambient light.
-
----
-
 **`cyber/facade_2.jpg`** the quiet one, plus its `-emissive.png`
 **From:** `cyber/facade_1.jpg` as the image reference.
 
@@ -951,8 +681,8 @@ read the wall as a surface rather than a void.
 
 ### The emissive maps
 
-Every family is missing every `-emissive.png`, so **no window glows at night on any building**. The colour
-maps are right; what is missing is the map that says which part of them is a light.
+The colour map says what the wall is; the emissive map says which part of it is a light. Without one, no
+window glows at night.
 
 Build each one from the colour map it belongs to rather than generating it fresh, or the two will not line
 up: mask the colour map to the pane rectangles from section 2, keep only the lit ones, and fill everything
@@ -960,68 +690,18 @@ else with black.
 
 | Needs one | Does not |
 | --- | --- |
-| `facade`, `glass-band`, `door`, `screen`, `neon`, `beacon` | `window`, `balcony`, `concrete`, `metal`, `pipe`, `antenna`, `roof` |
+| `facade`, `glass-band`, `door`, `screen` | `wall`, `base`, `window`, `balcony`, `concrete`, `metal`, `pipe`, `antenna`, `roof` |
 
-Any all-off variant needs no emissive map: nothing in it is lit, so the file simply does not exist and the
+An all-off variant needs no emissive map: nothing in it is lit, so the file simply does not exist and the
 finish stays dark.
 
 ---
 
-## 9. Regenerate, and the variants worth having
+### The doors and the walls
 
-### A tiling picture has no top and no bottom
-
-`cyber/base_1.jpg` came back with a black and yellow hazard band across it and a stencilled unit number.
-Both are things that belong at **one height on a building**, and a tile has no height: it repeats every three
-metres, so the band stripes the whole ground floor and the number is printed up the wall a dozen times.
-
-That was my prompt's fault, and the rule is now in every one below: **anything that belongs at a particular
-place belongs in the geometry, not in the tile.** A tiling picture is a material, evenly the same all over.
-
-**`cyber/base_1.jpg`** regenerate, no band, no text
-**From:** nothing. Generate fresh.
-
-```
-Hyper realistic, extreme realism, photographic. Photograph of a 3 metre square of the armoured base panelling of a futuristic megastructure at night,
-dead flat-on with a long telephoto. Heavy dark gunmetal plates with recessed hex bolts at their corners,
-deep shadow joints between them, scuffs and impact dents, grime collected in the joints, condensation and a
-wet sheen. Evenly the same all over. NO hazard stripes, NO chevrons, NO yellow, NO text, NO numbers, NO
-stencils, NO graffiti, NO window, NO opening: every one of those belongs at one place on a building and this
-picture repeats every three metres. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
-```
-
-### The brick has to be the same brick
-
-`fifties/wall_1.jpg` is the plain wall for a floor you compose on, and it came back **buff yellow** while
-`fifties/facade_1.jpg` is **red**. They sit on the same building, one directly above the other.
-
-**`fifties/wall_1.jpg`** regenerate to match
-**From:** `fifties/facade_1.jpg` as the image reference. Take the brick out of it: same bond, same colour,
-same mortar, same weathering, with the windows removed.
-
-```
-Hyper realistic, extreme realism, photographic. The same brickwork as the reference image and nothing else: identical red brick, identical bond,
-identical mortar colour and joint, identical weathering and soot, photographed dead flat-on with a long
-telephoto in flat overcast daylight. A 1.6 metre square of it, about 21 courses. Every brick a slightly
-different shade the way the reference has them, chips at the arrises, a patched repointed area. NO window,
-NO glass, NO opening, NO frame, NO sill, NO stone band: this is the blank brick between the windows, with
-the windows taken away. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
-```
-
-**Declare its scale.** A brick picture is not three metres of wall. Count the courses and put it in
-`pack.json` beside the images, or every course comes out the depth of a door:
-
-```json
-{ "wall": { "metres": 1.6 } }
-```
-
-21 courses at 75 mm is 1.6 m. The kit reads that and a course measures 76 mm on the building.
-
-### Variants worth having
-
-A finish can carry four pictures and a building picks one from its own name, so these are free variety
-rather than more work per building. The cyber door is the one asking for it: `door_1` came back as an
-industrial hatch, which is right for a service entrance and wrong for everything else.
+`cyber/door_1` is an industrial hatch, which is right for a service entrance and wrong for everything else,
+so the family carries two more doors. A second wall does the same job for the mass: two towers of one
+family stop being the same building.
 
 **`cyber/door_2.jpg`** the sci-fi entrance
 
@@ -1067,14 +747,13 @@ one side of each and dropping to black between them, water staining down the flu
 Evenly the same all over. NO window, NO opening, NO text, NO hazard marking, NO light of its own. The picture starts and ends mid-material, with no feature crossing an edge and no change of tone toward any edge, so where it repeats the join is invisible. Hyper realistic, hyper realism, extreme realist.
 ```
 
-**`modern/wall_2.jpg`** and **`fifties/wall_2.jpg`** are worth having for the same reason: a second wall so
-two buildings of one family are not the same building. Take the `wall_1` prompt for that family and change
-the material: `modern` to dark grey-green granite panels, `fifties` to painted render over brick, chalky and
-patched.
+**`modern/wall_2.jpg`** is worth having for the same reason: a second wall so two modern buildings are not
+the same building. Take the `modern/wall_1` prompt and change the material to dark grey-green granite
+panels.
 
 ---
 
-## 10. After generating
+## 8. After generating
 
 1. **Lay it out 3 by 3** before anything else. A seam, or a feature that reads as a polka dot, means
    regenerate rather than retouch.

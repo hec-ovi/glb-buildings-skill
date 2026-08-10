@@ -57,7 +57,7 @@ async function edit(
   return { project, bands: next.bands.map((b) => b.id) };
 }
 
-export const addBand: Verb = {
+const addBand: Verb = {
   name: 'add-band',
   summary: 'put a band of floors into the stack',
   usage: 'add-band <id> --kind bulk --tier flat --template bulk-flat --floors 6 [--height 3.2] [--width 12] [--depth 10] [--inset 0] [--shift-x 0] [--shift-z 0] [--rotation 0] [--twist 0] [--taper 0] [--wires S] [--shape round] [--arc 180] [--bow NS] [--corner 0.6] [--chamfer 0.2] [--greebles 0.4] [--windows] [--columns ribs] [--clutter 0.6] [--after <id> | --before <id>]',
@@ -115,7 +115,7 @@ export const addBand: Verb = {
   },
 };
 
-export const setBand: Verb = {
+const setBand: Verb = {
   name: 'set-band',
   summary: 'change a band that is already in the stack',
   usage: 'set-band <id> [--kind] [--tier] [--template] [--floors] [--height] [--width] [--depth] [--inset] [--shift-x] [--shift-z] [--rotation] [--twist] [--taper] [--wires] [--shape] [--segments] [--arc] [--bow] [--corner] [--chamfer] [--greebles] [--windows|--no-windows] [--columns] [--clutter]',
@@ -162,7 +162,7 @@ export const setBand: Verb = {
   },
 };
 
-export const removeBand: Verb = {
+const removeBand: Verb = {
   name: 'remove-band',
   summary: 'take a band out of the stack',
   usage: 'remove-band <id>',

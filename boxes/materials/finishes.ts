@@ -270,7 +270,11 @@ const RECIPES: Record<string, Recipe> = {
     lit: true,
     // A screen on a tower is a light hanging in the air, and the city shows through it a little.
     alpha: 0.88,
-    glow: 3.5,
+    // Just past one. An ad is a photograph that was already exposed to be looked at, and a wall in
+    // this family sits at a third of that, so barely over one is already the brightest thing in
+    // view. Push it further and the midtones of the picture clip: the face, the drink and the
+    // lettering all go to the same white and one ad stops being distinguishable from the next.
+    glow: 1.35,
     fit: true,
     draws: { key: 'screen', draw: (style, seed) => drawScreen(look(style), seed) },
   },
@@ -328,6 +332,14 @@ export function gridded(name: string): boolean {
 /** Whether it fills the height and repeats along the length, the way a balustrade does. */
 export function bands(name: string): boolean {
   return RECIPES[splitName(name).base]?.band ?? false;
+}
+
+/**
+ * Whether this finish carries a picture at all. A light does not: `neon` and `beacon` are a flat
+ * colour emitting that colour, so a generated image of one sits in the folder and is never read.
+ */
+export function pictured(name: string): boolean {
+  return RECIPES[splitName(name).base]?.draws !== undefined;
 }
 
 export type Look = {

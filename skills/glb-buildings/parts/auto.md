@@ -98,7 +98,6 @@ Three rules for choosing what to compose:
 | apartment, residential | floor height 2.8 to 3.0, base 3.5, footprint 15 to 25 m, few sections, balconies on the sunny face |
 | office, corporate | floor height 4.0, base 4.5, deeper footprint, clean steps, a rhythm of windows and nothing else |
 | cyberpunk, futuristic, high tech | `--style cyber`, and read `parts/cyber.md`: a black mass, neon lines, a lit band of floors, one screen, a lit crown |
-| 1950s, mid century, old block | `--style fifties`, punched windows, brick, a plain parapet, no twist |
 | industrial, brutalist | wide base, heavy overhangs, one or two sections, no twist, `metal` panels |
 | shop, retail, street level | a taller ground section, doors and big `window` panels on the front, apartments above |
 | far away, background city, fill | one bulk section, `flat` tier, small crown, no facade pass at all |

@@ -53,7 +53,7 @@ type is `Band`, and the verbs are `add-band`, `set-band`, `remove-band`. Same th
 }
 ```
 
-`style` is the family every finish comes from (`modern`, `fifties`, `cyber`) and `textures` is whether the
+`style` is the family every finish comes from (`modern`, `cyber`) and `textures` is whether the
 file carries pictures at all. Both belong to the building, not to a section.
 
 Sections are listed bottom to top, and every field below `template` has a default, so the three lines above

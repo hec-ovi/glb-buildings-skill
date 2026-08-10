@@ -126,7 +126,7 @@ function runsOf(runs: BandRun[], y: number): MeshData[] {
 }
 
 /** Whether a section carries real detail: anything composed, cut, run or lit on it. */
-export function detailed(band: Pick<PlacedBand, 'windows' | 'faces' | 'runs' | 'lines' | 'screens'>): boolean {
+function detailed(band: Pick<PlacedBand, 'windows' | 'faces' | 'runs' | 'lines' | 'screens'>): boolean {
   return (
     band.windows ||
     band.faces.some((face) => face.elements.length > 0) ||
@@ -368,6 +368,9 @@ export async function buildGlb(doc: BuildingDocument, options: BuildOptions = {}
       deck: band.deck,
       covered: above ? metres(above.bottom) : undefined,
       seed: seedOf(`${doc.name}/${band.id}`),
+      // A tower of this kind is read against the sky, and the lit tip is what puts it there. It
+      // is not left to whoever composed the deck to remember.
+      mast: doc.style === 'cyber' && band.kind === 'roof',
       lines: linesOf(band, shape),
       screens: screensOf(band, shape, pictures),
       ...(band.crown === '' ? {} : { crown: { material: `${NEON}:${band.crown}`, thickness: 0.16 } }),
