@@ -282,7 +282,9 @@ const RECIPES: Record<string, Recipe> = {
     roughness: 0.3,
     emissive: (style) => look(style).neon,
     lit: true,
-    glow: 3,
+    // A line is a thin tube read from the street, not a sign. Past this it stops being a line and
+    // becomes a smear, and it starts competing with the screens, which are the loud thing.
+    glow: 1.5,
     tile: 1,
   },
   'screen-glass': {
