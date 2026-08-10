@@ -212,6 +212,16 @@ describe('faces', () => {
     expect(await call('build', 'tower-a')).toMatchObject({ ok: true });
   });
 
+  it('centres a rhythm on the bay the wall texture draws, so a composed floor lines up with the plain ones', async () => {
+    await call('new', 'tower-a', '--width', '24', '--depth', '12');
+    const put = (await call('put', 'window', '--row', '9', '--wide', '1.4', '--every', '3', '--section', 'body')) as unknown as {
+      on: number[][];
+    };
+    // A bay is 3 m and the texture puts its window in the middle of one, so a 1.4 m window on a
+    // 3 m pitch starts at 0.8 m and is centred at 1.5, 4.5, 7.5 m: the same places.
+    expect(put.on.map((cell) => cell[0]! + 7)).toEqual([15, 45, 75, 105, 135, 165, 195, 225]);
+  });
+
   it('says where to look when a shape fits nowhere on the face', async () => {
     await call('new', 'tower-a', '--width', '12', '--depth', '9');
     const tooBig = (await call('put', 'window', '--row', '9', '--wide', '40', '--tall', '1.5', '--section', 'body')) as unknown as {

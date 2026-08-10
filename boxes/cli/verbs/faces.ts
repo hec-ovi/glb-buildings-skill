@@ -140,7 +140,6 @@ export const put: Verb = {
       return Math.max(1, Math.round(value / CELL));
     };
 
-    const col = byShape ? MARGIN : Math.min(from[0], to[0]);
     const row = byShape ? Number(text(values.row)) : Math.min(from[1], to[1]);
     const cols = byShape ? inCells(text(values.wide), 'wide', 14) : Math.abs(to[0] - from[0]) + 1;
     const rows = byShape ? inCells(text(values.tall), 'tall', 15) : Math.abs(to[1] - from[1]) + 1;
@@ -152,6 +151,11 @@ export const put: Verb = {
     // `--every` repeats the same element across the face on a pitch, which is what a rhythm of
     // windows is, without the composer counting cells.
     const pitch = step !== undefined && Number.isFinite(step) && step > 0 ? Math.round(step / CELL) : undefined;
+
+    // A rhythm starts in the middle of its first bay, not against the margin, so what is composed
+    // on a special floor lands under the windows the wall texture draws on the floors around it.
+    // Both are measured from the same end of the same face, so they line up by construction.
+    const col = byShape ? (pitch === undefined ? MARGIN : Math.max(MARGIN, Math.round(pitch / 2 - cols / 2))) : Math.min(from[0], to[0]);
     const existing = facesOf(band, side);
 
     // Given a shape rather than two cells, walk the face and take what is free. What a section

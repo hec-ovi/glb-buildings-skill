@@ -3,6 +3,33 @@
 One section, one face at a time. You are not modelling anything: you name rectangles of cells and
 the tool builds the geometry, so you never work out a size, a position or a corner.
 
+## Where composing belongs
+
+**The plain floors are already solved by the wall texture.** A `flat` section carries its windows,
+its spandrels and its floor lines in the picture, for about eight triangles a floor. Composing
+windows on top of that gives the wall two window systems that disagree, and costs a hundred times
+as much for a worse result.
+
+So the rhythm is: **four or five plain floors, then one composed floor**, and repeat.
+
+```bash
+buildings enhance body.f11 --style ledge          # lift one floor into its own section
+buildings put balcony --row 2 --wide 2.2 --tall 1.2 --every 3 --section body-e11
+buildings put door --row 4 --wide 0.9 --tall 2.1 --every 3 --section body-e11
+```
+
+`enhance` splits the run: the floors below keep the section id, the chosen floor becomes
+`<section>-e<floor>` with a section of its own, and the floors above become `<section>-a<floor>`.
+Compose on the middle one. The two plain runs stay flat and stay free.
+
+That is where balconies, doors, deep reveals, screens and landing decks go: on the one floor that
+is meant to be looked at. It is also what keeps a forty floor tower under a thousand triangles.
+
+**A rhythm lines up with the texture on its own.** The wall tile draws one window per 3 m bay, and
+`--every 3` steps the same 3 m and starts in the middle of the first bay, so what you compose on
+the special floor sits directly under the windows the plain floors draw. Use `--every 3` and do
+not count columns.
+
 ## Read the face first
 
 ```bash

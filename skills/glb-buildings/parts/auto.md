@@ -9,6 +9,11 @@ at a window. A facade pass works in cells on one section and never looks at the 
 building. Neither has to hold the other in its head, and the document is the only thing between
 them.
 
+**Most floors get no facade pass at all.** The wall texture already carries their windows, their
+spandrels and their floor lines. The second pass runs on the ground section, the crown, and one
+floor in every four or five that was lifted out of its run with `enhance`. A forty floor tower is
+three or four facade passes, not forty.
+
 ---
 
 ## Pass one: the architect
@@ -75,7 +80,9 @@ buildings build                         # prove it, then move to the next sectio
 Three rules for choosing what to compose:
 
 - A `flat` section carries **no** elements: its windows live in the texture and it has 120
-  triangles a floor to spend. Leave it alone or move it to `light` first.
+  triangles a floor to spend. To give a run of plain floors one worked floor, lift that floor out
+  with `buildings enhance body.f11` and compose on the section it becomes. Four or five plain
+  floors, then one composed floor, is the rhythm.
 - Do not compose every section. A tower where two sections are worked and the rest are plain
   reads as a building; one where all of them are busy reads as noise.
 - The four sides are not equal. Compose `S` (the front) first, and only do `N`, `E` and `W` if the

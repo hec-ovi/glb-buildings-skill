@@ -12,6 +12,19 @@ buildings enhance --style cables --side E        # uses whatever the human picke
 The floor's section splits into up to three: the floors below keep the original id, the chosen floor becomes
 `<section>-e<floor>`, and the floors above become `<section>-a<floor>`. Everything else is untouched.
 
+## This is how a special floor is made
+
+The split is the point, as much as the shape. The floor that comes out has a section of its own at `light`
+tier, so it is the one floor you compose on: balconies, doors, screens, a deck of parts on a ledge. The runs
+above and below stay `flat` and stay solved by the wall texture.
+
+```bash
+buildings enhance body.f11 --style ledge
+buildings put balcony --row 2 --wide 2.2 --tall 1.2 --every 3 --section body-e11
+```
+
+Four or five plain floors, then one composed floor. See `parts/facade.md` for what goes on it.
+
 ## The styles
 
 | style | what it does | use it for |
