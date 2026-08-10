@@ -31,6 +31,30 @@ from code. Generate a family a texture at a time and the build keeps working the
 and those are clean images with no screen effect baked into them. They have their own prompts in
 [ADS.md](ADS.md).
 
+### `pack.json`: what grid your wall pictures actually hold
+
+An image model draws whatever grid it feels like, not the 8 by 4 asked for. Rather than fight it, tell the
+tool what came back, in a `pack.json` beside the images:
+
+```json
+{
+  "facade": { "across": 10, "down": 3 },
+  "glass-band": { "across": 12, "down": 3 }
+}
+```
+
+`across` is how many window bays the picture holds side by side, `down` how many floors. The wall then lays
+its UVs on that, so one drawn window is one 3 m bay and one drawn row is one floor. Without it a picture of
+10 columns is stretched over 8, and a picture of 3 rows is sliced by every floor line, which is what makes
+the top and bottom of a section look cut.
+
+**Count them by eye.** Open the picture and count the mullions across and the floor bands down. It is the
+one measurement a person does better than a script: an autocorrelation locks onto the sub-mullions or a
+harmonic and answers confidently wrong. Only `facade` and `glass-band` need it; everything else tiles by the
+metre and has no grid.
+
+Only the finishes you name are affected, and a missing or unreadable file is the same as saying nothing.
+
 ## 2. The wall tile has to land on a grid
 
 The wall lays its own UVs: **one row of the tile per floor, one bay per 3 m of face**, on a tile of

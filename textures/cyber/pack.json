@@ -1,0 +1,10 @@
+{
+  "facade": {
+    "across": 6,
+    "down": 6
+  },
+  "glass-band": {
+    "across": 12,
+    "down": 3
+  }
+}
