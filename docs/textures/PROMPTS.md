@@ -721,99 +721,147 @@ reads as noise and the band of glass floors, the neon and the screen have nothin
 The fix is not to redo `_1`. It is to generate three quieter walls beside it, because a building picks a
 variant from its own name: a street then runs one busy tower to three calm ones on its own.
 
-Three rules carry all nine prompts below:
+**Generate each one from `facade_1` as an image reference, not from the text alone.** That is the whole
+trick. The reference carries the mullion spacing, the spandrel bands, the metal, the glass tint and the
+grid, so the quiet wall inherits all of it and the only thing that changes is what is switched on. Text
+alone gives a different wall every time, and a different grid with it.
+
+| Tool | How to hand it the reference |
+| --- | --- |
+| Midjourney | put the `facade_1` image URL first, then the text, with `--iw 2` so the wall is held |
+| SD / Flux img2img | `facade_1` as the init image at denoise 0.35 to 0.5, same size, same seed |
+| Anything with a style reference | `facade_1` as the style or structure reference at high strength |
+
+Three rules carry all nine prompts:
 
 - **Dark is the ground, light is the exception.** No more than one window in six shows anything at all.
 - **Break the 1 x 1.** A lit run is one bay, or three, or four together as one long ribbon. Never all singles.
 - **Leave whole zones dead.** Two or three large rectangles of the tile with nothing lit in them at all.
 
-The lit interiors also want to be *simpler*, not more detailed. At the distance a wall is seen, a lit office
-is a flat wash with a ceiling line and one or two silhouettes. Painting a full room in every pane is what
+And the lit interiors want to be *simpler*, not more detailed. At the distance a wall is seen, a lit office
+is a flat wash with a ceiling line and one or two silhouettes. A fully painted room in every pane is what
 made the first pass read as static.
 
-**`modern/facade_2.jpg`** the quiet one, and its `-emissive.png`
+---
+
+**`modern/facade_2.jpg`** the quiet one, plus its `-emissive.png`
+**From:** `modern/facade_1.jpg` as the image reference.
 
 ```
-Hyper realistic, extreme realism, photographic. Night photograph of a modern office curtain wall, taken with
-a 400mm telephoto so the wall fills the frame dead flat-on. An exact grid of 8 window bays across and 4
-floors down. Almost the whole wall is dark: blue-green glass reading as near-black with only the dim
-reflection of the city in it, between slim champagne anodised aluminium mullions, with a matte charcoal
-spandrel below each row. Just three or four windows in the whole picture are lit, and they are not alike:
-one is a run of three bays lit together as a single unbroken ribbon of cool white with a ceiling line and
-two chair silhouettes, one is a single bay of warm lamp light, one shows only a sliver at the top where a
-blind is nearly closed. Everything else is dark, and one whole corner of the picture, three bays wide and
-two floors tall, has nothing lit in it at all. The lit interiors are simple washes of light, not detailed
-rooms. The picture starts and ends in the middle of a mullion, and in the middle of the solid band between
-two floors, so where it repeats the join makes one whole mullion and one whole floor band and never cuts a
-window in half. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. The same curtain wall as the reference image: identical
+mullion spacing, identical spandrel bands, identical champagne anodised aluminium and blue-green glass,
+identical grid of 8 window bays across and 4 floors down, same camera, same 400mm telephoto, dead flat-on.
+Change one thing only: the building has gone home for the night. SWITCH THE WINDOWS OFF. Almost every pane
+is now dark, closed and empty, reading as near-black glass with nothing behind it but the dim reflection of
+the city. NO lit offices, NO desks, NO chairs, NO lamps, NO ceiling grids, NO people, NO furniture, NO
+visible interiors, in any pane except the few named here. Only three or four windows in the whole picture
+are lit: one run of three bays lit together as a single unbroken ribbon of cool white with a ceiling line
+and two chair silhouettes and nothing more, one single bay of warm lamp light, one showing a thin sliver of
+light at the top where a blind is nearly closed. One whole corner of the picture, three bays wide and two
+floors tall, is completely dead with nothing lit in it at all. The picture starts and ends in the middle of
+a mullion, and in the middle of the solid band between two floors, so where it repeats the join makes one
+whole mullion and one whole floor band and never cuts a window in half. Hyper realistic, hyper realism,
+extreme realist.
 ```
 
-**`modern/facade_3.jpg`** mostly closed, and its `-emissive.png`
+**`modern/facade_3.jpg`** closed and blinded, plus its `-emissive.png`
+**From:** `modern/facade_1.jpg` as the image reference.
 
 ```
-Hyper realistic, extreme realism, photographic. Night photograph of a modern office curtain wall, 400mm
-telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. The building is closed for
-the night: every pane is dark blue-green glass holding a faint reflection, blinds fully down across two
-entire floors so those rows read as flat pale grey panels rather than glass, and only two windows lit in the
-whole picture, both on the same floor, side by side as one four-bay ribbon of dim cool white with a ceiling
-line and nothing else in it. Champagne anodised aluminium mullions, matte charcoal spandrels, dust in the
-frame corners, soft vertical rain smears. Overwhelmingly dark and even. The picture starts and ends in the
-middle of a mullion, and in the middle of the solid band between two floors, so where it repeats the join
-makes one whole mullion and one whole floor band and never cuts a window in half. Hyper realistic, hyper
-realism, extreme realist.
+Hyper realistic, extreme realism, photographic. The same curtain wall as the reference image: identical
+mullion spacing, identical spandrels, identical materials and glass tint, identical grid of 8 window bays
+across and 4 floors down, same 400mm telephoto, dead flat-on. Change one thing only: the building is shut.
+SWITCH THE WINDOWS OFF and PULL THE BLINDS DOWN. Two entire floors have their blinds fully lowered, so
+those rows read as flat pale grey panels rather than glass, with no interior visible through them at all.
+Every other pane is dark closed glass holding only a faint reflection. NO lit offices, NO desks, NO lamps,
+NO ceiling grids, NO people, NO furniture, NO visible interiors anywhere except two windows on one floor,
+side by side, lit together as a single four-bay ribbon of dim cool white with a ceiling line and nothing
+else in it. Dust in the frame corners, soft vertical rain smears. Overwhelmingly dark and even. The picture
+starts and ends in the middle of a mullion, and in the middle of the solid band between two floors, so
+where it repeats the join makes one whole mullion and one whole floor band and never cuts a window in half.
+Hyper realistic, hyper realism, extreme realist.
 ```
 
-**`modern/facade_4.jpg`** all off, no emissive map at all
+**`modern/facade_4.jpg`** all off, and NO emissive map
+**From:** `modern/facade_1.jpg` as the image reference.
 
 ```
-Hyper realistic, extreme realism, photographic. Night photograph of a modern office curtain wall with every
-light off, 400mm telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. Every
-pane is dark blue-green low-iron glass holding nothing but the dim reflection of the city opposite: faint
-charcoal shapes, a few tiny distant lights in the reflection only, soft vertical rain smears, dust collected
-in the frame corners. Slim champagne anodised aluminium mullions and matte charcoal spandrel panels catch a
-little ambient light. No interior visible anywhere, no window lit, no glow. The picture starts and ends in
-the middle of a mullion, and in the middle of the solid band between two floors, so where it repeats the
-join makes one whole mullion and one whole floor band and never cuts a window in half. Hyper realistic,
-hyper realism, extreme realist.
-```
-
-**`fifties/facade_2.jpg`**, **`_3`**, **`_4`** the same three, in brick
-
-```
-Hyper realistic, extreme realism, photographic. Night photograph of a 1950s apartment building facade, 400mm
-telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. Punched rectangular
-windows in buff yellow brick with pale lime mortar, cream painted steel casements divided into six small
-panes, cast stone sills with a weathering streak under each. Almost every window is dark and empty. Only
-three in the whole picture carry light, all warm tungsten and all different: one a full window glowing amber
-behind net curtains, one showing light in a single small pane of the six, one a dim brown wash behind a
-drawn curtain. Two whole zones, each three bays wide and two floors tall, are completely dark, and one of
-them is a run of sage green enamel spandrel panels instead of windows. Soot along the top, patched brick.
+Hyper realistic, extreme realism, photographic. The same curtain wall as the reference image: identical
+mullion spacing, identical spandrels, identical champagne anodised aluminium and blue-green glass, identical
+grid of 8 window bays across and 4 floors down, same 400mm telephoto, dead flat-on. Change one thing only:
+EVERY LIGHT IN THE BUILDING IS OFF. Every single pane is dark, closed and empty. NO lit window anywhere, NO
+glow anywhere, NO desks, NO chairs, NO lamps, NO ceiling grids, NO people, NO furniture, NO visible interior
+in any pane whatsoever. The glass carries nothing but the dim reflection of the city opposite: faint
+charcoal shapes and a few tiny distant lights in the reflection only. The mullions and spandrels catch a
+little ambient light so the wall is still readable. Soft vertical rain smears, dust in the frame corners.
 The picture starts and ends in the middle of a mullion, and in the middle of the solid band between two
 floors, so where it repeats the join makes one whole mullion and one whole floor band and never cuts a
 window in half. Hyper realistic, hyper realism, extreme realist.
 ```
 
-For `_3` drop it to one lit window and put curtains in the rest. For `_4` turn every light off and let the
-glass carry only a dull grey-green reflection, with no emissive map.
+---
 
-**`cyber/facade_2.jpg`**, **`_3`**, **`_4`** the same three, near black
+**`fifties/facade_2.jpg`** the quiet one, plus its `-emissive.png`
+**From:** `fifties/facade_1.jpg` as the image reference.
 
 ```
-Hyper realistic, extreme realism, photographic. Night photograph of a futuristic megastructure facade, 600mm
-telephoto, dead flat-on, an exact grid of 8 window bays across and 4 floors down. The wall is near-black
-composite panel with fine joints, recessed service channels, bundled conduit and dim stencilled decals. Each
-cell holds a narrow horizontal window slit set deep behind a dark reveal. Almost all of them are dead black.
-Only a handful glow, and they are deliberately uneven: one run of four slits side by side lit as a single
-long unbroken bar of cold white, one lone amber slit far from it, one deep red sliver at the end of another.
-Two large zones of the picture, each four bays wide and two floors tall, are entirely dark with no light in
-them at all. The lit slits are flat hard-edged bars, not rooms. Extremely dark overall, the few lights doing
-all the work. The picture starts and ends in the middle of a mullion, and in the middle of the solid band
-between two floors, so where it repeats the join makes one whole mullion and one whole floor band and never
-cuts a window in half. Hyper realistic, hyper realism, extreme realist.
+Hyper realistic, extreme realism, photographic. The same 1950s apartment facade as the reference image:
+identical brick bond and colour, identical cream painted steel casements with the same glazing bars,
+identical stone sills, identical grid of 8 window bays across and 4 floors down, same 400mm telephoto, dead
+flat-on. Change one thing only: the block has gone to bed. SWITCH THE WINDOWS OFF. Almost every window is
+dark, closed and empty, the old glass holding only a dull grey-green reflection. NO lit rooms, NO
+televisions, NO lamps, NO furniture, NO people, NO visible interiors, in any window except the three named
+here. Only three windows in the whole picture carry light, all warm tungsten and all different: one full
+window glowing amber behind net curtains, one showing light in a single small pane of the six, one a dim
+brown wash behind a drawn curtain. Two whole zones, each three bays wide and two floors tall, are completely
+dead, and one of them is a run of sage green enamel spandrel panels instead of windows. Soot along the top,
+patched brick, weathering streaks under every sill. The picture starts and ends in the middle of a mullion,
+and in the middle of the solid band between two floors, so where it repeats the join makes one whole mullion
+and one whole floor band and never cuts a window in half. Hyper realistic, hyper realism, extreme realist.
 ```
 
-For `_3` use teal and magenta instead of white and amber, and light one vertical run of four slits stacked
-up the same bay. For `_4` turn everything off: pure black panel, no lit slit anywhere, no emissive map.
+**`fifties/facade_3.jpg`** curtains drawn, plus its `-emissive.png`
+**From:** `fifties/facade_1.jpg`. Same prompt as `_2`, with one change: **only one window** in the whole
+picture is lit, and every other window has a curtain or a blind drawn across it, so nothing at all can be
+seen through the glass. NO interiors, NO furniture, NO glow anywhere else.
+
+**`fifties/facade_4.jpg`** all off, and NO emissive map
+**From:** `fifties/facade_1.jpg`. Same prompt as `_2`, with one change: EVERY LIGHT IS OFF. NO lit window
+anywhere, NO glow, NO visible interior in any window. Old wavy glass carrying nothing but a dull grey-green
+reflection, curtains and blinds drawn, the brick and the sills catching a little ambient light.
+
+---
+
+**`cyber/facade_2.jpg`** the quiet one, plus its `-emissive.png`
+**From:** `cyber/facade_1.jpg` as the image reference.
+
+```
+Hyper realistic, extreme realism, photographic. The same megastructure facade as the reference image:
+identical near-black composite panel, identical panel joints and conduit and stencilled decals, identical
+window slits set in the same deep reveals, identical grid of 8 window bays across and 4 floors down, same
+600mm telephoto, dead flat-on. Change one thing only: SWITCH ALMOST EVERYTHING OFF. Nearly every slit is
+now dead black and empty. NO lit slit, NO glow, NO interior, NO colour, anywhere except the few named here.
+Only a handful glow, and they are deliberately uneven: one run of four slits side by side lit together as a
+single long unbroken bar of cold white, one lone amber slit far away from it, one deep red sliver at the end
+of another. Two large zones of the picture, each four bays wide and two floors tall, are entirely dark with
+no light in them at all. The lit slits are flat hard-edged bars of colour, not rooms: no furniture, no
+depth, no detail inside them. Extremely dark overall, the few lights doing all the work, the wall sitting
+at 8 to 12 out of 255. The picture starts and ends in the middle of a mullion, and in the middle of the
+solid band between two floors, so where it repeats the join makes one whole mullion and one whole floor band
+and never cuts a window in half. Hyper realistic, hyper realism, extreme realist.
+```
+
+**`cyber/facade_3.jpg`** one lit column, plus its `-emissive.png`
+**From:** `cyber/facade_1.jpg`. Same prompt as `_2`, with two changes: the colours are teal and magenta
+instead of cold white and amber, and the only lit run is a vertical stack of four slits in the same bay, one
+above another, like a single lit stairwell. Everything else on the wall is dead black. NO other lit slit
+anywhere.
+
+**`cyber/facade_4.jpg`** all off, and NO emissive map
+**From:** `cyber/facade_1.jpg`. Same prompt as `_2`, with one change: EVERYTHING IS OFF. Pure black panel
+and dead black slits across the entire picture. NO lit slit anywhere, NO glow, NO colour, NO interior. Only
+the panel joints, the conduit, the decals and the reveals catch the faintest ambient light, just enough to
+read the wall as a surface rather than a void.
 
 ### The emissive maps
 
@@ -828,7 +876,8 @@ else with black.
 | --- | --- |
 | `facade`, `glass-band`, `door`, `screen`, `neon`, `beacon` | `window`, `balcony`, `concrete`, `metal`, `pipe`, `antenna`, `roof` |
 
-`facade_4` and any other all-off variant needs no emissive map: nothing in it is lit.
+Any all-off variant needs no emissive map: nothing in it is lit, so the file simply does not exist and the
+finish stays dark.
 
 ---
 
