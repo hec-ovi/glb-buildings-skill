@@ -4,8 +4,8 @@ Start here. Open one box, read its `CONTRACT.md`, change its folder, run its tes
 
 | Need | Read |
 |---|---|
-| Hector's raw idea | [IDEA.md](IDEA.md) |
-| Every request, raw and in order | [REQUIREMENTS.md](REQUIREMENTS.md) |
+| Hector's raw idea | `IDEA.md` (local, not committed) |
+| Every request, raw and in order | `REQUIREMENTS.md` (local, not committed) |
 | How the whole thing fits together | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | What it is built on and why | [DECISIONS.md](DECISIONS.md) |
 | Build order and what is left | [PLAN.md](PLAN.md) |

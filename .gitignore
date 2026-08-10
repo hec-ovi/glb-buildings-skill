@@ -4,8 +4,10 @@ dist/
 .env.*
 *.log
 
-# Raw personal notes
+# Raw personal notes: Hector's own words, kept beside the work and not published
 docs/private/
+docs/IDEA.md
+docs/REQUIREMENTS.md
 
 # Agent scratch
 *.probe.*
