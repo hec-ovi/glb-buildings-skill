@@ -250,7 +250,7 @@ export function boot(options: BootOptions): { bar: Bar; models: Models; ready: P
     try {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 0.28, 0.25, 0.85));
+      composer.addPass(new UnrealBloomPass(new Vector2(1, 1), 0.18, 0.18, 0.85));
       composer.addPass(new OutputPass());
       draw = () => composer!.render();
     } catch {

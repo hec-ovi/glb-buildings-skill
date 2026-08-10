@@ -51,7 +51,8 @@ floor is 32 rows, and a 12 m face is 120 columns.
 Keep **1 cell clear** all the way round: nothing may touch the border.
 
 The design belongs to the face, so **every floor of the section gets it**. Compose one floor and a
-twenty floor section carries it twenty times for one mesh.
+twenty floor section carries it twenty times for one mesh. A street door is the one exception: it
+builds once, at the bottom, however many floors the section has.
 
 ## Put something on it
 

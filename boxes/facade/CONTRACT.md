@@ -84,7 +84,9 @@ floating in the middle of a wall, a balcony deeper than the kit allows, a rectan
   twists, tapers or curves needs no special case anywhere.
 - Everything bites into the wall behind it and stands proud in front, so nothing shares a plane
   with the wall and every element is seen from outside the section.
-- Every element closes into its own solid, on every floor of the section.
+- Every element closes into its own solid, on every floor of the section. The exception is a
+  street door, which builds once at the bottom: a way in is not a design that repeats. A balcony
+  door repeats with the balcony that carries it.
 
 ## Depends on
 

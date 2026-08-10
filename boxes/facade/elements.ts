@@ -108,11 +108,16 @@ function reveal(rect: Rect): Rect {
 /**
  * Build one element on every floor of the section. The design belongs to the face, so a section
  * of eighteen floors carries it eighteen times and still costs one mesh.
+ *
+ * The one exception is a door standing on the ground of the face: a way in exists once, at the
+ * bottom, and repeating it up a three floor lobby hangs doors in the air. A door higher up the
+ * grid stands on a balcony's slab and repeats with the balcony that carries it.
  */
 export function build(kit: Surfaces, face: Face, element: Element): void {
   const surface = kit.get(element.material);
+  const floors = element.kind === 'door' && element.rect.row <= 2 ? 1 : face.floors;
 
-  for (let floor = 0; floor < face.floors; floor++) {
+  for (let floor = 0; floor < floors; floor++) {
     switch (element.kind) {
       case 'window':
       case 'door':

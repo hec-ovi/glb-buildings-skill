@@ -101,10 +101,15 @@ describe('what the elements build', () => {
           // Every piece closes with positive volume, whatever the face is doing under it.
           expect(shellProblems([mesh]), element.kind).toEqual([]);
         }
-        // The design belongs to the face, so every floor of the section gets the same of it.
+        // The design belongs to the face, so every floor of the section gets the same of it,
+        // except a street door: a way in exists once, at the bottom.
         const pieces = solids(meshes).length;
-        expect(pieces, element.kind).toBeGreaterThanOrEqual(shape.floors);
-        expect(pieces % shape.floors, element.kind).toBe(0);
+        if (element.kind === 'door') {
+          expect(pieces, element.kind).toBe(1);
+        } else {
+          expect(pieces, element.kind).toBeGreaterThanOrEqual(shape.floors);
+          expect(pieces % shape.floors, element.kind).toBe(0);
+        }
       }
     }
   });
@@ -112,6 +117,14 @@ describe('what the elements build', () => {
   it('costs a flat element twelve triangles a floor, so a face full of them still fits a tier', () => {
     const meshes = dressFaces(plain, [{ side: 'S', elements: [window(10, 12, 8, 12)] }]);
     expect(meshes.reduce((n, mesh) => n + mesh.indices.length / 3, 0)).toBe(3 * 12);
+  });
+
+  it('repeats a balcony door with the floor that carries it, while a street door builds once', () => {
+    const balcony: Element = { kind: 'balcony', rect: { col: 20, row: 2, cols: 26, rows: 13 }, material: 'concrete', depth: 1.4 };
+    const onto: Element = { kind: 'door', rect: { col: 28, row: 4, cols: 10, rows: 18 }, material: 'window' };
+    const meshes = dressFaces(plain, [{ side: 'S', elements: [balcony, onto] }]);
+    const doors = solids(meshes.filter((mesh) => mesh.material === 'window')).length;
+    expect(doors).toBe(plain.floors);
   });
 
   it('refuses a door that floats above the floor it opens onto', () => {

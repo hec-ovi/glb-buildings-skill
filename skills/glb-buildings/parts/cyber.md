@@ -18,7 +18,7 @@ In this order. Each one only works because the ones around it are dark.
 1. **A black mass with lit windows.** That is the `cyber` style's own wall texture, and a `flat` section
    carries it for eight triangles a floor. Most of the tower is this and nothing else.
 2. **A band of full glass floors**, four or five of them, somewhere in the upper half.
-3. **Lines** climbing one or two faces, several of them, in two or three colours.
+3. **Lines** climbing one or two faces, two or three of them, in one colour family.
 4. **One screen** standing off a face, spanning many floors.
 5. **A lit crown** round the roof, and a mast with a beacon on it.
 
@@ -49,11 +49,12 @@ way up, or where the building steps in, and keep the sections above and below pl
 
 ## Lines
 
-A line is a lit run climbing a face across many floors. Several at different places across one face, in a
-couple of colours, is the shape to aim for.
+A line is a lit run climbing a face across many floors. Two or three on one face is the shape to
+aim for: they read as seams on a machine. Past four the wall stops being dark, and dark is what
+the whole style stands on, so treat five as the ceiling for the entire building, not per face.
 
 ```bash
-buildings line body --side S --count 5 --spacing 3.5 --colours cyan,magenta,red
+buildings line body --side S --count 3 --spacing 4.5 --colours cyan,magenta
 buildings line body --side W --count 2 --spacing 6 --colour amber --from 12 --to 34
 ```
 
@@ -135,7 +136,7 @@ buildings put door --row 1 --wide 2 --tall 3.2 --section ground --side S
 buildings set-band body --floors 26
 buildings add-band glow --kind custom --tier flat --template bulk-glass --floors 5 --after body
 buildings add-band upper --kind bulk --tier flat --floors 10 --inset 1.5 --after glow
-buildings line body --side S --count 5 --spacing 3.5 --colours cyan,magenta,red
+buildings line body --side S --count 3 --spacing 4.5 --colours cyan,magenta --thickness 0.3
 buildings screen body --side E --along 3 --width 8 --from 8 --to 20
 buildings crown crown --colour red
 buildings build
