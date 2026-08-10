@@ -196,8 +196,9 @@ floors, so where it repeats the join makes one whole mullion and one whole floor
 a window in half. Hyper realistic, hyper realism, extreme realist.
 ```
 
-*Emissive:* build it from this colour map, masked to the lit panes only, near white, black
-everywhere else.
+*Emissive:* build it from this colour map, masked to the lit panes only, each pane carrying its
+own pixels from the photograph at their own brightness, black everywhere else. A pane pushed to
+near white sits above the preview's bloom threshold and the whole wall blooms into one cloud.
 
 ## 8. `modern/facade_7.jpg`
 
@@ -230,9 +231,11 @@ not the rectangles of the panes. On the building those blobs float across the mu
 white smears rather than lit floors.
 
 **It is not an image generation job.** Build it from `modern/glass-band_1.jpg`: take the pane
-rectangles of the 14 by 4 grid, keep the ones that are lit, fill each one **flat, edge to edge, to
-its own mullion lines**, near white, and make everything else pure black. Hard edges, no feathering,
-no blur, no glow. A lit pane is a rectangle, because a window is a rectangle.
+rectangles of the 14 by 4 grid, keep the ones that are lit, fill each one **edge to edge, to its
+own mullion lines** with the pane's own pixels from the colour map, and make everything else pure
+black. Hard edges, no feathering past the rectangle, no glow. A lit pane is a rectangle, because a
+window is a rectangle, and it keeps the photograph's brightness: near white times the finish's
+glow of 1.6 sits far above the preview's bloom threshold and the band becomes the cloud again.
 
 ## 10. `modern/wall_3.jpg`
 
