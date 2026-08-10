@@ -31,5 +31,5 @@ export { greebles, seedOf } from './greebles.ts';
 export { mast, dish, sector, whips } from './antenna.ts';
 export { solar, tank } from './plant.ts';
 export { columns, uprightsOn, RIB_PITCH, type ColumnStyle, type Upright } from './columns.ts';
-export { rooftop, deckCells, DECK_PART_NOTES, PART_SIZE, claim, type RooftopOptions, type Placement, type DeckPart } from './rooftop.ts';
+export { rooftop, deckCells, DECK_PART_NOTES, PART_SIZE, claim, covers, type RooftopOptions, type Placement, type DeckPart } from './rooftop.ts';
 export { cells, cylinder, block, turbine, pipe, CELL, type Cell } from './deck.ts';

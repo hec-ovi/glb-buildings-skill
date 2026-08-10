@@ -4,7 +4,7 @@
  * instead of asking for a pile of clutter and hoping.
  */
 import { assemble } from '#assemble';
-import { DECK_PART_NOTES, PART_SIZE, claim, deckCells } from '#kit';
+import { DECK_PART_NOTES, PART_SIZE, claim, covers, deckCells, ringAt } from '#kit';
 import { BuildingError, DECK_PARTS, parseDocument, type DeckPart, type DeckPlacement } from '#spec';
 import type { Verb } from './verb.ts';
 import { degrees, need, parse, text } from './args.ts';
@@ -24,7 +24,7 @@ async function target(projects: Parameters<Verb['run']>[1]['projects'], named: s
   const above = placed.bands[at + 1];
   const shape = sectionShape(section);
   const covered = above ? above.bottom.map(([x, z]) => [x * MM, z * MM] as [number, number]) : undefined;
-  return { name, project, doc, at, band: doc.bands[at]!, grid: deckCells(shape, covered) };
+  return { name, project, doc, at, band: doc.bands[at]!, grid: deckCells(shape, covered), ring: ringAt(shape, 1) };
 }
 
 export const deck: Verb = {
@@ -33,13 +33,13 @@ export const deck: Verb = {
   usage: 'deck [section]',
   async run(args, { projects }) {
     const { positionals } = parse(args, {});
-    const { name, band, grid } = await target(projects, positionals[0]);
+    const { name, band, grid, ring } = await target(projects, positionals[0]);
     const held = new Map(band.deck.map((entry) => [entry.cell, entry]));
 
     // A part that needs a block holds every cell of it, so nothing is placed on top of it.
     const occupied = new Map<string, string>();
     for (const entry of band.deck) {
-      for (const cell of claim(grid, entry.cell, PART_SIZE[entry.part] ?? 1) ?? []) occupied.set(cell.name, entry.part);
+      for (const cell of covers(grid, ring, entry.cell, entry.part) ?? []) occupied.set(cell.name, entry.part);
     }
 
     return {
@@ -69,7 +69,7 @@ export const place: Verb = {
     const wanted = positionals.slice(1).map((cell) => cell.toUpperCase());
     if (wanted.length === 0) throw new BuildingError('E_DOC_INVALID', 'name at least one cell, like B3', ['cell']);
 
-    const { name, project, doc, at, band, grid } = await target(projects, text(values.section));
+    const { name, project, doc, at, band, grid, ring } = await target(projects, text(values.section));
     const turn = degrees(values.turn) ?? 0;
 
     // A cell that is not on this deck would be dropped silently at build time.
@@ -88,7 +88,7 @@ export const place: Verb = {
     const held = new Map<string, string>();
     for (const entry of band.deck) {
       if (wanted.includes(entry.cell)) continue;
-      for (const cell of claim(grid, entry.cell, PART_SIZE[entry.part] ?? 1) ?? []) held.set(cell.name, entry.part);
+      for (const cell of covers(grid, ring, entry.cell, entry.part) ?? []) held.set(cell.name, entry.part);
     }
 
     for (const cell of wanted) {
@@ -96,7 +96,8 @@ export const place: Verb = {
       if (!block) {
         throw new BuildingError('E_DOC_INVALID', `a ${part} needs a ${size}x${size} block and ${cell} does not have room for one`, ['cell']);
       }
-      const clash = block.find((candidate) => held.has(candidate.name));
+      const over = covers(grid, ring, cell, part) ?? block;
+      const clash = over.find((candidate) => held.has(candidate.name));
       if (clash) {
         // A big part takes a block, so the cell in the way is often not the one that was asked
         // for. Say which cells it needs, or the message reads as a non sequitur.
@@ -107,7 +108,7 @@ export const place: Verb = {
           ['cell', clash.name],
         );
       }
-      for (const candidate of block) held.set(candidate.name, part);
+      for (const candidate of over) held.set(candidate.name, part);
     }
 
     const kept = band.deck.filter((entry) => !wanted.includes(entry.cell));

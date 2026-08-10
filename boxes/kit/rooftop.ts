@@ -4,9 +4,10 @@
  * whatever is left, seeded, so a roof is never bare and never the same twice.
  */
 import { METAL, PIPE } from './names.ts';
+import { nearestOn } from './plan.ts';
 import { ringAt, type Corner, type SectionShape } from './section.ts';
 import type { Surfaces } from './surfaces.ts';
-import { block, cells, cylinder, pipe, rng, turbine, type Cell } from './deck.ts';
+import { CELL, block, cells, cylinder, pipe, rng, turbine, type Cell } from './deck.ts';
 import { dish, mast, sector, whips } from './antenna.ts';
 import { solar, tank } from './plant.ts';
 
@@ -76,6 +77,30 @@ function blockCentre(block: Cell[]): Corner {
   const x = block.reduce((sum, cell) => sum + cell.centre[0], 0) / block.length;
   const z = block.reduce((sum, cell) => sum + cell.centre[1], 0) / block.length;
   return [x, z];
+}
+
+/** How far a point sits from the segment `from`..`to`. */
+function awayFrom(point: Corner, from: Corner, to: Corner): number {
+  const dx = to[0] - from[0];
+  const dz = to[1] - from[1];
+  const span = dx * dx + dz * dz;
+  const t = span === 0 ? 0 : Math.max(0, Math.min(1, ((point[0] - from[0]) * dx + (point[1] - from[1]) * dz) / span));
+  return Math.hypot(point[0] - (from[0] + dx * t), point[1] - (from[1] + dz * t));
+}
+
+/**
+ * Every cell a part actually covers, which is not always the block it stands in. A pipe runs
+ * across the deck to the nearest edge before it drops, so it covers the corridor it crosses:
+ * without that the deck happily stands a dish in the middle of a pipeline.
+ */
+export function covers(grid: Cell[], ring: Corner[], cell: string, part: DeckPart): Cell[] | undefined {
+  const block = claim(grid, cell, PART_SIZE[part] ?? 1);
+  if (!block || part !== 'pipe') return block;
+
+  const from = blockCentre(block);
+  const to = nearestOn(ring, from).at;
+  const held = new Set(block.map((one) => one.name));
+  return [...block, ...grid.filter((one) => !held.has(one.name) && awayFrom(one.centre, from, to) <= CELL / 2)];
 }
 
 /** Parts sit this far into the deck. Two faces in the same plane flicker; these never are. */
@@ -157,7 +182,8 @@ export function rooftop(kit: Surfaces, shape: SectionShape, options: RooftopOpti
   for (const placement of options.placements ?? []) {
     const block = claim(grid, placement.cell, PART_SIZE[placement.part] ?? 1);
     if (!block) continue;
-    for (const cell of block) taken.add(cell.name);
+    // What it stands on decides where it is drawn; what it covers decides what may go near it.
+    for (const cell of covers(grid, deck, placement.cell, placement.part) ?? block) taken.add(cell.name);
     one(kit, placement.part, blockCentre(block), y - SINK, ((placement.turn ?? 0) * Math.PI) / 180, random, deck);
   }
 
@@ -172,8 +198,16 @@ export function rooftop(kit: Surfaces, shape: SectionShape, options: RooftopOpti
   const wanted = Math.round(free.length * clutter * 0.5);
   for (let i = 0; i < wanted && i < free.length; i++) {
     const cell = free[Math.floor(random() * free.length)]!;
+    const part = FILL[Math.floor(random() * FILL.length)]!;
+    const turn = random() * Math.PI;
     if (taken.has(cell.name)) continue;
-    taken.add(cell.name);
-    one(kit, FILL[Math.floor(random() * FILL.length)]!, cell.centre, y - SINK, random() * Math.PI, random, deck);
+
+    // A pipe covers the corridor it runs along, so a fill that would cross something already
+    // standing is dropped rather than drawn through it.
+    const over = covers(grid, deck, cell.name, part) ?? [cell];
+    if (over.some((held) => taken.has(held.name))) continue;
+
+    for (const held of over) taken.add(held.name);
+    one(kit, part, cell.centre, y - SINK, turn, random, deck);
   }
 }
